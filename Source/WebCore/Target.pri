@@ -4189,14 +4189,18 @@ use?(3D_GRAPHICS) {
 
     contains(QT_CONFIG, opengl) | contains(QT_CONFIG, opengles2) {
         !contains(QT_CONFIG, opengles2) {
+            INCLUDEPATH += $$QMAKE_INCDIR_OPENGL
             SOURCES += \
                platform/graphics/opengl/GraphicsContext3DOpenGL.cpp \
                platform/graphics/opengl/Extensions3DOpenGL.cpp
         } else {
+            INCLUDEPATH += $$QMAKE_INCDIR_OPENGL_ES2
             SOURCES += \
                platform/graphics/opengl/GraphicsContext3DOpenGLES.cpp \
                platform/graphics/opengl/Extensions3DOpenGLES.cpp
         }
+
+        !isEmpty(QMAKE_INCDIR_EGL): INCLUDEPATH += $$QMAKE_INCDIR_EGL
 
         HEADERS += platform/graphics/opengl/Extensions3DOpenGL.h
 
