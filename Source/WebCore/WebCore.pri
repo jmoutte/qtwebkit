@@ -13,6 +13,7 @@ WEBCORE_GENERATED_SOURCES_DIR = $${ROOT_BUILD_DIR}/Source/WebCore/$${GENERATED_S
 
 INCLUDEPATH += \
     $$SOURCE_DIR \
+    $$SOURCE_DIR/Modules/discovery \
     $$SOURCE_DIR/Modules/filesystem \
     $$SOURCE_DIR/Modules/geolocation \
     $$SOURCE_DIR/Modules/indexeddb \
