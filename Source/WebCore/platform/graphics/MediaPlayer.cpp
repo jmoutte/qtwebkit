@@ -54,6 +54,9 @@
 
 #if USE(GSTREAMER)
 #include "MediaPlayerPrivateGStreamer.h"
+#if ENABLE(MEDIA_STREAM)
+#include "StreamMediaPlayerPrivateGStreamer.h"
+#endif
 #define PlatformMediaEngineClassName MediaPlayerPrivateGStreamer
 #endif
 
@@ -212,6 +215,11 @@ static Vector<MediaPlayerFactory*>& installedMediaEngines(RequeryEngineOptions r
 
     if (!enginesQueried) {
         enginesQueried = true;
+
+
+#if USE(GSTREAMER) && ENABLE(MEDIA_STREAM)
+        StreamMediaPlayerPrivateGStreamer::registerMediaEngine(addMediaEngine);
+#endif
 
 #if USE(AVFOUNDATION)
         if (Settings::isAVFoundationEnabled()) {
