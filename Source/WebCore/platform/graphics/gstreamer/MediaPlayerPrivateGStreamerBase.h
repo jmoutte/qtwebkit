@@ -126,8 +126,9 @@ public:
 
 protected:
     MediaPlayerPrivateGStreamerBase(MediaPlayer*);
-    GstElement* createVideoSink(GstElement* pipeline);
+    virtual GstElement* createVideoSink();
     void setStreamVolumeElement(GstStreamVolume*);
+    virtual GstElement* createAudioSink() { return 0; }
     virtual GstElement* audioSink() const { return 0; }
     GRefPtr<GstCaps> currentVideoSinkCaps() const;
 
