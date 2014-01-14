@@ -125,6 +125,9 @@ private:
     void setDownloadBuffering();
     void processBufferingStats(GstMessage*);
 
+    bool doSeek(gint64 position, float rate, GstSeekFlags seekType);
+    void updatePlaybackRate();
+
     virtual String engineDescription() const { return "GStreamer"; }
     virtual bool isLiveStream() const { return m_isStreaming; }
     virtual bool didPassCORSAccessCheck() const;
@@ -146,6 +149,7 @@ private:
     bool m_canFallBackToLastFinishedSeekPositon;
     bool m_buffering;
     float m_playbackRate;
+    float m_lastPlaybackRate;
     bool m_errorOccured;
     mutable gfloat m_mediaDuration;
     bool m_downloadFinished;
