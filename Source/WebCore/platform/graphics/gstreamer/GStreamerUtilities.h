@@ -30,4 +30,5 @@
 
 namespace WebCore {
 bool initializeGStreamer();
+unsigned getGstPlaysFlag(const char* nick);
 }
