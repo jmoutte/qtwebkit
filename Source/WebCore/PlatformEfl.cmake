@@ -2,6 +2,8 @@ list(APPEND WebCore_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}/editing/atk"
     "${WEBCORE_DIR}/page/efl"
     "${WEBCORE_DIR}/platform/cairo"
+    "${WEBCORE_DIR}/platform/discovery/gssdp/soup"
+    "${WEBCORE_DIR}/platform/discovery/gupnp/soup"
     "${WEBCORE_DIR}/platform/efl"
     "${WEBCORE_DIR}/platform/graphics/cairo"
     "${WEBCORE_DIR}/platform/graphics/efl"
@@ -45,6 +47,8 @@ list(APPEND WebCore_SOURCES
 
     platform/cairo/WidgetBackingStoreCairo.cpp
 
+    platform/discovery/gssdp/soup/SSDPResolverSoup.cpp
+
     platform/Cursor.cpp
 
     platform/audio/efl/AudioBusEfl.cpp
@@ -73,6 +77,7 @@ list(APPEND WebCore_SOURCES
     platform/efl/LoggingEfl.cpp
     platform/efl/MIMETypeRegistryEfl.cpp
     platform/efl/NetworkInfoProviderEfl.cpp
+    platform/efl/NetworkServicesProviderEfl.cpp
     platform/efl/PasteboardEfl.cpp
     platform/efl/PlatformKeyboardEventEfl.cpp
     platform/efl/PlatformMouseEventEfl.cpp
@@ -171,6 +176,12 @@ list(APPEND WebCore_SOURCES
 if (ENABLE_BATTERY_STATUS)
     list(APPEND WebCore_INCLUDE_DIRECTORIES ${DBUS_INCLUDE_DIRS})
     list(APPEND WebCore_LIBRARIES ${DBUS_LIBRARIES})
+endif ()
+
+if (ENABLE_DISCOVERY)
+    list(APPEND WebCore_INCLUDE_DIRECTORIES ${GSSDP_INCLUDE_DIRS} ${GUPNP_INCLUDE_DIRS} ${AVAHI_INCLUDE_DIRS})
+    list(APPEND WebCore_LIBRARIES ${GSSDP_LIBRARIES} ${GUPNP_LIBRARIES} ${AVAHI_COMMON_LIBRARIES} ${AVAHI_CLIENT_LIBRARIES} ${AVAHI_GLIB_LIBRARIES})
+    add_definitions(-DNETWORK_SERVICES_RESOURCES_DIR="${WEBCORE_DIR}/platform/mock/resources")
 endif ()
 
 if (ENABLE_NETSCAPE_PLUGIN_API)

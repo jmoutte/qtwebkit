@@ -75,6 +75,7 @@ my (
     $deviceOrientationSupport,
     $dialogElementSupport,
     $directoryUploadSupport,
+    $discoverySupport,
     $dom4EventsConstructor,
     $downloadAttributeSupport,
     $fileSystemSupport,
@@ -256,6 +257,9 @@ my @features = (
 
     { option => "dom4-events-constructor", desc => "Expose DOM4 Events constructors",
       define => "ENABLE_DOM4_EVENTS_CONSTRUCTOR", default => (isAppleWebKit() || isGtk() || isEfl()), value => \$dom4EventsConstructor },
+
+    { option => "discovery", desc => "Toggle Discovery Network Services support",
+      define => "ENABLE_DISCOVERY", default => (isGtk() || isEfl()), value => \$discoverySupport },
 
     { option => "download-attribute", desc => "Toggle Download Attribute support",
       define => "ENABLE_DOWNLOAD_ATTRIBUTE", default => (isBlackBerry() || isEfl()), value => \$downloadAttributeSupport },

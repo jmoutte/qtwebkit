@@ -1,6 +1,7 @@
 set(WebCore_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}"
     "${WEBCORE_DIR}/Modules/battery"
+    "${WEBCORE_DIR}/Modules/discovery"
     "${WEBCORE_DIR}/Modules/filesystem"
     "${WEBCORE_DIR}/Modules/gamepad"
     "${WEBCORE_DIR}/Modules/geolocation"
@@ -49,6 +50,10 @@ set(WebCore_INCLUDE_DIRECTORIES
     "${WEBCORE_DIR}/platform"
     "${WEBCORE_DIR}/platform/animation"
     "${WEBCORE_DIR}/platform/audio"
+    "${WEBCORE_DIR}/platform/discovery"
+    "${WEBCORE_DIR}/platform/discovery/avahi"
+    "${WEBCORE_DIR}/platform/discovery/gssdp"
+    "${WEBCORE_DIR}/platform/discovery/gupnp"
     "${WEBCORE_DIR}/platform/graphics"
     "${WEBCORE_DIR}/platform/graphics/cpu/arm"
     "${WEBCORE_DIR}/platform/graphics/cpu/arm/filters"
@@ -115,6 +120,7 @@ set(WebCore_INCLUDE_DIRECTORIES
 
 set(WebCore_IDL_INCLUDES
     Modules/battery
+    Modules/discovery
     Modules/filesystem
     Modules/gamepad
     Modules/geolocation
@@ -151,6 +157,13 @@ set(WebCore_IDL_INCLUDES
 set(WebCore_IDL_FILES
     Modules/battery/BatteryManager.idl
     Modules/battery/NavigatorBattery.idl
+
+    Modules/discovery/NavigatorNetworkService.idl
+    Modules/discovery/NavigatorNetworkServiceError.idl
+    Modules/discovery/NavigatorNetworkServiceErrorCallback.idl
+    Modules/discovery/NavigatorNetworkServiceSuccessCallback.idl
+    Modules/discovery/NetworkService.idl
+    Modules/discovery/NetworkServices.idl
 
     Modules/filesystem/DataTransferItemFileSystem.idl
     Modules/filesystem/DirectoryEntry.idl
@@ -376,6 +389,7 @@ set(WebCore_IDL_FILES
     dom/NodeIterator.idl
     dom/NodeList.idl
     dom/Notation.idl
+    dom/NotifyEvent.idl
     dom/OverflowEvent.idl
     dom/PageTransitionEvent.idl
     dom/PopStateEvent.idl
@@ -776,6 +790,14 @@ set(WebCore_SOURCES
     Modules/battery/BatteryManager.cpp
     Modules/battery/BatteryStatus.cpp
     Modules/battery/NavigatorBattery.cpp
+
+    Modules/discovery/NavigatorNetworkService.cpp
+    Modules/discovery/NetworkService.cpp
+    Modules/discovery/NetworkServiceDescription.cpp
+    Modules/discovery/NetworkServices.cpp
+    Modules/discovery/NetworkServicesController.cpp
+    Modules/discovery/NetworkServicesManager.cpp
+    Modules/discovery/NetworkServicesRequest.cpp
 
     Modules/filesystem/DOMFilePath.cpp
     Modules/filesystem/DOMFileSystem.cpp
@@ -1215,6 +1237,7 @@ set(WebCore_SOURCES
     dom/NodeRenderingTraversal.cpp
     dom/NodeTraversal.cpp
     dom/Notation.cpp
+    dom/NotifyEvent.cpp
     dom/OverflowEvent.cpp
     dom/PageTransitionEvent.cpp
     dom/PendingScript.cpp
@@ -1894,6 +1917,15 @@ set(WebCore_SOURCES
     platform/audio/VectorMath.cpp
     platform/audio/ZeroPole.cpp
 
+    platform/discovery/NetworkServicesProviderBase.cpp
+    platform/discovery/avahi/NetworkServicesProviderAvahi.cpp
+    platform/discovery/gssdp/NetworkServicesProviderGssdp.cpp
+    platform/discovery/gssdp/SSDPParser.cpp
+    platform/discovery/gssdp/SSDPResolverBase.cpp
+    platform/discovery/gupnp/NetworkServiceDescriptionGupnp.cpp
+    platform/discovery/gupnp/NetworkServicesProviderGupnp.cpp
+    platform/discovery/gupnp/UPnPDevice.cpp
+
     platform/graphics/BitmapImage.cpp
     platform/graphics/Color.cpp
     platform/graphics/CrossfadeGeneratedImage.cpp
@@ -2039,6 +2071,11 @@ set(WebCore_SOURCES
     platform/mock/DeviceMotionClientMock.cpp
     platform/mock/DeviceOrientationClientMock.cpp
     platform/mock/GeolocationClientMock.cpp
+
+    platform/mock/NetworkServicePublisherAvahiMock.cpp
+    platform/mock/NetworkServicePublisherGssdpMock.cpp
+    platform/mock/NetworkServicePublisherGupnpMock.cpp
+
     platform/mock/ScrollbarThemeMock.cpp
 
     platform/network/AuthenticationChallengeBase.cpp
