@@ -4421,6 +4421,10 @@ use?(GRAPHICS_SURFACE) {
             platform/graphics/surfaces/glx/X11Helper.cpp \
             platform/graphics/surfaces/glx/GraphicsSurfaceGLX.cpp
     }
+    use?(egl) {
+        SOURCES += platform/graphics/surfaces/qt/GraphicsSurfaceEGL.cpp
+        SOURCES -= platform/graphics/surfaces/qt/GraphicsSurfaceQt.cpp
+    }
 }
 
 build?(qttestsupport) {

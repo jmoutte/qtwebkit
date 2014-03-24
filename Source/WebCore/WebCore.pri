@@ -251,8 +251,10 @@ use?(3D_GRAPHICS) {
 use?(GRAPHICS_SURFACE) {
     mac: LIBS += -framework IOSurface -framework CoreFoundation
     linux-*: {
-        LIBS += -lXcomposite -lXrender
-        CONFIG *= x11
+        use?(glx) {
+            LIBS += -lXcomposite -lXrender
+            CONFIG *= x11
+        }
     }
 }
 

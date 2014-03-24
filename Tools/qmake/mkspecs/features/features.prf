@@ -62,6 +62,8 @@ defineTest(detectFeatures) {
 
         # We need fontconfig to set up the test fonts for DumpRenderTree and WebKitTestRunner.
         config_fontconfig: WEBKIT_CONFIG += have_fontconfig
+
+        contains(QT_CONFIG, egl): WEBKIT_CONFIG += have_egl
     }
 
     # Nescape plugins support (NPAPI)
@@ -128,6 +130,7 @@ defineTest(detectFeatures) {
         mac: WEBKIT_CONFIG += use_graphics_surface
         win32:contains(QT_CONFIG, opengles2): WEBKIT_CONFIG += use_graphics_surface
         have?(glx):have?(xcomposite):have?(xrender): WEBKIT_CONFIG += use_graphics_surface use_glx
+        have?(egl): WEBKIT_CONFIG += use_graphics_surface use_egl
     }
 
     # Slider Touch is sensible to use when compiling WebKit2
