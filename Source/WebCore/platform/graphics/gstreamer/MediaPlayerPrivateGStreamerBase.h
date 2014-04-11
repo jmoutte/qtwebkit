@@ -84,6 +84,8 @@ public:
     void setSize(const IntSize&);
     void sizeChanged();
 
+    void triggerDrain();
+
     void triggerRepaint(GstBuffer*);
     void paint(GraphicsContext*, const IntRect&);
 
@@ -141,6 +143,7 @@ protected:
     GstElement* m_fpsSink;
     MediaPlayer::ReadyState m_readyState;
     MediaPlayer::NetworkState m_networkState;
+    bool m_isEndReached;
     IntSize m_size;
     GMutex* m_bufferMutex;
     GstBuffer* m_buffer;
@@ -153,6 +156,7 @@ protected:
     unsigned long m_repaintHandler;
     unsigned long m_volumeSignalHandler;
     unsigned long m_muteSignalHandler;
+    unsigned long m_drainHandler;
     mutable IntSize m_videoSize;
 #if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
 #if USE(COORDINATED_GRAPHICS) && defined(GST_API_VERSION_1)
