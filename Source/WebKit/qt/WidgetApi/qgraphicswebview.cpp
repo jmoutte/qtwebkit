@@ -316,6 +316,11 @@ QVariant QGraphicsWebView::itemChange(GraphicsItemChange change, const QVariant&
         QApplication::sendEvent(this, &event);
         return value;
     }
+#ifndef QT_NO_OPENGL
+    case ItemSceneHasChanged:
+        if (scene())
+            d->page->d->saveGLContext();
+#endif
     default:
         break;
     }

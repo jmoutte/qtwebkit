@@ -158,6 +158,9 @@ public:
     // For similar reasons, we don't want to create the WebCore Page before
     // we properly initialized the style factory callbacks.
     void initializeWebCorePage();
+#ifndef QT_NO_OPENGL
+    void saveGLContext();
+#endif
 
     virtual void show() = 0;
     virtual void setFocus() = 0;

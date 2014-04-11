@@ -195,6 +195,26 @@ bool PageClientQGraphicsWidget::makeOpenGLContextCurrentIfAvailable()
     return false;
 }
 
+#ifndef QT_NO_OPENGL
+QOpenGLContext* PageClientQGraphicsWidget::getOpenGLContextIfAvailable()
+{
+#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL) && defined(QT_OPENGL_LIB)
+    QGraphicsView* graphicsView = firstGraphicsView();
+    if (graphicsView && graphicsView->viewport()) {
+        QGLWidget* glWidget = qobject_cast<QGLWidget*>(graphicsView->viewport());
+        if (glWidget) {
+            QOpenGLContext *previous = QOpenGLContext::currentContext();
+            glWidget->makeCurrent();
+            QOpenGLContext *c = QOpenGLContext::currentContext();
+            previous->makeCurrent(previous->surface());
+            return c;
+        }
+    }
+#endif
+    return 0;
+}
+#endif
+
 void PageClientQGraphicsWidget::setInputMethodEnabled(bool enable)
 {
     view->setFlag(QGraphicsItem::ItemAcceptsInputMethod, enable);

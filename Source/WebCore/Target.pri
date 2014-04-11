@@ -2232,7 +2232,14 @@ HEADERS += \
     platform/graphics/RoundedRect.h \
     platform/graphics/qt/FontCustomPlatformData.h \
     platform/graphics/qt/NativeImageQt.h \
-    platform/graphics/qt/StillImageQt.h \
+    platform/graphics/qt/StillImageQt.h
+
+contains(QT_CONFIG,opengl) {
+HEADERS += \
+    platform/graphics/qt/GLSharedContext.h
+}
+
+HEADERS += \
     platform/graphics/qt/TransparencyLayer.h \
     platform/graphics/SegmentedFontData.h \
     platform/graphics/ShadowBlur.h \
@@ -2886,7 +2893,14 @@ SOURCES += \
     platform/graphics/qt/IntSizeQt.cpp \
     platform/graphics/qt/PathQt.cpp \
     platform/graphics/qt/PatternQt.cpp \
-    platform/graphics/qt/StillImageQt.cpp \
+    platform/graphics/qt/StillImageQt.cpp
+
+contains(QT_CONFIG,opengl){
+SOURCES += \
+    platform/graphics/qt/GLSharedContext.cpp
+}
+
+SOURCES += \
     platform/graphics/texmap/GraphicsLayerTextureMapper.cpp \
     platform/graphics/texmap/TextureMapper.cpp \
     platform/graphics/texmap/TextureMapperBackingStore.cpp \

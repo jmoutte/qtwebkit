@@ -45,41 +45,265 @@
 #include <QPixmap>
 #include <math.h>
 
+#if ENABLE(ACCELERATED_2D_CANVAS)
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLPaintDevice>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include "TextureMapper.h"
+#include "TextureMapperPlatformLayer.h"
+#include "TextureMapperGL.h"
+#include <private/qopenglpaintengine_p.h>
+#include "OpenGLShims.h"
+#include "GLSharedContext.h"
+#endif
+
 namespace WebCore {
 
-ImageBufferData::ImageBufferData(const IntSize& size)
-    : m_pixmap(size)
+struct ImageBufferDataPrivate {
+    virtual ~ImageBufferDataPrivate() { }
+    virtual QPaintDevice* paintDevice() = 0;
+    virtual QImage toQImage() const = 0;
+    virtual PassRefPtr<Image> copyImage(BackingStoreCopy copyBehavior) const = 0;
+    virtual bool isAccelerated() const = 0;
+    virtual PlatformLayer* platformLayer() = 0;
+    virtual void draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect,
+                      const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode, bool useLowQualityScale,
+                      bool ownContext) = 0;
+    virtual void drawPattern(GraphicsContext* destContext, const FloatRect& srcRect, const AffineTransform& patternTransform,
+                             const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op,
+                             const FloatRect& destRect, bool ownContext) = 0;
+    virtual void clip(GraphicsContext* context, const FloatRect& floatRect) const = 0;
+    virtual void platformTransformColorSpace(const Vector<int>& lookUpTable) = 0;
+};
+
+#if ENABLE(ACCELERATED_2D_CANVAS)
+class GLBufferContext : public QOpenGLContext {
+public:
+    static GLBufferContext* getContext() {
+        if (!m_context)
+            m_context = new GLBufferContext;
+        return m_context;
+    }
+
+    void makeCurrentIfNeeded() {
+        if (QOpenGLContext::currentContext() != this)
+            makeCurrent(m_surface);
+    }
+private:
+    GLBufferContext() : m_surface(new QOffscreenSurface) {
+        m_surface->create();
+        setShareContext(GLSharedContext::getContext());
+        create();
+        makeCurrent(m_surface);
+        initializeOpenGLShims();
+    }
+    QOffscreenSurface *m_surface;
+    static GLBufferContext *m_context;
+};
+GLBufferContext* GLBufferContext::m_context = NULL;
+
+
+/*************** accelerated implementation ****************/
+
+class ImageBufferPaintDevice;
+struct ImageBufferDataPrivateAccelerated : public TextureMapperPlatformLayer, public ImageBufferDataPrivate {
+    ImageBufferDataPrivateAccelerated(const IntSize& size);
+    QPaintDevice* paintDevice() { return m_pdev.get(); }
+    QImage toQImage() const;
+    PassRefPtr<Image> copyImage(BackingStoreCopy copyBehavior) const;
+    bool isAccelerated() const { return true; }
+    PlatformLayer* platformLayer() { return this; }
+
+    void commitChanges() const;
+    void draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect,
+              const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode, bool useLowQualityScale,
+              bool ownContext);
+    void drawPattern(GraphicsContext* destContext, const FloatRect& srcRect, const AffineTransform& patternTransform,
+                     const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op,
+                     const FloatRect& destRect, bool ownContext);
+    void clip(GraphicsContext* context, const FloatRect& floatRect) const;
+    void platformTransformColorSpace(const Vector<int>& lookUpTable);
+    void paintToTextureMapper(TextureMapper*, const FloatRect&, const TransformationMatrix& modelViewMatrix = TransformationMatrix(), float opacity = 1.0);
+
+    mutable bool m_fboDirty;
+    OwnPtr<QOpenGLFramebufferObject> m_fbo;
+    OwnPtr<QOpenGLPaintDevice> m_pdev;
+};
+
+class ImageBufferPaintDevice : public QOpenGLPaintDevice
 {
-    if (m_pixmap.isNull())
-        return;
+public:
+    ImageBufferPaintDevice(ImageBufferDataPrivateAccelerated* impl)
+    : QOpenGLPaintDevice(impl->m_fbo->size())
+    , m_impl(impl) { }
+    virtual ~ImageBufferPaintDevice() { }
 
-    m_pixmap.fill(QColor(Qt::transparent));
+    void ensureActiveTarget()
+    {
+        GLBufferContext::getContext()->makeCurrentIfNeeded();
+        m_impl->m_fbo->bind();
+        m_impl->m_fboDirty = true;
+    }
+private:
+    ImageBufferDataPrivateAccelerated* m_impl;
+};
 
-    QPainter* painter = new QPainter;
-    m_painter = adoptPtr(painter);
+ImageBufferDataPrivateAccelerated::ImageBufferDataPrivateAccelerated(const IntSize& size)
+    : m_fboDirty(true)
+{
+    GLBufferContext::getContext()->makeCurrentIfNeeded();
 
-    if (!painter->begin(&m_pixmap))
-        return;
-
-    // Since ImageBuffer is used mainly for Canvas, explicitly initialize
-    // its painter's pen and brush with the corresponding canvas defaults
-    // NOTE: keep in sync with CanvasRenderingContext2D::State
-    QPen pen = painter->pen();
-    pen.setColor(Qt::black);
-    pen.setWidth(1);
-    pen.setCapStyle(Qt::FlatCap);
-    pen.setJoinStyle(Qt::SvgMiterJoin);
-    pen.setMiterLimit(10);
-    painter->setPen(pen);
-    QBrush brush = painter->brush();
-    brush.setColor(Qt::black);
-    painter->setBrush(brush);
-    painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
-    
-    m_image = StillImage::createForRendering(&m_pixmap);
+    QOpenGLFramebufferObjectFormat fboFormat;
+    fboFormat.setSamples(0);
+    fboFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+    m_fbo = adoptPtr(new QOpenGLFramebufferObject(size, fboFormat));
+    m_fbo->bind();
+    m_pdev = adoptPtr(new ImageBufferPaintDevice(this));
 }
 
-QImage ImageBufferData::toQImage() const
+QImage ImageBufferDataPrivateAccelerated::toQImage() const
+{
+    QOpenGLContext *previousContext = QOpenGLContext::currentContext();
+    GLBufferContext::getContext()->makeCurrentIfNeeded();
+    commitChanges();
+    QImage image = m_fbo->toImage();
+    previousContext->makeCurrent(previousContext->surface());
+    return image;
+}
+
+PassRefPtr<Image> ImageBufferDataPrivateAccelerated::copyImage(BackingStoreCopy copyBehavior) const
+{
+    return StillImage::create(QPixmap::fromImage(toQImage()));
+}
+
+void ImageBufferDataPrivateAccelerated::commitChanges() const
+{
+    if (!m_fboDirty)
+        return;
+
+    // this will flush pending QPainter operations and force ensureActiveTarget() to be called on the next paint
+    QPainter* painter = m_pdev->paintEngine()->painter();
+    painter->beginNativePainting();
+    painter->endNativePainting();
+
+    m_fboDirty = false;
+}
+
+void ImageBufferDataPrivateAccelerated::draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect,
+                                             const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode,
+                                             bool useLowQualityScale, bool ownContext)
+{
+    if (destContext->isAcceleratedContext()) {
+        QOpenGLContext *previousContext = QOpenGLContext::currentContext();
+        GLBufferContext::getContext()->makeCurrentIfNeeded();
+        commitChanges();
+        previousContext->makeCurrent(previousContext->surface());
+
+        QOpenGL2PaintEngineEx* acceleratedPaintEngine = static_cast<QOpenGL2PaintEngineEx*>(destContext->platformContext()->paintEngine());
+        FloatRect flippedSrc = srcRect;
+        flippedSrc.setY(m_fbo->size().height() - flippedSrc.height() - flippedSrc.y());
+        acceleratedPaintEngine->drawTexture(destRect, m_fbo->texture(), m_fbo->size(), flippedSrc);
+    } else {
+        RefPtr<Image> image = StillImage::create(QPixmap::fromImage(toQImage()));
+        destContext->drawImage(image.get(), styleColorSpace, destRect, srcRect, op, blendMode,
+                               DoNotRespectImageOrientation, useLowQualityScale);
+    }
+}
+
+void ImageBufferDataPrivateAccelerated::drawPattern(GraphicsContext* destContext, const FloatRect& srcRect, const AffineTransform& patternTransform,
+                                                    const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op,
+                                                    const FloatRect& destRect, bool ownContext)
+{
+    RefPtr<Image> image = StillImage::create(QPixmap::fromImage(toQImage()));
+    image->drawPattern(destContext, srcRect, patternTransform, phase, styleColorSpace, op, destRect);
+}
+
+void ImageBufferDataPrivateAccelerated::clip(GraphicsContext* context, const FloatRect& floatRect) const
+{
+    QPixmap alphaMask = QPixmap::fromImage(toQImage());
+    IntRect rect = enclosingIntRect(floatRect);
+    context->pushTransparencyLayerInternal(rect, 1.0, alphaMask);
+}
+
+void ImageBufferDataPrivateAccelerated::platformTransformColorSpace(const Vector<int>& lookUpTable)
+{
+    QPainter* painter = paintDevice()->paintEngine()->painter();
+
+    QImage image = toQImage().convertToFormat(QImage::Format_ARGB32);
+    ASSERT(!image.isNull());
+
+    uchar* bits = image.bits();
+    const int bytesPerLine = image.bytesPerLine();
+
+    for (int y = 0; y < image.height(); ++y) {
+        quint32* scanLine = reinterpret_cast_ptr<quint32*>(bits + y * bytesPerLine);
+        for (int x = 0; x < image.width(); ++x) {
+            QRgb& pixel = scanLine[x];
+            pixel = qRgba(lookUpTable[qRed(pixel)],
+                          lookUpTable[qGreen(pixel)],
+                          lookUpTable[qBlue(pixel)],
+                          qAlpha(pixel));
+        }
+    }
+
+    painter->save();
+    painter->resetTransform();
+    painter->setOpacity(1.0);
+    painter->setClipping(false);
+    painter->setCompositionMode(QPainter::CompositionMode_Source);
+    // Should coordinates be flipped?
+    painter->drawImage(QPoint(0,0), image);
+    painter->restore();
+}
+
+void ImageBufferDataPrivateAccelerated::paintToTextureMapper(TextureMapper* textureMapper, const FloatRect& targetRect, const TransformationMatrix& matrix, float opacity)
+{
+    if (textureMapper->accelerationMode() != TextureMapper::OpenGLMode) {
+        return;
+    }
+
+    QOpenGLContext *previousContext = QOpenGLContext::currentContext();
+    GLBufferContext::getContext()->makeCurrentIfNeeded();
+    commitChanges();
+    previousContext->makeCurrent(previousContext->surface());
+
+    static_cast<TextureMapperGL*>(textureMapper)->drawTexture(m_fbo->texture(), TextureMapperGL::ShouldFlipTexture | TextureMapperGL::ShouldBlend, m_fbo->size(), targetRect, matrix, opacity);
+
+}
+
+#endif // ACCELERATED_2D_CANVAS
+
+/*************** non accelerated implementation ****************/
+
+struct ImageBufferDataPrivateUnaccelerated : public ImageBufferDataPrivate {
+    ImageBufferDataPrivateUnaccelerated(const IntSize& size);
+    QPaintDevice* paintDevice() { return m_pixmap.isNull() ? 0 : &m_pixmap; }
+    QImage toQImage() const;
+    PassRefPtr<Image> copyImage(BackingStoreCopy copyBehavior) const;
+    virtual bool isAccelerated() const { return false; }
+    PlatformLayer* platformLayer() { return 0; }
+    void draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect,
+              const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode, bool useLowQualityScale,
+              bool ownContext);
+    void drawPattern(GraphicsContext* destContext, const FloatRect& srcRect, const AffineTransform& patternTransform,
+                     const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op,
+                     const FloatRect& destRect, bool ownContext);
+    void clip(GraphicsContext* context, const FloatRect& floatRect) const;
+    void platformTransformColorSpace(const Vector<int>& lookUpTable);
+
+    QPixmap m_pixmap;
+    RefPtr<Image> m_image;
+};
+
+ImageBufferDataPrivateUnaccelerated::ImageBufferDataPrivateUnaccelerated(const IntSize& size)
+    : m_pixmap(size)
+    , m_image(StillImage::createForRendering(&m_pixmap))
+{
+    m_pixmap.fill(QColor(Qt::transparent));
+}
+
+QImage ImageBufferDataPrivateUnaccelerated::toQImage() const
 {
     QPaintEngine* paintEngine = m_pixmap.paintEngine();
     if (!paintEngine || paintEngine->type() != QPaintEngine::Raster)
@@ -94,8 +318,116 @@ QImage ImageBufferData::toQImage() const
     return image;
 }
 
-ImageBuffer::ImageBuffer(const IntSize& size, float /* resolutionScale */, ColorSpace, RenderingMode, bool& success)
-    : m_data(size)
+PassRefPtr<Image> ImageBufferDataPrivateUnaccelerated::copyImage(BackingStoreCopy copyBehavior) const
+{
+    if (copyBehavior == CopyBackingStore)
+        return StillImage::create(m_pixmap);
+
+    return StillImage::createForRendering(&m_pixmap);
+}
+
+void ImageBufferDataPrivateUnaccelerated::draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect,
+                                               const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode,
+                                               bool useLowQualityScale, bool ownContext)
+{
+    if (ownContext) {
+        // We're drawing into our own buffer.  In order for this to work, we need to copy the source buffer first.
+        RefPtr<Image> copy = copyImage(CopyBackingStore);
+        destContext->drawImage(copy.get(), ColorSpaceDeviceRGB, destRect, srcRect, op, blendMode, DoNotRespectImageOrientation, useLowQualityScale);
+    } else
+        destContext->drawImage(m_image.get(), styleColorSpace, destRect, srcRect, op, blendMode, DoNotRespectImageOrientation, useLowQualityScale);
+}
+
+void ImageBufferDataPrivateUnaccelerated::drawPattern(GraphicsContext* destContext, const FloatRect& srcRect, const AffineTransform& patternTransform,
+                                                      const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op,
+                                                      const FloatRect& destRect, bool ownContext)
+{
+    if (ownContext) {
+        // We're drawing into our own buffer.  In order for this to work, we need to copy the source buffer first.
+        RefPtr<Image> copy = copyImage(CopyBackingStore);
+        copy->drawPattern(destContext, srcRect, patternTransform, phase, styleColorSpace, op, destRect);
+    } else
+        m_image->drawPattern(destContext, srcRect, patternTransform, phase, styleColorSpace, op, destRect);
+}
+
+void ImageBufferDataPrivateUnaccelerated::clip(GraphicsContext* context, const FloatRect& floatRect) const
+{
+    QPixmap* nativeImage = m_image->nativeImageForCurrentFrame();
+
+    if (!nativeImage)
+        return;
+
+    IntRect rect = enclosingIntRect(floatRect);
+    QPixmap alphaMask = *nativeImage;
+
+    context->pushTransparencyLayerInternal(rect, 1.0, alphaMask);
+}
+
+void ImageBufferDataPrivateUnaccelerated::platformTransformColorSpace(const Vector<int>& lookUpTable)
+{
+    QPainter* painter = paintDevice()->paintEngine()->painter();
+
+    bool isPainting = painter->isActive();
+    if (isPainting)
+        painter->end();
+
+    QImage image = toQImage().convertToFormat(QImage::Format_ARGB32);
+    ASSERT(!image.isNull());
+
+    uchar* bits = image.bits();
+    const int bytesPerLine = image.bytesPerLine();
+
+    for (int y = 0; y < m_pixmap.height(); ++y) {
+        quint32* scanLine = reinterpret_cast_ptr<quint32*>(bits + y * bytesPerLine);
+        for (int x = 0; x < m_pixmap.width(); ++x) {
+            QRgb& pixel = scanLine[x];
+            pixel = qRgba(lookUpTable[qRed(pixel)],
+                          lookUpTable[qGreen(pixel)],
+                          lookUpTable[qBlue(pixel)],
+                          qAlpha(pixel));
+        }
+    }
+
+    m_pixmap = QPixmap::fromImage(image);
+
+    if (isPainting)
+        painter->begin(&m_pixmap);
+}
+
+// ********************************************************
+ImageBufferData::ImageBufferData(const IntSize& size, bool accelerated)
+{
+    QPainter* painter = new QPainter;
+    m_painter = adoptPtr(painter);
+
+#if ENABLE(ACCELERATED_2D_CANVAS)
+    if (accelerated) {
+        m_impl = adoptPtr(new ImageBufferDataPrivateAccelerated(size));
+    } else
+#endif
+        m_impl = adoptPtr(new ImageBufferDataPrivateUnaccelerated(size));
+
+    if (!m_impl->paintDevice())
+        return;
+    if (!painter->begin(m_impl->paintDevice()))
+        return;
+
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::HighQualityAntialiasing);
+    QPen pen = painter->pen();
+    pen.setColor(Qt::black);
+    pen.setWidth(1);
+    pen.setCapStyle(Qt::FlatCap);
+    pen.setJoinStyle(Qt::SvgMiterJoin);
+    pen.setMiterLimit(10);
+    painter->setPen(pen);
+    QBrush brush = painter->brush();
+    brush.setColor(Qt::black);
+    painter->setBrush(brush);
+    painter->setCompositionMode(QPainter::CompositionMode_SourceOver);
+}
+
+ImageBuffer::ImageBuffer(const IntSize& size, float /* resolutionScale */, ColorSpace, RenderingMode renderingMode, bool& success)
+    : m_data(size, renderingMode == Accelerated)
     , m_size(size)
     , m_logicalSize(size)
 {
@@ -108,6 +440,7 @@ ImageBuffer::ImageBuffer(const IntSize& size, float /* resolutionScale */, Color
 
 ImageBuffer::~ImageBuffer()
 {
+    m_data.m_painter->end();
 }
 
 GraphicsContext* ImageBuffer::context() const
@@ -119,10 +452,7 @@ GraphicsContext* ImageBuffer::context() const
 
 PassRefPtr<Image> ImageBuffer::copyImage(BackingStoreCopy copyBehavior, ScaleBehavior) const
 {
-    if (copyBehavior == CopyBackingStore)
-        return StillImage::create(m_data.m_pixmap);
-
-    return StillImage::createForRendering(&m_data.m_pixmap);
+    return m_data.m_impl->copyImage(copyBehavior);
 }
 
 BackingStoreCopy ImageBuffer::fastCopyImageMode()
@@ -131,66 +461,25 @@ BackingStoreCopy ImageBuffer::fastCopyImageMode()
 }
 
 void ImageBuffer::draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect, const FloatRect& srcRect,
-    CompositeOperator op, BlendMode blendMode, bool useLowQualityScale)
+                       CompositeOperator op, BlendMode blendMode, bool useLowQualityScale)
 {
-    if (destContext == context()) {
-        // We're drawing into our own buffer.  In order for this to work, we need to copy the source buffer first.
-        RefPtr<Image> copy = copyImage(CopyBackingStore);
-        destContext->drawImage(copy.get(), ColorSpaceDeviceRGB, destRect, srcRect, op, blendMode, DoNotRespectImageOrientation, useLowQualityScale);
-    } else
-        destContext->drawImage(m_data.m_image.get(), styleColorSpace, destRect, srcRect, op, blendMode, DoNotRespectImageOrientation, useLowQualityScale);
+    m_data.m_impl->draw(destContext, styleColorSpace, destRect, srcRect, op, blendMode, useLowQualityScale, destContext == context());
 }
 
 void ImageBuffer::drawPattern(GraphicsContext* destContext, const FloatRect& srcRect, const AffineTransform& patternTransform,
                               const FloatPoint& phase, ColorSpace styleColorSpace, CompositeOperator op, const FloatRect& destRect)
 {
-    if (destContext == context()) {
-        // We're drawing into our own buffer.  In order for this to work, we need to copy the source buffer first.
-        RefPtr<Image> copy = copyImage(CopyBackingStore);
-        copy->drawPattern(destContext, srcRect, patternTransform, phase, styleColorSpace, op, destRect);
-    } else
-        m_data.m_image->drawPattern(destContext, srcRect, patternTransform, phase, styleColorSpace, op, destRect);
+    m_data.m_impl->drawPattern(destContext, srcRect, patternTransform, phase, styleColorSpace, op, destRect, destContext == context());
 }
 
 void ImageBuffer::clip(GraphicsContext* context, const FloatRect& floatRect) const
 {
-    QPixmap* nativeImage = m_data.m_image->nativeImageForCurrentFrame();
-    if (!nativeImage)
-        return;
-
-    IntRect rect = enclosingIntRect(floatRect);
-    QPixmap alphaMask = *nativeImage;
-
-    context->pushTransparencyLayerInternal(rect, 1.0, alphaMask);
+    m_data.m_impl->clip(context, floatRect);
 }
 
 void ImageBuffer::platformTransformColorSpace(const Vector<int>& lookUpTable)
 {
-    bool isPainting = m_data.m_painter->isActive();
-    if (isPainting)
-        m_data.m_painter->end();
-
-    QImage image = m_data.toQImage().convertToFormat(QImage::Format_ARGB32);
-    ASSERT(!image.isNull());
-
-    uchar* bits = image.bits();
-    const int bytesPerLine = image.bytesPerLine();
-
-    for (int y = 0; y < m_size.height(); ++y) {
-        quint32* scanLine = reinterpret_cast_ptr<quint32*>(bits + y * bytesPerLine);
-        for (int x = 0; x < m_size.width(); ++x) {
-            QRgb& pixel = scanLine[x];
-            pixel = qRgba(lookUpTable[qRed(pixel)],
-                          lookUpTable[qGreen(pixel)],
-                          lookUpTable[qBlue(pixel)],
-                          qAlpha(pixel));
-        }
-    }
-
-    m_data.m_pixmap = QPixmap::fromImage(image);
-
-    if (isPainting)
-        m_data.m_painter->begin(&m_data.m_pixmap);
+    m_data.m_impl->platformTransformColorSpace(lookUpTable);
 }
 
 static inline void copyColorToRGBA(Color& from, uchar* to)
@@ -246,7 +535,7 @@ PassRefPtr<Uint8ClampedArray> getImageData(const IntRect& rect, const ImageBuffe
     const unsigned destBytesPerRow = 4 * rect.width();
 
     // NOTE: For unmultiplied data, we undo the premultiplication below.
-    QImage image = imageData.toQImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    QImage image = imageData.m_impl->toQImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
 
     ASSERT(!image.isNull());
 
@@ -330,7 +619,7 @@ void ImageBuffer::putByteArray(Multiply multiplied, Uint8ClampedArray* source, c
 
     bool isPainting = m_data.m_painter->isActive();
     if (!isPainting)
-        m_data.m_painter->begin(&m_data.m_pixmap);
+        m_data.m_painter->begin(m_data.m_impl->paintDevice());
     else {
         m_data.m_painter->save();
 
@@ -371,11 +660,17 @@ String ImageBuffer::toDataURL(const String& mimeType, const double* quality, Coo
     // gif, jpeg..., xpm) so skip the image/ to get the Qt image format used to encode
     // the m_pixmap image.
 
+    RefPtr<Image> image = copyImage(DontCopyBackingStore);
     QByteArray data;
-    if (!encodeImage(m_data.m_pixmap, mimeType.substring(sizeof "image"), quality, data))
+    if (!encodeImage(*image->nativeImageForCurrentFrame(), mimeType.substring(sizeof "image"), quality, data))
         return "data:,";
 
     return "data:" + mimeType + ";base64," + data.toBase64().data();
+}
+
+PlatformLayer* ImageBuffer::platformLayer() const
+{
+    return m_data.m_impl->platformLayer();
 }
 
 }
