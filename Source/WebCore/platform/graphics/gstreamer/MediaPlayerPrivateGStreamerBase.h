@@ -31,7 +31,7 @@
 
 #include <wtf/Forward.h>
 
-#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL) && !USE(COORDINATED_GRAPHICS)
+#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
 #include "TextureMapperPlatformLayer.h"
 #endif
 
@@ -40,6 +40,12 @@ typedef struct _GstElement GstElement;
 typedef struct _GstMessage GstMessage;
 typedef struct _GstStreamVolume GstStreamVolume;
 typedef struct _WebKitVideoSink WebKitVideoSink;
+
+typedef struct _GstMiniObject GstMiniObject;
+
+typedef struct _GstEGLImageMemoryPool GstEGLImageMemoryPool;
+typedef struct _GstEGLImageMemory GstEGLImageMemory;
+typedef struct _EGLDetails EGLDetails;
 
 namespace WebCore {
 
@@ -50,7 +56,7 @@ class IntRect;
 class GStreamerGWorld;
 
 class MediaPlayerPrivateGStreamerBase : public MediaPlayerPrivateInterface
-#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL) && !USE(COORDINATED_GRAPHICS)
+#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
     , public TextureMapperPlatformLayer
 #endif
 {
@@ -103,11 +109,23 @@ public:
     unsigned audioDecodedByteCount() const;
     unsigned videoDecodedByteCount() const;
 
-#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL) && !USE(COORDINATED_GRAPHICS)
+#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
     virtual PlatformLayer* platformLayer() const { return const_cast<MediaPlayerPrivateGStreamerBase*>(this); }
     virtual bool supportsAcceleratedRendering() const { return true; }
     virtual void paintToTextureMapper(TextureMapper*, const FloatRect&, const TransformationMatrix&, float);
 #endif
+
+#ifndef GST_API_VERSION_1
+    void updateEGLMemory (GstBuffer * buffer);
+    gboolean queueObject(GstMiniObject * obj, gboolean synchronous);
+    void dequeueObjects();
+    void queueFlushStart();
+    void queueFlushStop();
+    void triggerRepaint();
+    void flushLastEGLMemory();
+    GstEGLImageMemoryPool* createEGLPool(gint size, gint width, gint height);
+#endif
+    GstElement* pipeline() const { return m_pipeline; }
 
 protected:
     MediaPlayerPrivateGStreamerBase(MediaPlayer*);
@@ -136,9 +154,26 @@ protected:
     unsigned long m_volumeSignalHandler;
     unsigned long m_muteSignalHandler;
     mutable IntSize m_videoSize;
-#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL) && !USE(COORDINATED_GRAPHICS)
+#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
+#if USE(COORDINATED_GRAPHICS) && defined(GST_API_VERSION_1)
     PassRefPtr<BitmapTexture> updateTexture(TextureMapper*);
+#else
+    void updateTexture();
+    RefPtr<BitmapTexture> m_texture;
 #endif
+    guint m_orientation;
+#endif
+#ifndef GST_API_VERSION_1
+    GAsyncQueue *m_queue;
+    GMutex *m_queueLock;
+    GCond *m_queueCond;
+    bool m_queueFlushing;
+    GstMiniObject *m_queueLastObject;
+    GstEGLImageMemory *m_currentEGLMemory;
+    GstEGLImageMemory *m_lastEGLMemory;
+    EGLDetails *m_egl_details;
+#endif
+    GstElement* m_pipeline;
 };
 }
 
