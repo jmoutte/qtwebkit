@@ -18,4 +18,6 @@ release r deployment dep deploy: ;
 
 clean: ;
 
+install: ;
+
 endif
