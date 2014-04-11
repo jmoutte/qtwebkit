@@ -656,7 +656,7 @@ void ChromeClientQt::scheduleCompositingLayerFlush()
 ChromeClient::CompositingTriggerFlags ChromeClientQt::allowedCompositingTriggers() const
 {
     if (allowsAcceleratedCompositing())
-        return ThreeDTransformTrigger | CanvasTrigger | AnimationTrigger | AnimatedOpacityTrigger;
+        return ThreeDTransformTrigger | VideoTrigger | CanvasTrigger | AnimationTrigger | AnimatedOpacityTrigger;
 
     return 0;
 }
