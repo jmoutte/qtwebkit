@@ -104,12 +104,11 @@ defineTest(detectFeatures) {
         }
     }
 
+    # Enable CSS shaders when CSS filters and WebGL are enabled
+    enable?(css_filters):enable?(webgl): WEBKIT_CONFIG += css_shaders
+
     !enable?(video):qtHaveModule(multimediawidgets) {
         WEBKIT_CONFIG += video use_qt_multimedia
-    }
-
-    !enable?(video) {
-        CONFIGURE_WARNINGS += "Missing GStreamer or QtMultimedia, disabling HTML5 media element support"
     }
 
     # Try to use an system wide SQlite installation
