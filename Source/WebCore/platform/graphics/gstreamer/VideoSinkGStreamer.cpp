@@ -96,6 +96,7 @@ GST_DEBUG_CATEGORY_STATIC(webkitVideoSinkDebug);
 
 enum {
     REPAINT_REQUESTED,
+    DRAIN,
     LAST_SIGNAL
 };
 
@@ -164,6 +165,7 @@ static void webkit_video_sink_init(WebKitVideoSink* sink)
 #endif
 
 #if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
+    g_object_set(GST_BASE_SINK(sink), "enable-last-sample", FALSE, NULL);
     sink->priv->pool = NULL;
     sink->priv->last_buffer = NULL;
 
@@ -1033,6 +1035,29 @@ static gboolean webkitVideoSinkProposeAllocation(GstBaseSink* baseSink, GstQuery
 #endif
     return TRUE;
 }
+
+static gboolean webkitVideoSinkQuery(GstBaseSink* baseSink, GstQuery* query)
+{
+    WebKitVideoSink* sink = WEBKIT_VIDEO_SINK(baseSink);
+    WebKitVideoSinkPrivate* priv = sink->priv;
+
+    switch (GST_QUERY_TYPE(query)) {
+    case GST_QUERY_DRAIN:
+    {
+#if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
+        GST_OBJECT_LOCK (sink);
+        if (priv->last_buffer)
+            gst_buffer_replace (&priv->last_buffer, NULL);
+        g_signal_emit(sink, webkitVideoSinkSignals[DRAIN], 0);
+        GST_OBJECT_UNLOCK (sink);
+#endif
+        return TRUE;
+    default:
+        return GST_CALL_PARENT_WITH_DEFAULT(GST_BASE_SINK_CLASS, query, (baseSink, query), TRUE);
+      break;
+    }
+    }
+}
 #endif
 
 #ifndef GST_API_VERSION_1
@@ -1081,6 +1106,7 @@ static void webkit_video_sink_class_init(WebKitVideoSinkClass* klass)
     baseSinkClass->set_caps = webkitVideoSinkSetCaps;
 #ifdef GST_API_VERSION_1
     baseSinkClass->propose_allocation = webkitVideoSinkProposeAllocation;
+    baseSinkClass->query = webkitVideoSinkQuery;
 #endif
 
     g_object_class_install_property(gobjectClass, PROP_CAPS,
@@ -1100,6 +1126,17 @@ static void webkit_video_sink_class_init(WebKitVideoSinkClass* klass)
             G_TYPE_NONE, // Return type
             1, // Only one parameter
             GST_TYPE_BUFFER);
+
+    webkitVideoSinkSignals[DRAIN] = g_signal_new("drain",
+            G_TYPE_FROM_CLASS(klass),
+            static_cast<GSignalFlags>(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
+            0, // Class offset
+            0, // Accumulator
+            0, // Accumulator data
+            g_cclosure_marshal_generic,
+            G_TYPE_NONE, // Return type
+            0 // No parameters
+            );
 }
 
 

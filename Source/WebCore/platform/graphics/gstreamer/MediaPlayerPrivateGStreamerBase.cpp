@@ -162,11 +162,17 @@ static void mediaPlayerPrivateRepaintCallback(WebKitVideoSink*, GstBuffer *buffe
     playerPrivate->triggerRepaint(buffer);
 }
 
+static void mediaPlayerPrivateDrainCallback(WebKitVideoSink*, MediaPlayerPrivateGStreamerBase* playerPrivate)
+{
+    playerPrivate->triggerDrain();
+}
+
 MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* player)
     : m_player(player)
     , m_fpsSink(0)
     , m_readyState(MediaPlayer::HaveNothing)
     , m_networkState(MediaPlayer::Empty)
+    , m_isEndReached(false)
     , m_buffer(0)
     , m_volumeTimerHandler(0)
     , m_muteTimerHandler(0)
@@ -202,6 +208,11 @@ MediaPlayerPrivateGStreamerBase::~MediaPlayerPrivateGStreamerBase()
     if (m_repaintHandler) {
         g_signal_handler_disconnect(m_webkitVideoSink.get(), m_repaintHandler);
         m_repaintHandler = 0;
+    }
+
+    if (m_drainHandler) {
+        g_signal_handler_disconnect(m_webkitVideoSink.get(), m_drainHandler);
+        m_drainHandler = 0;
     }
 
 #ifndef GST_API_VERSION_1
@@ -868,6 +879,17 @@ void MediaPlayerPrivateGStreamerBase::triggerRepaint(GstBuffer* buffer)
     m_player->repaint();
 }
 
+void MediaPlayerPrivateGStreamerBase::triggerDrain()
+{
+    m_videoSize.setWidth(0);
+    m_videoSize.setHeight(0);
+    g_mutex_lock(m_bufferMutex);
+    if (m_buffer)
+        gst_buffer_unref(m_buffer);
+    m_buffer = 0;
+    g_mutex_unlock(m_bufferMutex);
+}
+
 void MediaPlayerPrivateGStreamerBase::setSize(const IntSize& size)
 {
     m_size = size;
@@ -938,7 +960,8 @@ void MediaPlayerPrivateGStreamerBase::paintToTextureMapper(TextureMapper* textur
 #else
         textureMapper->drawTexture(*texture.get(), targetRect, modelViewMatrix, opacity);
 #endif
-    }
+    } else if (!m_isEndReached)
+        client()->setPlatformLayerNeedsDisplay();
 #else
 
 #ifndef GST_API_VERSION_1
@@ -1046,6 +1069,7 @@ GstElement* MediaPlayerPrivateGStreamerBase::createVideoSink(GstElement* pipelin
 #ifdef GST_API_VERSION_1
     m_webkitVideoSink = webkitVideoSinkNew();
     m_repaintHandler = g_signal_connect(m_webkitVideoSink.get(), "repaint-requested", G_CALLBACK(mediaPlayerPrivateRepaintCallback), this);
+    m_drainHandler = g_signal_connect(m_webkitVideoSink.get(), "drain", G_CALLBACK(mediaPlayerPrivateDrainCallback), this);
 #else
     m_webkitVideoSink = gst_element_factory_make("fakesink", "vsink");
     g_object_set (m_webkitVideoSink.get(), "sync", TRUE, "silent", TRUE,
