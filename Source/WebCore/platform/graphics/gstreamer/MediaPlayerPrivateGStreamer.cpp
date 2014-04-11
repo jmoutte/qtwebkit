@@ -128,7 +128,8 @@ static void setAudioStreamPropertiesCallback(GstChildProxy*, GObject* object, Me
 static gboolean mediaPlayerPrivateVideoChangeTimeoutCallback(MediaPlayerPrivateGStreamer* player)
 {
     // This is the callback of the timeout source created in ::videoChanged.
-    player->notifyPlayerOfVideo();
+    if (player)
+        player->notifyPlayerOfVideo();
     return FALSE;
 }
 
@@ -271,9 +272,11 @@ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
 
     if (m_videoTimerHandler)
         g_source_remove(m_videoTimerHandler);
+    m_videoTimerHandler = 0;
 
     if (m_audioTimerHandler)
         g_source_remove(m_audioTimerHandler);
+    m_audioTimerHandler = 0;
 }
 
 void MediaPlayerPrivateGStreamer::load(const String& url)
@@ -556,8 +559,6 @@ bool MediaPlayerPrivateGStreamer::seeking() const
 
 void MediaPlayerPrivateGStreamer::videoChanged()
 {
-    if (m_videoTimerHandler)
-        g_source_remove(m_videoTimerHandler);
     m_videoTimerHandler = g_timeout_add(0, reinterpret_cast<GSourceFunc>(mediaPlayerPrivateVideoChangeTimeoutCallback), this);
 }
 
@@ -578,8 +579,6 @@ void MediaPlayerPrivateGStreamer::notifyPlayerOfVideo()
 
 void MediaPlayerPrivateGStreamer::audioChanged()
 {
-    if (m_audioTimerHandler)
-        g_source_remove(m_audioTimerHandler);
     m_audioTimerHandler = g_timeout_add(0, reinterpret_cast<GSourceFunc>(mediaPlayerPrivateAudioChangeTimeoutCallback), this);
 }
 
