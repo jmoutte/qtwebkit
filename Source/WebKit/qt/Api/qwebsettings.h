@@ -161,6 +161,8 @@ public:
 
     static void clearMemoryCaches();
 
+    static void garbageCollectNow();
+
     static void enablePersistentStorage(const QString& path = QString());
 
     void setThirdPartyCookiePolicy(ThirdPartyCookiePolicy);

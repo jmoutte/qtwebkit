@@ -870,6 +870,11 @@ void QWebSettings::clearMemoryCaches()
     WTF::releaseFastMallocFreeMemory();        
 }
 
+void QWebSettings::garbageCollectNow()
+{
+    WebCore::gcController().garbageCollectNow();
+}
+
 /*!
     Sets the maximum number of pages to hold in the memory page cache to \a pages.
 
