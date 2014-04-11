@@ -2985,6 +2985,11 @@ void FrameLoader::applyUserAgent(ResourceRequest& request)
 
 bool FrameLoader::shouldInterruptLoadForXFrameOptions(const String& content, const KURL& url, unsigned long requestIdentifier)
 {
+    Settings* settings = m_frame->document()->settings();
+
+    if (settings == NULL || settings->webSecurityEnabled() == false)
+	return false;
+ 
     FeatureObserver::observe(m_frame->document(), FeatureObserver::XFrameOptions);
 
     Frame* topFrame = m_frame->tree()->top();
