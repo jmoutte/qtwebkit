@@ -34,16 +34,14 @@
 namespace WebCore {
 
 class IntSize;
+struct ImageBufferDataPrivate;
 
-class ImageBufferData {
+class ImageBufferData
+{
 public:
-    ImageBufferData(const IntSize&);
-
-    QImage toQImage() const;
-
-    QPixmap m_pixmap;
+    ImageBufferData(const IntSize&, bool);
     OwnPtr<QPainter> m_painter;
-    RefPtr<Image> m_image;
+    OwnPtr<ImageBufferDataPrivate> m_impl;
 };
 
 } // namespace WebCore

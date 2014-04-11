@@ -174,7 +174,9 @@ public:
 #endif
 
     virtual bool makeOpenGLContextCurrentIfAvailable();
-
+#ifndef QT_NO_OPENGL
+    virtual QOpenGLContext* getOpenGLContextIfAvailable();
+#endif
     virtual QRectF windowRect() const;
 
     QGraphicsView* firstGraphicsView() const;

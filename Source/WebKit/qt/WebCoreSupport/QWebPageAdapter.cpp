@@ -107,6 +107,10 @@
 #include <QTextCharFormat>
 #include <QTouchEvent>
 #include <QWheelEvent>
+#ifndef QT_NO_OPENGL
+#include <QOpenGLContext>
+#include "GLSharedContext.h"
+#endif
 
 // from text/qfont.cpp
 QT_BEGIN_NAMESPACE
@@ -280,6 +284,14 @@ void QWebPageAdapter::initializeWebCorePage()
 
     PageGroup::setShouldTrackVisitedLinks(true);
 }
+
+#ifndef QT_NO_OPENGL
+void QWebPageAdapter::saveGLContext()
+{
+    QOpenGLContext *c = client->getOpenGLContextIfAvailable();
+    GLSharedContext::setContext(c);
+}
+#endif
 
 QWebPageAdapter::~QWebPageAdapter()
 {
