@@ -153,8 +153,15 @@ void QWebSettingsPrivate::apply()
         settings->setAcceleratedCompositingEnabled(value);
 
         bool showDebugVisuals = qgetenv("WEBKIT_SHOW_COMPOSITING_DEBUG_VISUALS") == "1";
-        settings->setShowDebugBorders(showDebugVisuals);
-        settings->setShowRepaintCounter(showDebugVisuals);
+        value = attributes.value(QWebSettings::DebugBorder,
+                                      global->attributes.value(QWebSettings::DebugBorder));
+
+        settings->setShowDebugBorders(showDebugVisuals || value);
+
+        value = attributes.value(QWebSettings::RepaintCounter,
+                                      global->attributes.value(QWebSettings::RepaintCounter));
+
+        settings->setShowRepaintCounter(showDebugVisuals || value);
 #endif
 #if ENABLE(WEBGL)
         value = attributes.value(QWebSettings::WebGLEnabled,
@@ -288,6 +295,10 @@ void QWebSettingsPrivate::apply()
         settings->setNeedsSiteSpecificQuirks(value);
 
         settings->setUsesPageCache(WebCore::pageCache()->capacity());
+
+        value = attributes.value(QWebSettings::WebSecurityEnabled,
+                                      global->attributes.value(QWebSettings::WebSecurityEnabled));
+        settings->setWebSecurityEnabled(value);
     } else {
         QList<QWebSettingsPrivate*> settings = *::allSettings();
         for (int i = 0; i < settings.count(); ++i)
@@ -556,6 +567,8 @@ QWebSettings::QWebSettings()
     d->attributes.insert(QWebSettings::ScrollAnimatorEnabled, false);
     d->attributes.insert(QWebSettings::CaretBrowsingEnabled, false);
     d->attributes.insert(QWebSettings::NotificationsEnabled, true);
+    d->attributes.insert(QWebSettings::RepaintCounter, false);
+    d->attributes.insert(QWebSettings::DebugBorder, false);
     d->offlineStorageDefaultQuota = 5 * 1024 * 1024;
     d->defaultTextEncoding = QLatin1String("iso-8859-1");
     d->thirdPartyCookiePolicy = AlwaysAllowThirdPartyCookies;
