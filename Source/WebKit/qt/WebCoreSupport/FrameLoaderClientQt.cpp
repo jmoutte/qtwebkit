@@ -459,7 +459,7 @@ void FrameLoaderClientQt::dispatchDidReceiveTitle(const StringWithDirection& tit
     if (!m_webFrame)
         return;
 
-    emit titleChanged(title.string());
+    Q_EMIT titleChanged(title.string());
 }
 
 
@@ -490,13 +490,13 @@ void FrameLoaderClientQt::dispatchDidCommitLoad()
     // We should assume first the frame has no title. If it has, then the above dispatchDidReceiveTitle()
     // will be called very soon with the correct title.
     // This properly resets the title when we navigate to a URI without a title.
-    emit titleChanged(QString());
+    Q_EMIT titleChanged(QString());
 
     bool isMainFrame = (m_frame == m_frame->page()->mainFrame());
     if (!isMainFrame)
         return;
 
-    emit m_webFrame->pageAdapter->emitViewportChangeRequested();
+    Q_EMIT m_webFrame->pageAdapter->emitViewportChangeRequested();
 }
 
 
@@ -571,7 +571,7 @@ void FrameLoaderClientQt::postProgressStartedNotification()
 void FrameLoaderClientQt::postProgressEstimateChangedNotification()
 {
     if (m_webFrame && m_frame->page())
-        emit loadProgress(qRound(m_frame->page()->progress()->estimatedProgress() * 100));
+        Q_EMIT loadProgress(qRound(m_frame->page()->progress()->estimatedProgress() * 100));
 }
 
 void FrameLoaderClientQt::postProgressFinishedNotification()

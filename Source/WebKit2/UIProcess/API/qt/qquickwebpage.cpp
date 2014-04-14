@@ -84,7 +84,7 @@ QSGNode* QQuickWebPage::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*)
         WKPageSetCustomBackingScaleFactor(pageRef, window->devicePixelRatio());
         // This signal is queued since if we are running a threaded renderer. This might cause failures
         // if tests are reading the new value between the property change and the signal emission.
-        emit d->viewportItem->experimental()->test()->devicePixelRatioChanged();
+        Q_EMIT d->viewportItem->experimental()->test()->devicePixelRatioChanged();
     }
 
     if (!node)
@@ -108,7 +108,7 @@ void QQuickWebPage::setContentsSize(const QSizeF& size)
 
     d->contentsSize = size;
     d->updateSize();
-    emit d->viewportItem->experimental()->test()->contentsSizeChanged();
+    Q_EMIT d->viewportItem->experimental()->test()->contentsSizeChanged();
 }
 
 const QSizeF& QQuickWebPage::contentsSize() const
@@ -121,7 +121,7 @@ void QQuickWebPage::setContentsScale(qreal scale)
     ASSERT(scale > 0);
     d->contentsScale = scale;
     d->updateSize();
-    emit d->viewportItem->experimental()->test()->contentsScaleChanged();
+    Q_EMIT d->viewportItem->experimental()->test()->contentsScaleChanged();
 }
 
 qreal QQuickWebPage::contentsScale() const

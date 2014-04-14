@@ -124,7 +124,7 @@ Vector<String> listDirectory(const String& path, const String& filter)
     if (!filter.isEmpty())
         nameFilters.append(filter);
     QFileInfoList fileInfoList = QDir(path).entryInfoList(nameFilters, QDir::AllEntries | QDir::NoDotAndDotDot);
-    foreach (const QFileInfo fileInfo, fileInfoList) {
+    Q_FOREACH (const QFileInfo fileInfo, fileInfoList) {
         String entry = String(fileInfo.canonicalFilePath());
         entries.append(entry);
     }

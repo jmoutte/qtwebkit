@@ -212,7 +212,7 @@ void EditorClientQt::respondToChangedSelection(Frame* frame)
 
     m_page->respondToChangedSelection();
     if (!frame->editor().ignoreCompositionSelectionChange())
-        emit m_page->microFocusChanged();
+        Q_EMIT m_page->microFocusChanged();
 }
 
 void EditorClientQt::didEndEditing()
@@ -644,7 +644,7 @@ void EditorClientQt::setInputMethodState(bool active)
         webPageClient->setInputMethodHints(hints);
         webPageClient->setInputMethodEnabled(active);
     }
-    emit m_page->microFocusChanged();
+    Q_EMIT m_page->microFocusChanged();
 }
 
 bool EditorClientQt::supportsGlobalSelection()

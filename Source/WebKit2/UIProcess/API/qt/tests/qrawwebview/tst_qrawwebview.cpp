@@ -114,7 +114,7 @@ public:
 
     void onRepaintDone()
     {
-        emit loaded();
+        Q_EMIT loaded();
     }
 
     static void finishForceRepaint(WKErrorRef, void* context)

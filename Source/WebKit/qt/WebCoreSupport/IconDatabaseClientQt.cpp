@@ -63,7 +63,7 @@ void IconDatabaseClientQt::didImportIconURLForPageURL(const String& url)
 
 void IconDatabaseClientQt::didImportIconDataForPageURL(const String& url)
 {
-    emit iconLoadedForPageURL(url);
+    Q_EMIT iconLoadedForPageURL(url);
 }
 
 void IconDatabaseClientQt::didChangeIconForPageURL(const String& url)

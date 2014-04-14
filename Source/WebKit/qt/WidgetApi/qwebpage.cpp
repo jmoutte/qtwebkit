@@ -260,7 +260,7 @@ void QWebPagePrivate::unfocus()
 
 void QWebPagePrivate::setWindowRect(const QRect &rect)
 {
-    emit q->geometryChangeRequested(rect);
+    Q_EMIT q->geometryChangeRequested(rect);
 }
 
 QSize QWebPagePrivate::viewportSize() const
@@ -305,17 +305,17 @@ bool QWebPagePrivate::shouldInterruptJavaScript()
 
 void QWebPagePrivate::printRequested(QWebFrameAdapter *frame)
 {
-    emit q->printRequested(QWebFramePrivate::kit(frame));
+    Q_EMIT q->printRequested(QWebFramePrivate::kit(frame));
 }
 
 void QWebPagePrivate::databaseQuotaExceeded(QWebFrameAdapter* frame, const QString& databaseName)
 {
-    emit q->databaseQuotaExceeded(QWebFramePrivate::kit(frame), databaseName);
+    Q_EMIT q->databaseQuotaExceeded(QWebFramePrivate::kit(frame), databaseName);
 }
 
 void QWebPagePrivate::applicationCacheQuotaExceeded(QWebSecurityOrigin *origin, quint64 defaultOriginQuota, quint64 c)
 {
-    emit q->applicationCacheQuotaExceeded(origin, defaultOriginQuota, c);
+    Q_EMIT q->applicationCacheQuotaExceeded(origin, defaultOriginQuota, c);
 }
 
 void QWebPagePrivate::setToolTip(const QString &tip)
@@ -382,22 +382,22 @@ bool QWebPagePrivate::acceptNavigationRequest(QWebFrameAdapter *frameAdapter, co
 
 void QWebPagePrivate::emitRestoreFrameStateRequested(QWebFrameAdapter *frame)
 {
-    emit q->restoreFrameStateRequested(QWebFramePrivate::kit(frame));
+    Q_EMIT q->restoreFrameStateRequested(QWebFramePrivate::kit(frame));
 }
 
 void QWebPagePrivate::emitSaveFrameStateRequested(QWebFrameAdapter *frame, QWebHistoryItem *item)
 {
-    emit q->saveFrameStateRequested(QWebFramePrivate::kit(frame), item);
+    Q_EMIT q->saveFrameStateRequested(QWebFramePrivate::kit(frame), item);
 }
 
 void QWebPagePrivate::emitDownloadRequested(const QNetworkRequest &request)
 {
-    emit q->downloadRequested(request);
+    Q_EMIT q->downloadRequested(request);
 }
 
 void QWebPagePrivate::emitFrameCreated(QWebFrameAdapter *frame)
 {
-    emit q->frameCreated(QWebFramePrivate::kit(frame));
+    Q_EMIT q->frameCreated(QWebFramePrivate::kit(frame));
 }
 
 bool QWebPagePrivate::errorPageExtension(QWebPageAdapter::ErrorPageOption *opt, QWebPageAdapter::ErrorPageReturn *out)
@@ -444,7 +444,7 @@ void QWebPagePrivate::createMainFrame()
 {
     if (!mainFrame) {
         mainFrame = new QWebFrame(q);
-        emit q->frameCreated(mainFrame.data());
+        Q_EMIT q->frameCreated(mainFrame.data());
     }
 }
 
@@ -676,7 +676,7 @@ QStringList QWebPagePrivate::menuActionsAsText()
 
 void QWebPagePrivate::emitViewportChangeRequested()
 {
-    emit q->viewportChangeRequested();
+    Q_EMIT q->viewportChangeRequested();
 }
 
 void QWebPagePrivate::updateEditorActions()
@@ -1809,40 +1809,40 @@ QRect QWebPagePrivate::viewRectRelativeToWindow()
 
 void QWebPagePrivate::geolocationPermissionRequested(QWebFrameAdapter* frame)
 {
-    emit q->featurePermissionRequested(QWebFramePrivate::kit(frame), QWebPage::Geolocation);
+    Q_EMIT q->featurePermissionRequested(QWebFramePrivate::kit(frame), QWebPage::Geolocation);
 }
 
 void QWebPagePrivate::geolocationPermissionRequestCancelled(QWebFrameAdapter* frame)
 {
-    emit q->featurePermissionRequestCanceled(QWebFramePrivate::kit(frame), QWebPage::Geolocation);
+    Q_EMIT q->featurePermissionRequestCanceled(QWebFramePrivate::kit(frame), QWebPage::Geolocation);
 }
 
 void QWebPagePrivate::notificationsPermissionRequested(QWebFrameAdapter* frame)
 {
-    emit q->featurePermissionRequested(QWebFramePrivate::kit(frame), QWebPage::Notifications);
+    Q_EMIT q->featurePermissionRequested(QWebFramePrivate::kit(frame), QWebPage::Notifications);
 }
 
 void QWebPagePrivate::notificationsPermissionRequestCancelled(QWebFrameAdapter* frame)
 {
-    emit q->featurePermissionRequestCanceled(QWebFramePrivate::kit(frame), QWebPage::Notifications);
+    Q_EMIT q->featurePermissionRequestCanceled(QWebFramePrivate::kit(frame), QWebPage::Notifications);
 }
 
 void QWebPagePrivate::respondToChangedContents()
 {
     updateEditorActions();
 
-    emit q->contentsChanged();
+    Q_EMIT q->contentsChanged();
 }
 
 void QWebPagePrivate::respondToChangedSelection()
 {
     updateEditorActions();
-    emit q->selectionChanged();
+    Q_EMIT q->selectionChanged();
 }
 
 void QWebPagePrivate::microFocusChanged()
 {
-    emit q->microFocusChanged();
+    Q_EMIT q->microFocusChanged();
 }
 
 void QWebPagePrivate::triggerCopyAction()
@@ -2121,11 +2121,11 @@ bool QWebPage::acceptNavigationRequest(QWebFrame *frame, const QNetworkRequest &
         case DelegateExternalLinks:
             if (QWebPageAdapter::treatSchemeAsLocal(request.url().scheme()))
                 return true;
-            emit linkClicked(request.url());
+            Q_EMIT linkClicked(request.url());
             return false;
 
         case DelegateAllLinks:
-            emit linkClicked(request.url());
+            Q_EMIT linkClicked(request.url());
             return false;
         }
     }

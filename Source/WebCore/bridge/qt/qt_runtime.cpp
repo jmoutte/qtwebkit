@@ -999,7 +999,7 @@ static int findMethodIndex(JSContextRef context,
     QVector<int> tooFewArgs;
     QVector<int> conversionFailed;
 
-    foreach(int index, matchingIndices) {
+    Q_FOREACH(int index, matchingIndices) {
         QMetaMethod method = meta->method(index);
 
         QVector<QtMethodMatchType> types;
@@ -1428,7 +1428,7 @@ JSValueRef QtRuntimeMethod::connectOrDisconnect(JSContextRef context, JSObjectRe
     // Now to find our previous connection object.
     QList<QtConnectionObject*> conns = QtConnectionObject::connections.values(sender);
 
-    foreach (QtConnectionObject* conn, conns) {
+    Q_FOREACH (QtConnectionObject* conn, conns) {
         // Is this the right connection?
         if (!conn->match(context, sender, signalIndex, targetObject, targetFunction))
             continue;
