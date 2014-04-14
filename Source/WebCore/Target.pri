@@ -1081,7 +1081,6 @@ SOURCES += \
     platform/network/HTTPParsers.cpp \
     platform/network/MIMEHeader.cpp \
     platform/network/NetworkStateNotifier.cpp \
-    platform/network/NetworkStorageSessionStub.cpp \
     platform/network/ParsedContentType.cpp \
     platform/network/ProtectionSpace.cpp \
     platform/network/ProxyServer.cpp \
@@ -2324,8 +2323,6 @@ HEADERS += \
     platform/network/PlatformCookieJar.h \
     platform/network/ProtectionSpace.h \
     platform/network/ProxyServer.h \
-    platform/network/qt/QtMIMETypeSniffer.h \
-    platform/network/qt/QNetworkReplyHandler.h \
     platform/network/ResourceErrorBase.h \
     platform/network/ResourceHandle.h \
     platform/network/ResourceHandleTypes.h \
@@ -2333,13 +2330,12 @@ HEADERS += \
     platform/network/ResourceLoadTiming.h \
     platform/network/ResourceRequestBase.h \
     platform/network/ResourceResponseBase.h \
-    platform/network/qt/NetworkStateNotifierPrivate.h \
-    platform/network/qt/CookieJarQt.h \
     platform/PlatformExportMacros.h \
     platform/PlatformTouchEvent.h \
     platform/PlatformTouchPoint.h \
     platform/PopupMenu.h \
     platform/ReferrerPolicy.h \
+    platform/qt/ErrorsQt.h \
     platform/qt/QWebPageClient.h \
     platform/qt/QStyleFacade.h \
     platform/qt/RenderThemeQStyle.h \
@@ -2912,15 +2908,6 @@ SOURCES += \
     platform/graphics/texmap/TextureMapperTiledBackingStore.cpp \
     platform/network/DNSResolveQueue.cpp \
     platform/network/MIMESniffing.cpp \
-    platform/network/qt/CookieJarQt.cpp \
-    platform/network/qt/CredentialStorageQt.cpp \
-    platform/network/qt/ResourceHandleQt.cpp \
-    platform/network/qt/ResourceRequestQt.cpp \
-    platform/network/qt/DNSQt.cpp \
-    platform/network/qt/NetworkStateNotifierQt.cpp \
-    platform/network/qt/ProxyServerQt.cpp \
-    platform/network/qt/QtMIMETypeSniffer.cpp \
-    platform/network/qt/QNetworkReplyHandler.cpp \
     platform/Cursor.cpp \
     platform/ContextMenu.cpp \
     platform/ContextMenuItem.cpp \
@@ -2931,6 +2918,7 @@ SOURCES += \
     platform/qt/DragDataQt.cpp \
     platform/qt/DragImageQt.cpp \
     platform/qt/EventLoopQt.cpp \
+    platform/qt/ErrorsQt.cpp \
     platform/qt/FileSystemQt.cpp \
     platform/qt/RunLoopQt.cpp \
     platform/qt/SharedBufferQt.cpp \
@@ -4011,8 +3999,7 @@ enable?(WEB_SOCKETS) {
         Modules/websockets/WebSocketExtensionProcessor.h \
         Modules/websockets/WebSocketFrame.h \
         Modules/websockets/WebSocketHandshake.h \
-        Modules/websockets/WorkerThreadableWebSocketChannel.h \
-        platform/network/qt/SocketStreamHandlePrivate.h
+        Modules/websockets/WorkerThreadableWebSocketChannel.h
 
     SOURCES += \
         Modules/websockets/WebSocket.cpp \
@@ -4027,8 +4014,7 @@ enable?(WEB_SOCKETS) {
         Modules/websockets/ThreadableWebSocketChannel.cpp \
         Modules/websockets/ThreadableWebSocketChannelClientWrapper.cpp \
         platform/network/SocketStreamErrorBase.cpp \
-        platform/network/SocketStreamHandleBase.cpp \
-        platform/network/qt/SocketStreamHandleQt.cpp
+        platform/network/SocketStreamHandleBase.cpp
 
     enable?(WORKERS) {
         HEADERS += \
@@ -4299,6 +4285,60 @@ enable?(opencl) {
         platform/graphics/gpu/opencl/OpenCLFESourceAlpha.cpp \
         platform/graphics/gpu/opencl/OpenCLFESourceGraphic.cpp \
         platform/graphics/gpu/opencl/OpenCLFETurbulence.cpp
+}
+
+use?(SOUP) {
+    HEADERS += \
+        platform/network/soup/AuthenticationChallenge.h \
+        platform/network/soup/CookieJarSoup.h \
+        platform/network/soup/GOwnPtrSoup.h \
+        platform/network/soup/ProxyResolverSoup.h \
+        platform/network/soup/ResourceError.h \
+        platform/network/soup/ResourceRequest.h \
+        platform/network/soup/ResourceResponse.h \
+        platform/network/soup/SocketStreamError.h \
+        platform/network/soup/SocketStreamHandle.h \
+        platform/network/soup/SoupURIUtils.h
+    SOURCES += \
+        loader/soup/CachedRawResourceSoup.cpp \
+        loader/soup/SubresourceLoaderSoup.cpp \
+        platform/network/soup/AuthenticationChallengeSoup.cpp \
+        platform/network/soup/CookieJarSoup.cpp \
+        platform/network/soup/CookieStorageSoup.cpp \
+        platform/network/soup/CredentialStorageSoup.cpp \
+        platform/network/soup/DNSSoup.cpp \
+        platform/network/soup/GOwnPtrSoup.cpp \
+        platform/network/soup/NetworkStorageSessionSoup.cpp \
+        platform/network/soup/ProxyResolverSoup.cpp \
+        platform/network/soup/ProxyServerSoup.cpp \
+        platform/network/soup/ResourceErrorSoup.cpp \
+        platform/network/soup/ResourceHandleSoup.cpp \
+        platform/network/soup/ResourceRequestSoup.cpp \
+        platform/network/soup/ResourceResponseSoup.cpp \
+        platform/network/soup/SocketStreamHandleSoup.cpp \
+        platform/network/soup/SoupURIUtils.cpp
+} else {
+    HEADERS += \
+        platform/network/qt/QtMIMETypeSniffer.h \
+        platform/network/qt/QNetworkReplyHandler.h \
+        platform/network/qt/NetworkStateNotifierPrivate.h \
+        platform/network/qt/CookieJarQt.h \
+        platform/network/qt/SocketStreamHandlePrivate.h
+
+    SOURCES += \
+        platform/network/NetworkStorageSessionStub.cpp \
+        platform/network/qt/CookieJarQt.cpp \
+        platform/network/qt/CredentialStorageQt.cpp \
+        platform/network/qt/ResourceHandleQt.cpp \
+        platform/network/qt/ResourceRequestQt.cpp \
+        platform/network/qt/DNSQt.cpp \
+        platform/network/qt/NetworkStateNotifierQt.cpp \
+        platform/network/qt/ProxyServerQt.cpp \
+        platform/network/qt/QtMIMETypeSniffer.cpp \
+        platform/network/qt/QNetworkReplyHandler.cpp \
+        platform/network/qt/SocketStreamHandleQt.cpp
+
+
 }
 
 use?(GRAPHICS_SURFACE) {

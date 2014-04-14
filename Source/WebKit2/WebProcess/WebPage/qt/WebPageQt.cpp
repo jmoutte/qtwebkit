@@ -300,10 +300,12 @@ PassRefPtr<SharedBuffer> WebPage::cachedResponseDataForURL(const KURL&)
 
 void WebPage::registerApplicationScheme(const String& scheme)
 {
+#if !USE(SOUP)
     QtNetworkAccessManager* qnam = qobject_cast<QtNetworkAccessManager*>(WebProcess::shared().networkAccessManager());
     if (!qnam)
         return;
     qnam->registerApplicationScheme(this, QString(scheme));
+#endif
 }
 
 void WebPage::receivedApplicationSchemeRequest(const QNetworkRequest& request, QtNetworkReply* reply)
@@ -318,9 +320,11 @@ void WebPage::applicationSchemeReply(const QtNetworkReplyData& replyData)
     if (!m_applicationSchemeReplies.contains(replyData.m_replyUuid))
         return;
 
+#if !USE(SOUP)
     QtNetworkReply* networkReply = m_applicationSchemeReplies.take(replyData.m_replyUuid);
     networkReply->setReplyData(replyData);
     networkReply->finalize();
+#endif
 }
 
 void WebPage::selectedIndex(int32_t newIndex)

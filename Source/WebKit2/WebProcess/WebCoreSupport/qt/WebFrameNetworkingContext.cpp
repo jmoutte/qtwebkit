@@ -25,16 +25,26 @@
 #include <QObject>
 #include <QVariant>
 
+#if USE(SOUP)
+#include <WebCore/NetworkStorageSession.h>
+#endif
+
 namespace WebKit {
 
 WebFrameNetworkingContext::WebFrameNetworkingContext(WebFrame* frame)
     : FrameNetworkingContext(frame->coreFrame())
+#if USE(SOUP)
+    , m_initiatingPageID(0)
+#endif
     , m_mimeSniffingEnabled(true)
 {
     // Save the page ID for a valid page as it is needed later for HTTP authentication and SSL errors.
     if (frame->page()) {
         m_originatingObject = adoptPtr(new QObject);
         m_originatingObject->setProperty("pageID", qulonglong(frame->page()->pageID()));
+#if USE(SOUP)
+        m_initiatingPageID = frame->page()->pageID();
+#endif
     }
 }
 
@@ -42,5 +52,17 @@ PassRefPtr<WebFrameNetworkingContext> WebFrameNetworkingContext::create(WebFrame
 {
     return adoptRef(new WebFrameNetworkingContext(frame));
 }
+
+#if USE(SOUP)
+WebCore::NetworkStorageSession& WebFrameNetworkingContext::storageSession() const
+{
+    return WebCore::NetworkStorageSession::defaultStorageSession();
+}
+
+uint64_t WebFrameNetworkingContext::initiatingPageID() const
+{
+    return m_initiatingPageID;
+}
+#endif
 
 }

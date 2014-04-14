@@ -37,6 +37,11 @@
 #include "WebGeolocationProviderQt.h"
 #endif
 
+#if USE(SOUP)
+#include "WebCookieManagerProxy.h"
+#include "WebSoupRequestManagerProxy.h"
+#endif
+
 namespace WebKit {
 
 String WebContext::platformDefaultApplicationCacheDirectory() const
@@ -55,6 +60,14 @@ void WebContext::platformInitializeWebProcess(WebProcessCreationParameters& para
 #if ENABLE(GEOLOCATION) && HAVE(QTLOCATION)
     static WebGeolocationProviderQt* location = WebGeolocationProviderQt::create(toAPI(supplement<WebGeolocationManagerProxy>()));
     WKGeolocationManagerSetProvider(toAPI(supplement<WebGeolocationManagerProxy>()), WebGeolocationProviderQt::provider(location));
+#endif
+
+#if USE(SOUP)
+    parameters.urlSchemesRegistered = supplement<WebSoupRequestManagerProxy>()->registeredURISchemes();
+    supplement<WebCookieManagerProxy>()->getCookiePersistentStorage(parameters.cookiePersistentStoragePath, parameters.cookiePersistentStorageType);
+    parameters.cookieAcceptPolicy = m_initialHTTPCookieAcceptPolicy;
+    parameters.ignoreTLSErrors = m_ignoreTLSErrors;
+    parameters.shouldTrackVisitedLinks = true;
 #endif
 }
 

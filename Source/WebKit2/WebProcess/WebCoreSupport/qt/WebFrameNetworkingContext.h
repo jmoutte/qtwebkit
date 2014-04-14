@@ -41,6 +41,13 @@ private:
     bool mimeSniffingEnabled() const { return m_mimeSniffingEnabled; }
     bool thirdPartyCookiePolicyPermission(const QUrl&) const { /*TODO. Used QWebSettings in WK1.*/ return true; }
 
+#if USE(SOUP)
+    virtual WebCore::NetworkStorageSession& storageSession() const;
+    virtual uint64_t initiatingPageID() const;
+
+    uint64_t m_initiatingPageID;
+#endif
+
     OwnPtr<QObject> m_originatingObject;
     bool m_mimeSniffingEnabled;
 };

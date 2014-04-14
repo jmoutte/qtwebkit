@@ -81,7 +81,7 @@ private:
     WebSocketServerClient* m_client;
     String m_bindAddress;
     unsigned short m_port;
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
     OwnPtr<QtTcpServerHandler> m_tcpServerHandler;
 #elif USE(SOUP)
     GRefPtr<GSocketService> m_socketService;

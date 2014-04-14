@@ -285,7 +285,7 @@ void Internals::resetToConsistentState(Page* page)
     if (page->mainFrame()->editor().isOverwriteModeEnabled())
         page->mainFrame()->editor().toggleOverwriteModeEnabled();
 
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
     if (NetworkingContext* context = page->mainFrame()->loader()->networkingContext()) {
         if (QNetworkAccessManager* qnam = context->networkAccessManager())
             qnam->clearAccessCache();

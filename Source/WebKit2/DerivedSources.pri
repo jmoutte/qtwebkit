@@ -50,6 +50,7 @@ VPATH = \
     WebProcess/Plugins \
     WebProcess/ResourceCache \
     WebProcess/Storage \
+    WebProcess/soup \
     WebProcess/WebCoreSupport \
     WebProcess/WebPage \
     WebProcess/WebPage/CoordinatedGraphics \
@@ -60,6 +61,7 @@ VPATH = \
     UIProcess/Notifications \
     UIProcess/Plugins \
     UIProcess/Storage \
+    UIProcess/soup \
     Shared \
     Shared/Authentication \
     Shared/Plugins
@@ -139,6 +141,18 @@ fwheader_generator.commands = perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwa
 fwheader_generator.depends = $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl
 generated_files.depends += fwheader_generator
 GENERATORS += fwheader_generator
+
+use?(SOUP) {
+
+    MESSAGE_RECEIVERS += \
+        WebSoupRequestManagerProxy.messages.in \
+        WebSoupRequestManager.messages.in
+
+    soupfwheader_generator.commands = perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl $${SOURCE_DIR}/WebKit2 $${ROOT_BUILD_DIR}/Source/include soup
+    soupfwheader_generator.depends = $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl
+    generated_files.depends += soupfwheader_generator
+    GENERATORS += soupfwheader_generator
+}
 
 for(header, WEBCORE_GENERATED_HEADERS_FOR_WEBKIT2) {
     header_name = $$basename(header)

@@ -63,7 +63,7 @@ public:
     void didReceiveDownloadProxyMessage(CoreIPC::Connection*, CoreIPC::MessageDecoder&);
     void didReceiveSyncDownloadProxyMessage(CoreIPC::Connection*, CoreIPC::MessageDecoder&, OwnPtr<CoreIPC::MessageEncoder>&);
 
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
     void startTransfer(const String& filename);
 #endif
 

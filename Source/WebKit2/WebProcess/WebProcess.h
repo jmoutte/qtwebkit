@@ -220,7 +220,7 @@ private:
 
     void downloadRequest(uint64_t downloadID, uint64_t initiatingPageID, const WebCore::ResourceRequest&);
     void cancelDownload(uint64_t downloadID);
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
     void startTransfer(uint64_t downloadID, const String& destination);
 #endif
 

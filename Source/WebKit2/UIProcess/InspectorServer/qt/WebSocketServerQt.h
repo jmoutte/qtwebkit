@@ -27,6 +27,7 @@
 #ifndef WebSocketServerQt_h
 #define WebSocketServerQt_h
 
+#if !USE(SOUP)
 #include <QTcpServer>
 #include <wtf/text/WTFString.h>
 
@@ -51,4 +52,5 @@ private:
 
 }
 
+#endif
 #endif // WebSocketServerQt_h

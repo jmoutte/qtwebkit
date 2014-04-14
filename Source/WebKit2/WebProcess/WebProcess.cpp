@@ -1091,7 +1091,7 @@ void WebProcess::cancelDownload(uint64_t downloadID)
     downloadManager().cancelDownload(downloadID);
 }
 
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
 void WebProcess::startTransfer(uint64_t downloadID, const String& destination)
 {
     downloadManager().startTransfer(downloadID, destination);

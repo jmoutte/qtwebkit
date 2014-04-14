@@ -87,7 +87,6 @@ HEADERS += \
     Shared/DictionaryPopupInfo.h \
     Shared/Downloads/Download.h \
     Shared/Downloads/DownloadManager.h \
-    Shared/Downloads/qt/QtFileDownloader.h \
     Shared/EditorState.h \
     Shared/FontInfo.h \
     Shared/ImageOptions.h \
@@ -154,7 +153,6 @@ HEADERS += \
     Shared/Plugins/PluginProcessCreationParameters.h \
     Shared/Plugins/PluginQuirks.h \
     Shared/qt/ArgumentCodersQt.h \
-    Shared/qt/PlatformCertificateInfo.h \
     Shared/qt/WebEventFactoryQt.h \
     Shared/qt/QtNetworkReplyData.h \
     Shared/qt/QtNetworkRequestData.h \
@@ -460,8 +458,6 @@ SOURCES += \
     Shared/DictionaryPopupInfo.cpp \
     Shared/Downloads/Download.cpp \
     Shared/Downloads/DownloadManager.cpp \
-    Shared/Downloads/qt/DownloadQt.cpp \
-    Shared/Downloads/qt/QtFileDownloader.cpp \
     Shared/EditorState.cpp \
     Shared/FontInfo.cpp \
     Shared/ImmutableArray.cpp \
@@ -663,7 +659,6 @@ SOURCES += \
     WebProcess/ApplicationCache/WebApplicationCacheManager.cpp \
     WebProcess/Battery/WebBatteryManager.cpp \
     WebProcess/Cookies/WebCookieManager.cpp \
-    WebProcess/Cookies/qt/WebCookieManagerQt.cpp \
     WebProcess/FullScreen/WebFullScreenManager.cpp \
     WebProcess/Geolocation/GeolocationPermissionRequestManager.cpp \
     WebProcess/Geolocation/WebGeolocationManager.cpp \
@@ -774,8 +769,6 @@ SOURCES += \
     WebProcess/WebProcess.cpp \
     WebProcess/qt/QtBuiltinBundle.cpp \
     WebProcess/qt/QtBuiltinBundlePage.cpp \
-    WebProcess/qt/QtNetworkAccessManager.cpp \
-    WebProcess/qt/QtNetworkReply.cpp \
     WebProcess/qt/WebProcessMainQt.cpp \
     WebProcess/qt/WebProcessQt.cpp
 
@@ -950,4 +943,51 @@ use?(PLUGIN_BACKEND_XLIB) {
     DEFINES += MOZ_X11
 }
 
+use?(SOUP) {
+    HEADERS += \
+        Shared/API/c/soup/WKBaseSoup.h \
+        Shared/Downloads/soup/DownloadSoupErrors.h \
+        Shared/soup/PlatformCertificateInfo.h \
+        Shared/soup/SoupCookiePersistentStorageType.h \
+        WebProcess/soup/WebKitSoupRequestGeneric.h \
+        WebProcess/soup/WebKitSoupRequestInputStream.h \
+        WebProcess/soup/WebSoupRequestManager.h \
+        UIProcess/API/C/soup/WKAPICastSoup.h \
+        UIProcess/API/C/soup/WKContextSoup.h \
+        UIProcess/API/C/soup/WKCookieManagerSoup.h \
+        UIProcess/API/C/soup/WKSoupRequestManager.h \
+        UIProcess/soup/WebSoupRequestManagerClient.h \
+        UIProcess/soup/WebSoupRequestManagerProxy.h \
+        WebProcess/Cookies/soup/WebKitSoupCookieJarSqlite.h
+
+    SOURCES += \
+        Shared/Downloads/qt/DownloadSoupErrorsQt.cpp \
+        Shared/Downloads/soup/DownloadSoup.cpp \
+        Shared/soup/PlatformCertificateInfo.cpp \
+        Shared/soup/WebCoreArgumentCodersSoup.cpp \
+        UIProcess/API/C/soup/WKContextSoup.cpp \
+        UIProcess/API/C/soup/WKCookieManagerSoup.cpp \
+        UIProcess/API/C/soup/WKSoupRequestManager.cpp \
+        UIProcess/InspectorServer/soup/WebSocketServerSoup.cpp \
+        UIProcess/soup/WebCookieManagerProxySoup.cpp \
+        UIProcess/soup/WebSoupRequestManagerClient.cpp \
+        UIProcess/soup/WebSoupRequestManagerProxy.cpp \
+        WebProcess/Cookies/soup/WebCookieManagerSoup.cpp \
+        WebProcess/Cookies/soup/WebKitSoupCookieJarSqlite.cpp \
+        WebProcess/soup/WebKitSoupRequestInputStream.cpp \
+        WebProcess/soup/WebProcessSoup.cpp \
+        WebProcess/soup/WebKitSoupRequestGeneric.cpp \
+        WebProcess/soup/WebSoupRequestManager.cpp
+} else {
+    HEADERS += \
+        Shared/Downloads/qt/QtFileDownloader.h \
+        Shared/qt/PlatformCertificateInfo.h
+
+    SOURCES += \
+        Shared/Downloads/qt/DownloadQt.cpp \
+        Shared/Downloads/qt/QtFileDownloader.cpp \
+        WebProcess/Cookies/qt/WebCookieManagerQt.cpp \
+        WebProcess/qt/QtNetworkAccessManager.cpp \
+        WebProcess/qt/QtNetworkReply.cpp
+}
 include(DerivedSources.pri)

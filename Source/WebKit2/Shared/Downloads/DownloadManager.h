@@ -77,7 +77,7 @@ public:
     CoreIPC::Connection* downloadProxyConnection();
     AuthenticationManager& downloadsAuthenticationManager();
 
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
     void startTransfer(uint64_t downloadID, const String& destination);
 #endif
 

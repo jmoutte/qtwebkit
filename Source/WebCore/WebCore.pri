@@ -78,7 +78,6 @@ INCLUDEPATH += \
     $$SOURCE_DIR/platform/leveldb \
     $$SOURCE_DIR/platform/mock \
     $$SOURCE_DIR/platform/network \
-    $$SOURCE_DIR/platform/network/qt \
     $$SOURCE_DIR/platform/qt \
     $$SOURCE_DIR/platform/sql \
     $$SOURCE_DIR/platform/text \
@@ -109,6 +108,12 @@ INCLUDEPATH += \
     $$SOURCE_DIR/testing/js
 
 INCLUDEPATH += $$WEBCORE_GENERATED_SOURCES_DIR
+
+use?(SOUP) {
+    INCLUDEPATH += $$SOURCE_DIR/platform/network/soup
+} else {
+    INCLUDEPATH += $$SOURCE_DIR/platform/network/qt
+}
 
 enable?(XSLT) {
     use?(LIBXML2) {
@@ -180,6 +185,12 @@ use?(GSTREAMER) {
         DEFINES += GST_API_VERSION_1
         PKGCONFIG += gstreamer-1.0 gstreamer-app-1.0 gstreamer-base-1.0 gstreamer-pbutils-1.0 gstreamer-plugins-base-1.0 gstreamer-video-1.0 gstreamer-audio-1.0 gstreamer-egl-1.0
     }
+}
+
+use?(SOUP) {
+        DEFINES += WTF_USE_SOUP
+        DEFINES += QT_NO_KEYWORDS
+        PKGCONFIG += libsoup-2.4
 }
 
 enable?(VIDEO) {

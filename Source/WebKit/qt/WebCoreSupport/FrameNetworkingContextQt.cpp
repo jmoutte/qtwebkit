@@ -24,6 +24,11 @@
 #include "QWebPageAdapter.h"
 #include "qwebsettings.h"
 
+#if USE(SOUP)
+#include "NetworkStorageSession.h"
+#include "NotImplemented.h"
+#endif
+
 #include <QNetworkAccessManager>
 #include <QNetworkCookie>
 #include <QNetworkCookieJar>
@@ -74,5 +79,18 @@ bool FrameNetworkingContextQt::thirdPartyCookiePolicyPermission(const QUrl& url)
 
     return false;
 }
+
+#if USE(SOUP)
+uint64_t FrameNetworkingContextQt::initiatingPageID() const
+{
+    notImplemented();
+    return 0;
+}
+
+NetworkStorageSession& FrameNetworkingContextQt::storageSession() const
+{
+    return NetworkStorageSession::defaultStorageSession();
+}
+#endif
 
 }

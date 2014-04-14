@@ -18,8 +18,9 @@
  *
  */
 
-
 #include "config.h"
+
+#if !USE(SOUP)
 #include "WebSocketServerQt.h"
 
 #include "WebSocketServer.h"
@@ -79,3 +80,4 @@ void QtTcpServerHandler::close()
 }
 
 #include "moc_WebSocketServerQt.cpp"
+#endif

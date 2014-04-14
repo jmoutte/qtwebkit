@@ -91,6 +91,8 @@ void QWebDownloadItem::start()
     if (d->destinationPath.isEmpty())
         d->destinationPath = d->suggestedFilename;
 
+#if !USE(SOUP)
     d->downloadProxy->startTransfer(d->destinationPath);
+#endif
 }
 

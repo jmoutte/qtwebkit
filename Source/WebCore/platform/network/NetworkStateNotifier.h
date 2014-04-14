@@ -55,7 +55,7 @@ typedef unsigned char Eina_Bool;
 
 namespace WebCore {
 
-#if (PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT))
+#if (PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT)) && !USE(SOUP)
 class NetworkStateNotifierPrivate;
 #endif
 
@@ -71,7 +71,7 @@ public:
 
     bool onLine() const { return m_isOnLine; }
 
-#if (PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT))
+#if (PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT)) && !USE(SOUP)
     void setNetworkAccessAllowed(bool);
 #endif
 
@@ -110,13 +110,13 @@ private:
     int m_netlinkSocket;
     Ecore_Fd_Handler* m_fdHandler;
 
-#elif (PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT))
+#elif (PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT)) && !USE(SOUP)
     friend class NetworkStateNotifierPrivate;
     NetworkStateNotifierPrivate* p;
 #endif
 };
 
-#if !PLATFORM(MAC) && !PLATFORM(WIN) && !(PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT)) && !PLATFORM(BLACKBERRY) && !PLATFORM(EFL)
+#if !PLATFORM(MAC) && !PLATFORM(WIN) && !(PLATFORM(QT) && !defined(QT_NO_BEARERMANAGEMENT) && !USE(SOUP)) && !PLATFORM(BLACKBERRY) && !PLATFORM(EFL)
 
 inline NetworkStateNotifier::NetworkStateNotifier()
     : m_isOnLine(true)

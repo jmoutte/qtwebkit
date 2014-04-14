@@ -43,10 +43,12 @@ QtNetworkAccessManager::QtNetworkAccessManager(WebProcess* webProcess)
     : QNetworkAccessManager()
     , m_webProcess(webProcess)
 {
+#if !USE(SOUP)
     connect(this, SIGNAL(authenticationRequired(QNetworkReply*, QAuthenticator*)), SLOT(onAuthenticationRequired(QNetworkReply*, QAuthenticator*)));
     connect(this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator*)), SLOT(onProxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator*)));
 #ifndef QT_NO_SSL
     connect(this, SIGNAL(sslErrors(QNetworkReply*, QList<QSslError>)), SLOT(onSslErrors(QNetworkReply*, QList<QSslError>)));
+#endif
 #endif
 }
 
@@ -60,6 +62,7 @@ WebPage* QtNetworkAccessManager::obtainOriginatingWebPage(const QNetworkRequest&
     return m_webProcess->webPage(pageID);
 }
 
+#if !USE(SOUP)
 QNetworkReply* QtNetworkAccessManager::createRequest(Operation operation, const QNetworkRequest& request, QIODevice* outData)
 {
     WebPage* webPage = obtainOriginatingWebPage(request);
@@ -71,12 +74,14 @@ QNetworkReply* QtNetworkAccessManager::createRequest(Operation operation, const 
 
     return QNetworkAccessManager::createRequest(operation, request, outData);
 }
+#endif
 
 void QtNetworkAccessManager::registerApplicationScheme(const WebPage* page, const QString& scheme)
 {
     m_applicationSchemes.insert(page, scheme.toLower());
 }
 
+#if !USE(SOUP)
 void QtNetworkAccessManager::onProxyAuthenticationRequired(const QNetworkProxy& proxy, QAuthenticator* authenticator)
 {
     // FIXME: Check if there is a better way to get a reference to the page.
@@ -146,6 +151,7 @@ void QtNetworkAccessManager::onSslErrors(QNetworkReply* reply, const QList<QSslE
     }
 #endif
 }
+#endif
 
 }
 

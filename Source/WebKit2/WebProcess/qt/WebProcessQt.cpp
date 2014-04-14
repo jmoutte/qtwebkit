@@ -57,6 +57,7 @@ using namespace WebCore;
 
 namespace WebKit {
 
+#if !USE(SOUP)
 void WebProcess::platformSetCacheModel(CacheModel cacheModel)
 {
     uint64_t physicalMemorySizeInMegabytes = WTF::ramSize() / 1024 / 1024;
@@ -155,5 +156,7 @@ void WebProcess::platformTerminate()
     m_networkAccessManager = 0;
     WebCore::SharedCookieJarQt::shared()->destroy();
 }
+
+#endif
 
 } // namespace WebKit
