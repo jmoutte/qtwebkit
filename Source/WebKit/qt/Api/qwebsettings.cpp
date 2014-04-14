@@ -56,7 +56,10 @@
 #include <wtf/FastMalloc.h>
 #include <wtf/text/WTFString.h>
 
-
+#if USE(SOUP)
+#include "ResourceHandle.h"
+#include <libsoup/soup.h>
+#endif
 
 QWEBKIT_EXPORT void qt_networkAccessAllowed(bool isAllowed)
 {
@@ -1239,6 +1242,14 @@ void QWebSettings::enablePersistentStorage(const QString& path)
         storagePath = path;
 
     WebCore::makeAllDirectories(storagePath);
+
+#if USE(SOUP)
+    /* Store cookies in moz-compatible SQLite format */
+    SoupSession* session = WebCore::ResourceHandle::defaultSession();
+    SoupCookieJar* jar = soup_cookie_jar_db_new(WebCore::pathByAppendingComponent(storagePath, "cookies.sqlite").ascii().data(), FALSE);
+    soup_session_add_feature(session, SOUP_SESSION_FEATURE(jar));
+    g_object_unref(jar);
+#endif
 
     QWebSettings::setIconDatabasePath(storagePath);
     QWebSettings::setOfflineWebApplicationCachePath(storagePath);
