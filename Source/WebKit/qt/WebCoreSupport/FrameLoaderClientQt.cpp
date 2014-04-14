@@ -62,7 +62,6 @@
 #include "PluginDatabase.h"
 #include "PolicyChecker.h"
 #include "ProgressTracker.h"
-#include "QNetworkReplyHandler.h"
 #include "QWebFrameAdapter.h"
 #include "QWebPageAdapter.h"
 #include "QWebPageClient.h"
@@ -82,6 +81,10 @@
 #include "qwebhistoryinterface.h"
 #include "qwebpluginfactory.h"
 #include "qwebsettings.h"
+
+#if !USE(SOUP)
+#include "QNetworkReplyHandler.h"
+#endif
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -993,6 +996,7 @@ void FrameLoaderClientQt::convertMainResourceLoadToDownload(WebCore::DocumentLoa
         return;
     }
 
+#if !USE(SOUP)
     QNetworkReply* reply = handler->release();
     if (reply) {
         if (m_webFrame->pageAdapter->forwardUnsupportedContent)
@@ -1000,6 +1004,7 @@ void FrameLoaderClientQt::convertMainResourceLoadToDownload(WebCore::DocumentLoa
         else
             reply->abort();
     }
+#endif
 }
 
 void FrameLoaderClientQt::assignIdentifierToInitialRequest(unsigned long identifier, WebCore::DocumentLoader*, const WebCore::ResourceRequest& request)
@@ -1224,6 +1229,7 @@ void FrameLoaderClientQt::dispatchDecidePolicyForResponse(FramePolicyFunction fu
 void FrameLoaderClientQt::dispatchDecidePolicyForNewWindowAction(FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState>, const WTF::String&)
 {
     Q_ASSERT(m_webFrame);
+#if !USE(SOUP)
     QNetworkRequest r(request.toNetworkRequest(m_frame->loader()->networkingContext()));
 
     if (!m_webFrame->pageAdapter->acceptNavigationRequest(0, r, (int)action.type())) {
@@ -1238,12 +1244,14 @@ void FrameLoaderClientQt::dispatchDecidePolicyForNewWindowAction(FramePolicyFunc
         callPolicyFunction(function, PolicyIgnore);
         return;
     }
+#endif
     callPolicyFunction(function, PolicyUse);
 }
 
 void FrameLoaderClientQt::dispatchDecidePolicyForNavigationAction(FramePolicyFunction function, const WebCore::NavigationAction& action, const WebCore::ResourceRequest& request, PassRefPtr<WebCore::FormState>)
 {
     Q_ASSERT(m_webFrame);
+#if !USE(SOUP)
     QNetworkRequest r(request.toNetworkRequest(m_frame->loader()->networkingContext()));
     PolicyAction result;
 
@@ -1285,6 +1293,7 @@ void FrameLoaderClientQt::dispatchDecidePolicyForNavigationAction(FramePolicyFun
         callPolicyFunction(function, PolicyIgnore);
         return;
     }
+#endif
     callPolicyFunction(function, PolicyUse);
 }
 
@@ -1298,7 +1307,9 @@ void FrameLoaderClientQt::startDownload(const WebCore::ResourceRequest& request,
     if (!m_webFrame)
         return;
 
+#if !USE(SOUP)
     m_webFrame->pageAdapter->emitDownloadRequested(request.toNetworkRequest(m_frame->loader()->networkingContext()));
+#endif
 }
 
 PassRefPtr<Frame> FrameLoaderClientQt::createFrame(const KURL& url, const String& name, HTMLFrameOwnerElement* ownerElement, const String& referrer, bool allowsScrolling, int marginWidth, int marginHeight)

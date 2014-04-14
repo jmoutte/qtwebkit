@@ -45,6 +45,10 @@
 #include "ScrollbarThemeQStyle.h"
 #include "SecurityPolicy.h"
 
+#if USE(SOUP)
+#include "ResourceHandle.h"
+#endif
+
 #include "qwebelement_p.h"
 #include <JavaScriptCore/runtime/InitializeThreading.h>
 #include <wtf/MainThread.h>
@@ -108,6 +112,10 @@ Q_DECL_EXPORT void initializeWebCoreQt()
     if (!WebCore::memoryCache()->disabled())
         WebCore::memoryCache()->setDeadDecodedDataDeletionInterval(60);
     WebCore::RuntimeEnabledFeatures::setCSSCompositingEnabled(true);
+
+#if USE(SOUP)
+    WebCore::ResourceHandle::setIgnoreSSLErrors(true);
+#endif
 
     initialized = true;
 }

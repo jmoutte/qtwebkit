@@ -28,8 +28,11 @@
 #include "AuthenticationChallengeBase.h"
 #include "AuthenticationClient.h"
 
+#include <wtf/gobject/GRefPtr.h>
+
 typedef struct _SoupAuth SoupAuth;
 typedef struct _SoupMessage SoupMessage;
+typedef struct _SoupSession SoupSession;
 
 namespace WebCore {
 

@@ -93,7 +93,7 @@ AuthenticationManager& DownloadManager::downloadsAuthenticationManager()
     return m_client->downloadsAuthenticationManager();
 }
 
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
 void DownloadManager::startTransfer(uint64_t downloadID, const String& destination)
 {
     ASSERT(m_downloads.contains(downloadID));

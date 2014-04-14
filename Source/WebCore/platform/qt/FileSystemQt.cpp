@@ -42,6 +42,14 @@
 #include <wtf/text/CString.h>
 #include <wtf/text/WTFString.h>
 
+#if USE(SOUP)
+#include <gio/gio.h>
+#include <glib.h>
+#include <glib/gstdio.h>
+#include <wtf/gobject/GOwnPtr.h>
+#include <wtf/gobject/GRefPtr.h>
+#endif
+
 #if OS(ANDROID)
 #include <sys/vfs.h>
 #elif !defined(Q_OS_WIN)
@@ -259,6 +267,14 @@ bool unloadModule(PlatformModule module)
     return false;
 #endif
 }
+
+#if USE(SOUP)
+CString fileSystemRepresentation(const String& path)
+{
+    GOwnPtr<gchar> filename(g_uri_unescape_string(path.utf8().data(), 0));
+    return filename.get();
+}
+#endif
 
 }
 

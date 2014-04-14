@@ -27,6 +27,9 @@ namespace WebCore {
 class FrameNetworkingContextQt : public FrameNetworkingContext {
 public:
     static PassRefPtr<FrameNetworkingContextQt> create(Frame*, QObject* originatingObject, bool mimeSniffingEnabled);
+#if USE(SOUP)
+    virtual uint64_t initiatingPageID() const;
+#endif
 
 private:
     FrameNetworkingContextQt(Frame*, QObject* originatingObject, bool mimeSniffingEnabled);
@@ -35,6 +38,10 @@ private:
     virtual QNetworkAccessManager* networkAccessManager() const;
     virtual bool mimeSniffingEnabled() const;
     virtual bool thirdPartyCookiePolicyPermission(const QUrl&) const;
+
+#if USE(SOUP)
+    virtual WebCore::NetworkStorageSession& storageSession() const;
+#endif
 
     QObject* m_originatingObject;
     bool m_mimeSniffingEnabled;

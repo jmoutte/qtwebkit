@@ -823,4 +823,9 @@ String localizedString(const char* key)
     return String::fromUTF8(key, strlen(key));
 }
 
+String unacceptableTLSCertificate()
+{
+    return String::fromUTF8("Unacceptable TLS certificate");
+}
+
 }

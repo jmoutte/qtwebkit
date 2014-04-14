@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2011 Zeno Albisser <zeno@webkit.org>
- * Copyright (C) 2012 Nokia Corporation and/or its subsidiary(-ies)
+ * Copyright (C) 2012 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,43 +23,24 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef QtNetworkAccessManager_h
-#define QtNetworkAccessManager_h
+#include "config.h"
+#include "DownloadSoupErrors.h"
 
-#include <QMultiHash>
-#include <QNetworkAccessManager>
-#include <QNetworkProxy>
-#include <QString>
+#include <WebCore/ErrorsQt.h>
+#include <WebCore/ResourceError.h>
+
+using namespace WebCore;
 
 namespace WebKit {
 
-class WebPage;
-class WebProcess;
+ResourceError platformDownloadNetworkError(int errorCode, const String& failingURL, const String& localizedDescription)
+{
+    return downloadNetworkError(ResourceError(errorDomainDownload, errorCode, failingURL, localizedDescription));
+}
 
-class QtNetworkAccessManager : public QNetworkAccessManager {
-    Q_OBJECT
-public:
-    QtNetworkAccessManager(WebProcess*);
-    void registerApplicationScheme(const WebPage*, const QString& scheme);
-
-protected:
-#if !defined(WTF_USE_SOUP)
-    virtual QNetworkReply* createRequest(Operation, const QNetworkRequest&, QIODevice* outgoingData = 0) OVERRIDE;
-
-private Q_SLOTS:
-    void onAuthenticationRequired(QNetworkReply *, QAuthenticator *);
-    void onProxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator *);
-    void onSslErrors(QNetworkReply*, const QList<QSslError>&);
-#endif
-
-private:
-    WebPage* obtainOriginatingWebPage(const QNetworkRequest&);
-
-    QMultiHash<const WebPage*, QString> m_applicationSchemes;
-    WebProcess* m_webProcess;
-
-};
+ResourceError platformDownloadDestinationError(const ResourceResponse& response, const String& message)
+{
+    return downloadDestinationError(response, message);
+}
 
 } // namespace WebKit
-
-#endif // QtNetworkAccessManager_h

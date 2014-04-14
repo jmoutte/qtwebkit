@@ -206,7 +206,7 @@ void DownloadProxy::didCancel(const CoreIPC::DataReference& resumeData)
     m_downloadProxyMap.downloadFinished(this);
 }
 
-#if PLATFORM(QT)
+#if PLATFORM(QT) && !USE(SOUP)
 void DownloadProxy::startTransfer(const String& filename)
 {
     if (!m_webContext)

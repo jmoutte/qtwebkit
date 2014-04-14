@@ -114,6 +114,7 @@ void setCookieStoragePrivateBrowsingEnabled(bool)
     notImplemented();
 }
 
+#if !USE(SOUP)
 void startObservingCookieChanges(CookieChangeCallbackPtr)
 {
     notImplemented();
@@ -123,6 +124,7 @@ void stopObservingCookieChanges()
 {
     notImplemented();
 }
+#endif
 
 }
 

@@ -75,6 +75,18 @@ INCLUDEPATH += $${ROOT_WEBKIT_DIR}/Source/WTF/wtf/qt
 
 INCLUDEPATH += $$WEBKIT2_GENERATED_SOURCES_DIR
 
+use?(SOUP) {
+INCLUDEPATH += \
+    $$SOURCE_DIR/UIProcess/API/C/soup \
+    $$SOURCE_DIR/UIProcess/InspectorServer/soup \
+    $$SOURCE_DIR/UIProcess/soup \
+    $$SOURCE_DIR/WebProcess/Cookies/soup \
+    $$SOURCE_DIR/Shared/API/c/soup \
+    $$SOURCE_DIR/Shared/Downloads/soup \
+    $$SOURCE_DIR/Shared/soup \
+    $$SOURCE_DIR/WebProcess/soup
+}
+
 linux-*:!android {
     # -lrt is required for shm_open and shm_unlink.
     LIBS += -lrt

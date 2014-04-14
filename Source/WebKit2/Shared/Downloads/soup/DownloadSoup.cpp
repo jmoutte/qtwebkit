@@ -31,6 +31,7 @@
 #include "DownloadSoupErrors.h"
 #include <WebCore/NotImplemented.h>
 #include <WebCore/ResourceHandleInternal.h>
+#include <WebCore/ResourceHandleClient.h>
 #include <gio/gio.h>
 #include <wtf/gobject/GOwnPtr.h>
 #include <wtf/gobject/GRefPtr.h>

@@ -34,6 +34,7 @@ using namespace WebCore;
  
 namespace CoreIPC {
 
+#if !USE(SOUP)
 void ArgumentCoder<ResourceRequest>::encodePlatformData(ArgumentEncoder& encoder, const ResourceRequest& resourceRequest)
 {
 }
@@ -62,5 +63,6 @@ bool ArgumentCoder<ResourceError>::decodePlatformData(ArgumentDecoder& decoder, 
 {
     return true;
 }
+#endif
 
 } // namespace CoreIPC
