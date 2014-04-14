@@ -111,7 +111,6 @@
 #include <QOpenGLContext>
 #include "GLSharedContext.h"
 #endif
-#include "CookieJarQt.h"
 
 // from text/qfont.cpp
 QT_BEGIN_NAMESPACE
@@ -361,14 +360,8 @@ void QWebPageAdapter::setNetworkAccessManager(QNetworkAccessManager *manager)
 
 QNetworkAccessManager* QWebPageAdapter::networkAccessManager()
 {
-    if (!networkManager) { 
+    if (!networkManager)
         networkManager = new QNetworkAccessManager(handle());
-
-        // set the shared cookieJar by default to the network manager
-        SharedCookieJarQt *cookieJar = SharedCookieJarQt::shared();
-        networkManager->setCookieJar(cookieJar);
-        cookieJar->setParent(0);
-    }
     return networkManager;
 }
 

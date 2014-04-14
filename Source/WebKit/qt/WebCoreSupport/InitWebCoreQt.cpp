@@ -49,14 +49,6 @@
 #include <JavaScriptCore/runtime/InitializeThreading.h>
 #include <wtf/MainThread.h>
 
-#include <QDir>
-#include "CookieJarQt.h"
-#if QT_VERSION >= 0x050000
-#include <QStandardPaths>
-#else
-#include <QDesktopServices>
-#endif
-
 namespace WebKit {
 
 static QtStyleFacadeFactoryFunction initCallback = 0;
@@ -116,15 +108,6 @@ Q_DECL_EXPORT void initializeWebCoreQt()
     if (!WebCore::memoryCache()->disabled())
         WebCore::memoryCache()->setDeadDecodedDataDeletionInterval(60);
     WebCore::RuntimeEnabledFeatures::setCSSCompositingEnabled(true);
-
-    // initialize CookieJar
-#if QT_VERSION >= 0x050000
-    QString path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-#else
-    QString path = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-#endif
-    QDir().mkpath(path);
-    SharedCookieJarQt::create(path);
 
     initialized = true;
 }
