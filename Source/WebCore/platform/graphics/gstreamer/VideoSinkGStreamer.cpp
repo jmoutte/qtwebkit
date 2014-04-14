@@ -367,6 +367,9 @@ static gboolean webkitVideoSinkAllocateEGLImage(gpointer data)
 
     priv->allocateBuffer = NULL;
 
+    /* reset error state */
+    while (glGetError() != GL_NO_ERROR);
+
     EGLContext eglcontext = eglGetCurrentContext ();
     if (eglcontext == EGL_NO_CONTEXT) {
         /* there is no EGLContext set to current in this thread,
