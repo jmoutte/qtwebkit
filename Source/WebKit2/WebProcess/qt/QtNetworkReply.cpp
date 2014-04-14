@@ -93,8 +93,8 @@ bool QtNetworkReply::canReadLine () const { return true; }
 void QtNetworkReply::finalize()
 {
     QNetworkReply::setFinished(true);
-    emit readyRead();
-    emit finished();
+    Q_EMIT readyRead();
+    Q_EMIT finished();
 }
 
 } // namespace WebKit

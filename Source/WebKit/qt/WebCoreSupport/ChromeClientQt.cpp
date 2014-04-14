@@ -533,7 +533,7 @@ void ChromeClientQt::setToolTip(const String &tip, TextDirection)
 
 void ChromeClientQt::print(Frame* frame)
 {
-    emit m_webPage->printRequested(QWebFrameAdapter::kit(frame));
+    Q_EMIT m_webPage->printRequested(QWebFrameAdapter::kit(frame));
 }
 
 #if ENABLE(SQL_DATABASE)

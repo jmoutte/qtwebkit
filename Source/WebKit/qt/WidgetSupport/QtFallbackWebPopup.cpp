@@ -121,7 +121,7 @@ void QtFallbackWebPopup::activeChanged(int index)
     if (index < 0)
         return;
 
-    emit selectItem(index, false, false);
+    Q_EMIT selectItem(index, false, false);
 }
 
 void QtFallbackWebPopup::deleteComboBox()

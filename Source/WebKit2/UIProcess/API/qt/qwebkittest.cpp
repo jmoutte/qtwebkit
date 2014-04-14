@@ -67,7 +67,7 @@ bool QWebKitTest::sendTouchEvent(QQuickWebView* window, QEvent::Type type, const
     }
 
     Qt::TouchPointStates touchPointStates = 0;
-    foreach (const QTouchEvent::TouchPoint& touchPoint, points)
+    Q_FOREACH (const QTouchEvent::TouchPoint& touchPoint, points)
         touchPointStates |= touchPoint.state();
 
     QTouchEvent event(type, device, Qt::NoModifier, touchPointStates, points);

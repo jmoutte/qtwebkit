@@ -58,7 +58,7 @@ void WebFullScreenManagerProxy::enterFullScreen()
 {
     willEnterFullScreen();
 #if HAVE(QTQUICK)
-    emit m_webView->experimental()->enterFullScreenRequested();
+    Q_EMIT m_webView->experimental()->enterFullScreenRequested();
 #endif
     didEnterFullScreen();
 }
@@ -67,7 +67,7 @@ void WebFullScreenManagerProxy::exitFullScreen()
 {
     willExitFullScreen();
 #if HAVE(QTQUICK)
-    emit m_webView->experimental()->exitFullScreenRequested();
+    Q_EMIT m_webView->experimental()->exitFullScreenRequested();
 #endif
     didExitFullScreen();
 }

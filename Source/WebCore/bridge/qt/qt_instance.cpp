@@ -120,7 +120,7 @@ PassRefPtr<QtInstance> QtInstance::getQtInstance(QObject* o, PassRefPtr<RootObje
 {
     JSLockHolder lock(WebCore::JSDOMWindowBase::commonVM());
 
-    foreach (QtInstance* instance, cachedInstances.values(o))
+    Q_FOREACH (QtInstance* instance, cachedInstances.values(o))
         if (instance->rootObject() == rootObject) {
             // The garbage collector removes instances, but it may happen that the wrapped
             // QObject dies before the gc kicks in. To handle that case we have to do an additional
@@ -204,7 +204,7 @@ void QtInstance::getPropertyNames(ExecState* exec, PropertyNameArray& array)
 
 #ifndef QT_NO_PROPERTIES
         QList<QByteArray> dynProps = obj->dynamicPropertyNames();
-        foreach (const QByteArray& ba, dynProps)
+        Q_FOREACH (const QByteArray& ba, dynProps)
             array.add(Identifier(exec, ba.constData()));
 #endif
 

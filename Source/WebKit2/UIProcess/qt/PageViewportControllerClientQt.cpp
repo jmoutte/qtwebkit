@@ -486,7 +486,7 @@ void PageViewportControllerClientQt::didChangeContentsSize(const IntSize& newSiz
 
     // Emit for testing purposes, so that it can be verified that
     // we didn't do scale adjustment.
-    emit m_viewportItem->experimental()->test()->contentsScaleCommitted();
+    Q_EMIT m_viewportItem->experimental()->test()->contentsScaleCommitted();
 
     if (!m_scaleChange.inProgress() && !m_scrollChange.inProgress())
         setContentsRectToNearestValidBounds();
@@ -497,7 +497,7 @@ void PageViewportControllerClientQt::didChangeVisibleContents()
     qreal scale = m_pageItem->contentsScale();
 
     if (scale != m_lastCommittedScale)
-        emit m_viewportItem->experimental()->test()->contentsScaleCommitted();
+        Q_EMIT m_viewportItem->experimental()->test()->contentsScaleCommitted();
     m_lastCommittedScale = scale;
 
     // Ensure that updatePaintNode is always called before painting.
@@ -507,7 +507,7 @@ void PageViewportControllerClientQt::didChangeVisibleContents()
 void PageViewportControllerClientQt::didChangeViewportAttributes()
 {
     clearRelativeZoomState();
-    emit m_viewportItem->experimental()->test()->viewportChanged();
+    Q_EMIT m_viewportItem->experimental()->test()->viewportChanged();
 }
 
 void PageViewportControllerClientQt::updateViewportController(const QPointF& trajectory)

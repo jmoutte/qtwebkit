@@ -121,9 +121,9 @@ LoadSpy::LoadSpy(QQuickWebView* webView)
 void LoadSpy::onLoadingChanged(QWebLoadRequest* loadRequest)
 {
     if (loadRequest->status() == QQuickWebView::LoadSucceededStatus)
-        emit loadSucceeded();
+        Q_EMIT loadSucceeded();
     else if (loadRequest->status() == QQuickWebView::LoadFailedStatus)
-        emit loadFailed();
+        Q_EMIT loadFailed();
 }
 
 LoadStartedCatcher::LoadStartedCatcher(QQuickWebView* webView)
