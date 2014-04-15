@@ -93,7 +93,7 @@ void TextureMapperLayerClientQt::syncLayers(Timer<TextureMapperLayerClientQt>*)
         return;
 
     if (rootLayer()->descendantsOrSelfHaveRunningAnimations() && !m_syncTimer.isActive())
-        m_syncTimer.startOneShot(1.0 / 60.0);
+        m_syncTimer.startOneShot(1.0 / 70.0);
 
     m_frame->pageAdapter->client->repaintViewport();
 }
