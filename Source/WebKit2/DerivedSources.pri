@@ -137,10 +137,6 @@ message_receiver_generator.depends = $$SCRIPTS
 message_receiver_generator.output_function = message_receiver_generator_output
 GENERATORS += message_receiver_generator
 
-fwheader_generator.commands = perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl $${SOURCE_DIR}/WebKit2 $${ROOT_BUILD_DIR}/Source/include qt
-fwheader_generator.depends = $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl
-generated_files.depends += fwheader_generator
-GENERATORS += fwheader_generator
 
 use?(SOUP) {
 
@@ -148,10 +144,15 @@ use?(SOUP) {
         WebSoupRequestManagerProxy.messages.in \
         WebSoupRequestManager.messages.in
 
-    soupfwheader_generator.commands = perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl $${SOURCE_DIR}/WebKit2 $${ROOT_BUILD_DIR}/Source/include soup
-    soupfwheader_generator.depends = $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl
-    generated_files.depends += soupfwheader_generator
-    GENERATORS += soupfwheader_generator
+    fwheader_generator.commands = perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl $${SOURCE_DIR}/WebKit2 $${ROOT_BUILD_DIR}/Source/include qt && perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl $${SOURCE_DIR}/WebKit2 $${ROOT_BUILD_DIR}/Source/include soup
+    fwheader_generator.depends = $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl
+    generated_files.depends += fwheader_generator
+    GENERATORS += fwheader_generator
+} else {
+    fwheader_generator.commands = perl $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl $${SOURCE_DIR}/WebKit2 $${ROOT_BUILD_DIR}/Source/include qt
+    fwheader_generator.depends = $${SOURCE_DIR}/WebKit2/Scripts/generate-forwarding-headers.pl
+    generated_files.depends += fwheader_generator
+    GENERATORS += fwheader_generator
 }
 
 for(header, WEBCORE_GENERATED_HEADERS_FOR_WEBKIT2) {
