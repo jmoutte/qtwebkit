@@ -84,7 +84,7 @@ void UrlLoader::loadNext()
 void UrlLoader::checkIfFinished()
 {
     if (!m_numFramesLoading)
-        emit pageLoadFinished();
+        Q_EMIT pageLoadFinished();
 }
 
 void UrlLoader::frameLoadStarted()
@@ -135,13 +135,13 @@ void UrlLoader::loadingChanged(QWebLoadRequest* loadRequest)
 {
     switch (loadRequest->status()) {
     case QQuickWebView::LoadStartedStatus:
-        emit loadStarted();
+        Q_EMIT loadStarted();
         break;
     case QQuickWebView::LoadStoppedStatus:
     case QQuickWebView::LoadSucceededStatus:
     case QQuickWebView::LoadFailedStatus:
     default:
-        emit loadFinished();
+        Q_EMIT loadFinished();
         break;
     }
 }

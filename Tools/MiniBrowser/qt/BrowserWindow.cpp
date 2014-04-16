@@ -120,13 +120,13 @@ void BrowserWindow::updateVisualMockTouchPoints(const QList<QTouchEvent::TouchPo
 {
     if (touchPoints.isEmpty()) {
         // Hide all touch indicator items.
-        foreach (QQuickItem* item, m_activeMockComponents.values())
+        Q_FOREACH (QQuickItem* item, m_activeMockComponents.values())
             item->setProperty("pressed", false);
 
         return;
     }
 
-    foreach (const QTouchEvent::TouchPoint& touchPoint, touchPoints) {
+    Q_FOREACH (const QTouchEvent::TouchPoint& touchPoint, touchPoints) {
         QQuickItem* mockTouchPointItem = m_activeMockComponents.value(touchPoint.id());
 
         if (!mockTouchPointItem) {
