@@ -71,16 +71,6 @@
 
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
-#ifndef GST_API_VERSION_1
-#include <gst/egl/egl.h>
-#endif
-
-struct _EGLDetails {
-    EGLDisplay display;
-    EGLContext context;
-    EGLSurface draw;
-    EGLSurface read;
-};
 
 GST_DEBUG_CATEGORY(webkit_media_player_debug);
 #define GST_CAT_DEFAULT webkit_media_player_debug
@@ -126,37 +116,6 @@ static gboolean mediaPlayerPrivateMuteChangeTimeoutCallback(MediaPlayerPrivateGS
     return FALSE;
 }
 
-#ifndef GST_API_VERSION_1
-static void mediaPlayerPrivateVideoPrerollCallback(GstElement* fakesink, GstBuffer* buffer, GstPad* pad, MediaPlayerPrivateGStreamerBase* player)
-{
-    player->updateEGLMemory(buffer);
-}
-
-static void mediaPlayerPrivateVideoBufferCallback(GstElement* fakesink, GstBuffer* buffer, GstPad* pad, MediaPlayerPrivateGStreamerBase* player)
-{
-    player->updateEGLMemory(buffer);
-}
-
-static gboolean mediaPlayerPrivateVideoEventCallback(GstPad* pad, GstEvent* event, MediaPlayerPrivateGStreamerBase* player)
-{
-    switch (GST_EVENT_TYPE (event)) {
-        case GST_EVENT_FLUSH_START:
-            player->queueFlushStart();
-            break;
-        case GST_EVENT_FLUSH_STOP:
-            player->queueFlushStop();
-            break;
-        case GST_EVENT_EOS:
-            player->queueObject(GST_MINI_OBJECT_CAST (gst_event_ref (event)), FALSE);
-            break;
-        default:
-            break;
-    }
-
-    return TRUE;
-}
-#endif
-
 static void mediaPlayerPrivateRepaintCallback(WebKitVideoSink*, GstBuffer *buffer, MediaPlayerPrivateGStreamerBase* playerPrivate)
 {
     playerPrivate->triggerRepaint(buffer);
@@ -179,27 +138,12 @@ MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* pl
     , m_repaintHandler(0)
     , m_volumeSignalHandler(0)
     , m_muteSignalHandler(0)
-#ifndef GST_API_VERSION_1
-    , m_queueFlushing(false)
-    , m_queueLastObject(NULL)
-    , m_currentEGLMemory(NULL)
-    , m_lastEGLMemory(NULL)
-    , m_egl_details(NULL)
-#endif
 {
 #if GLIB_CHECK_VERSION(2, 31, 0)
     m_bufferMutex = WTF::fastNew<GMutex>();
     g_mutex_init(m_bufferMutex);
 #else
     m_bufferMutex = g_mutex_new();
-#endif
-
-#ifndef GST_API_VERSION_1
-    m_queue = g_async_queue_new_full((GDestroyNotify) gst_mini_object_unref);
-    m_queueLock = WTF::fastNew<GMutex>();
-    g_mutex_init(m_queueLock);
-    m_queueCond = WTF::fastNew<GCond>();
-    g_cond_init(m_queueCond);
 #endif
 }
 
@@ -214,11 +158,6 @@ MediaPlayerPrivateGStreamerBase::~MediaPlayerPrivateGStreamerBase()
         g_signal_handler_disconnect(m_webkitVideoSink.get(), m_drainHandler);
         m_drainHandler = 0;
     }
-
-#ifndef GST_API_VERSION_1
-    g_signal_handlers_disconnect_by_func(m_webkitVideoSink.get(), reinterpret_cast<gpointer>(mediaPlayerPrivateVideoPrerollCallback), this);
-    g_signal_handlers_disconnect_by_func(m_webkitVideoSink.get(), reinterpret_cast<gpointer>(mediaPlayerPrivateVideoBufferCallback), this);
-#endif
 
 #if GLIB_CHECK_VERSION(2, 31, 0)
     g_mutex_clear(m_bufferMutex);
@@ -251,35 +190,9 @@ MediaPlayerPrivateGStreamerBase::~MediaPlayerPrivateGStreamerBase()
         m_muteSignalHandler = 0;
     }
 
-#ifndef GST_API_VERSION_1
-    if (m_egl_details) {
-        delete m_egl_details;
-        m_egl_details = NULL;
-    }
-#endif
-
 #if USE(NATIVE_FULLSCREEN_VIDEO)
     if (m_fullscreenVideoController)
         exitFullscreen();
-#endif
-
-#ifndef GST_API_VERSION_1
-    queueFlushStop();
-
-    if (m_queue) {
-        g_async_queue_unref (m_queue);
-    }
-
-    if (m_queueLock) {
-        g_mutex_clear(m_queueLock);
-        WTF::fastDelete(m_queueLock);
-    }
-
-    if (m_queueCond) {
-        g_cond_clear(m_queueCond);
-        WTF::fastDelete(m_queueCond);
-    }
-    LOG_MEDIA_MESSAGE("Player destroyed");
 #endif
 }
 
@@ -440,273 +353,6 @@ void MediaPlayerPrivateGStreamerBase::muteChanged()
     m_muteTimerHandler = g_timeout_add(0, reinterpret_cast<GSourceFunc>(mediaPlayerPrivateMuteChangeTimeoutCallback), this);
 }
 
-#ifndef GST_API_VERSION_1
-static gboolean mediaPlayerPrivateProcessQueueCallback (MediaPlayerPrivateGStreamerBase* player)
-{
-    player->triggerRepaint();
-    return FALSE;
-}
-
-void MediaPlayerPrivateGStreamerBase::updateEGLMemory (GstBuffer * buffer)
-{
-    g_mutex_lock (m_queueLock);
-    if (m_currentEGLMemory) {
-        gst_egl_image_memory_unref (m_currentEGLMemory);
-        m_currentEGLMemory = NULL;
-    }
-    if (GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_PREROLL) || m_queueFlushing) {
-        if (m_lastEGLMemory) {
-            gst_egl_image_memory_unref (m_lastEGLMemory);
-            m_lastEGLMemory = NULL;
-        }
-    } else {
-        GstEGLImageMemory *mem = (GstEGLImageMemory *) GST_BUFFER_DATA (buffer);
-        LOG_MEDIA_MESSAGE("Buffer %" GST_TIME_FORMAT " EGL Image: %p", GST_TIME_ARGS(GST_BUFFER_TIMESTAMP (buffer)), gst_egl_image_memory_get_image (mem));
-        m_currentEGLMemory = gst_egl_image_memory_ref (mem);
-        g_timeout_add_full (G_PRIORITY_HIGH, 0, (GSourceFunc) mediaPlayerPrivateProcessQueueCallback,
-            this, NULL);
-    }
-    g_mutex_unlock (m_queueLock);
-}
-
-gboolean MediaPlayerPrivateGStreamerBase::queueObject (GstMiniObject * obj, gboolean synchronous)
-{
-    gboolean res = TRUE;
-    g_mutex_lock (m_queueLock);
-    if (m_queueFlushing) {
-        gst_mini_object_unref (obj);
-        res = FALSE;
-        goto beach;
-    }
-
-    LOG_MEDIA_MESSAGE("queue object: %p", obj);
-    g_async_queue_push (m_queue, obj);
-
-    g_timeout_add_full (G_PRIORITY_HIGH, 0, (GSourceFunc) mediaPlayerPrivateProcessQueueCallback,
-        this, NULL);
-
-    if (synchronous) {
-        /* Waiting for object to be handled */
-        do {
-            g_cond_wait (m_queueCond, m_queueLock);
-        } while (!m_queueFlushing && m_queueLastObject != obj);
-    }
-
-beach:
-    g_mutex_unlock (m_queueLock);
-    LOG_MEDIA_MESSAGE("queue object: done");
-    return res;
-}
-
-void MediaPlayerPrivateGStreamerBase::dequeueObjects ()
-{
-    GstMiniObject *object = NULL;
-
-    g_mutex_lock (m_queueLock);
-    if (m_queueFlushing) {
-        g_cond_broadcast (m_queueCond);
-    } else if ((object = GST_MINI_OBJECT_CAST (g_async_queue_try_pop (m_queue)))) {
-        if (GST_IS_MESSAGE (object)) {
-            GstMessage *message = GST_MESSAGE_CAST (object);
-            if (gst_structure_has_name (message->structure, "need-egl-pool")) {
-                GstElement *element = GST_ELEMENT (GST_MESSAGE_SRC (message));
-                gint size, width, height;
-
-                gst_message_parse_need_egl_pool (message, &size, &width, &height);
-
-                if (g_object_class_find_property (G_OBJECT_GET_CLASS (element), "pool")) {
-                    GstEGLImageMemoryPool *pool = NULL;
-
-                    if ((pool = createEGLPool (size, width, height))) {
-                        g_object_set (element, "pool", pool, NULL);
-                    }
-                }
-            }
-            gst_message_unref (message);
-        } else if (GST_IS_EVENT (object)) {
-            GstEvent *event = GST_EVENT_CAST (object);
-
-            switch (GST_EVENT_TYPE (event)) {
-                case GST_EVENT_EOS:
-                    if (m_lastEGLMemory) {
-                        gst_egl_image_memory_unref (m_lastEGLMemory);
-                        m_lastEGLMemory = NULL;
-                        object = NULL;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            gst_event_unref (event);
-        }
-    }
-
-    if (object) {
-        m_queueLastObject = object;
-        LOG_MEDIA_MESSAGE("dequeued %p", object);
-        g_cond_broadcast (m_queueCond);
-    }
-    g_mutex_unlock (m_queueLock);
-}
-
-void MediaPlayerPrivateGStreamerBase::queueFlushStart()
-{
-    LOG_MEDIA_MESSAGE("Flush Start");
-    GstMiniObject *object = NULL;
-
-    g_mutex_lock (m_queueLock);
-    m_queueFlushing = true;
-    g_cond_broadcast (m_queueCond);
-    g_mutex_unlock (m_queueLock);
-
-    while ((object = GST_MINI_OBJECT_CAST (g_async_queue_try_pop (m_queue)))) {
-        gst_mini_object_unref (object);
-    }
-
-    g_mutex_lock (m_queueLock);
-    if (m_currentEGLMemory)
-        gst_egl_image_memory_unref (m_currentEGLMemory);
-    m_currentEGLMemory = NULL;
-
-    if (m_lastEGLMemory)
-        gst_egl_image_memory_unref (m_lastEGLMemory);
-    m_lastEGLMemory = NULL;
-
-    m_queueLastObject = NULL;
-    g_mutex_unlock (m_queueLock);
-}
-
-void MediaPlayerPrivateGStreamerBase::queueFlushStop()
-{
-    GstMiniObject *object = NULL;
-
-    g_mutex_lock (m_queueLock);
-    if (m_currentEGLMemory)
-        gst_egl_image_memory_unref (m_currentEGLMemory);
-    m_currentEGLMemory = NULL;
-
-    if (m_lastEGLMemory)
-        gst_egl_image_memory_unref (m_lastEGLMemory);
-    m_lastEGLMemory = NULL;
-
-    while ((object = GST_MINI_OBJECT_CAST (g_async_queue_try_pop (m_queue)))) {
-        gst_mini_object_unref (object);
-    }
-    m_queueLastObject = NULL;
-    m_queueFlushing = false;
-    g_mutex_unlock (m_queueLock);
-    LOG_MEDIA_MESSAGE("Flush Stop");
-}
-
-static void destroy_pool_resources (GstEGLImageMemoryPool * pool, gpointer user_data)
-{
-    gint i, size = gst_egl_image_memory_pool_get_size (pool);
-    EGLClientBuffer client_buffer;
-    EGLImageKHR image;
-    EGLint error;
-
-    /* reset error state */
-    while (glGetError() != GL_NO_ERROR);
-
-    GstEGLDisplay * gst_display = gst_egl_image_memory_pool_get_display (pool);
-    EGLDisplay display = gst_egl_display_get (gst_display);
-    gst_egl_display_unref (gst_display);
-
-    for (i = 0; i < size; i++) {
-        if (gst_egl_image_memory_pool_get_resources (pool, i, &client_buffer,
-                &image)) {
-            GLuint tid = (GLuint) client_buffer;
-            error = EGL_SUCCESS;
-
-            if (image != EGL_NO_IMAGE_KHR) {
-                eglDestroyImageKHR (display, image);
-                if ((error = eglGetError ()) != EGL_SUCCESS) {
-                    LOG_MEDIA_MESSAGE("eglDestroyImageKHR failed %x", error);
-                }
-            }
-
-            if (tid) {
-                error = GL_NO_ERROR;
-                glDeleteTextures (1, &tid);
-                if ((error = glGetError ()) != GL_NO_ERROR) {
-                    LOG_MEDIA_MESSAGE("glDeleteTextures failed %x", error);
-                }
-            }
-            LOG_MEDIA_MESSAGE("destroyed texture %x image %p", tid, image);
-        }
-    }
-}
-GstEGLImageMemoryPool* MediaPlayerPrivateGStreamerBase::createEGLPool(gint size, gint width, gint height)
-{
-    GstEGLImageMemoryPool *pool;
-    gint i;
-    EGLint error;
-    GstEGLDisplay *gst_display;
-
-    if (!width && !height) {
-      width = 320;
-      height = 200;
-    }
-
-    if (!m_egl_details) {
-        m_egl_details = new EGLDetails();
-        m_egl_details->display = eglGetCurrentDisplay();
-        m_egl_details->context = eglGetCurrentContext();
-        m_egl_details->draw = eglGetCurrentSurface(0);
-        m_egl_details->read = eglGetCurrentSurface(1);
-        LOG_MEDIA_MESSAGE("display %p context %p", m_egl_details->display, m_egl_details->context);
-    }
-
-    /* reset error state */
-    while (glGetError() != GL_NO_ERROR);
-
-    gst_display = gst_egl_display_new (m_egl_details->display, NULL, NULL);
-    pool = gst_egl_image_memory_pool_new (size, gst_display, this,
-        destroy_pool_resources);
-    gst_egl_display_unref (gst_display);
-
-    for (i = 0; i < size; i++) {
-        GLuint tid;
-        EGLImageKHR image;
-
-        error = GL_NO_ERROR;
-        glGenTextures (1, &tid);
-        if ((error = glGetError ()) != GL_NO_ERROR) {
-            LOG_MEDIA_MESSAGE("glGenTextures failed %x", error);
-            goto failed;
-        }
-
-        glBindTexture (GL_TEXTURE_2D, tid);
-        glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-            GL_UNSIGNED_BYTE, NULL);
-        if ((error = glGetError ()) != GL_NO_ERROR) {
-          LOG_MEDIA_MESSAGE("glTexImage2D failed %x", error);
-          goto failed;
-        }
-        /* Create EGL Image */
-        error = EGL_SUCCESS;
-        image = eglCreateImageKHR (m_egl_details->display, m_egl_details->context,
-            EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer) tid, 0);
-
-        if (image == EGL_NO_IMAGE_KHR) {
-          if ((error = eglGetError ()) != EGL_SUCCESS) {
-            LOG_MEDIA_MESSAGE("eglCreateImageKHR failed %x", error);
-          } else {
-            LOG_MEDIA_MESSAGE("eglCreateImageKHR failed");
-          }
-          goto failed;
-        }
-        LOG_MEDIA_MESSAGE("created texture %x image %p", tid, image);
-        gst_egl_image_memory_pool_set_resources (pool, i, (EGLClientBuffer) tid,
-            image);
-    }
-    return pool;
-
-failed:
-    gst_egl_image_memory_pool_unref (pool);
-    return NULL;
-}
-#endif // !GST_API_VERSION_1
 
 #if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
 #if USE(COORDINATED_GRAPHICS) && defined(GST_API_VERSION_1)
@@ -824,41 +470,7 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
 #endif
     return 0;
 }
-#else
-void MediaPlayerPrivateGStreamerBase::updateTexture()
-{
-#ifndef GST_API_VERSION_1
-    GstEGLImageMemory *mem;
-
-    mem = m_currentEGLMemory;
-
-    if (!mem)
-        return;
-
-    GLint texId = static_cast<const BitmapTextureGL*>(m_texture.get())->id();
-
-    GLint ctexId;
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &ctexId);
-
-    LOG_MEDIA_MESSAGE ("Upload EGL image: %p on texture %d current texture was: %d",
-        gst_egl_image_memory_get_image (mem), texId, ctexId);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture (GL_TEXTURE_2D, texId);
-    glEGLImageTargetTexture2DOES (GL_TEXTURE_2D, gst_egl_image_memory_get_image (mem));
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 #endif
-}
-#endif
-#endif
-
-#ifndef GST_API_VERSION_1
-void MediaPlayerPrivateGStreamerBase::triggerRepaint()
-{
-    client()->setPlatformLayerNeedsDisplay();
-    m_player->repaint();
-}
 #endif
 
 void MediaPlayerPrivateGStreamerBase::triggerRepaint(GstBuffer* buffer)
@@ -962,38 +574,6 @@ void MediaPlayerPrivateGStreamerBase::paintToTextureMapper(TextureMapper* textur
 #endif
     } else if (!m_isEndReached)
         client()->setPlatformLayerNeedsDisplay();
-#else
-
-#ifndef GST_API_VERSION_1
-    IntSize size = naturalSize();
-
-    if (!m_texture) {
-        m_texture = textureMapper->acquireTextureFromPool(size);
-        if (!m_texture) {
-            LOG_MEDIA_MESSAGE("failed acquiring texture");
-        }
-    }
-
-    dequeueObjects();
-
-    if (m_texture) {
-        g_mutex_lock (m_queueLock);
-        updateTexture();
-        TransformationMatrix mmatrix = modelViewMatrix;
-        mmatrix.setM22(-mmatrix.m22());
-        mmatrix.setM42(targetRect.maxY() + mmatrix.m42());
-        textureMapper->drawTexture(*m_texture.get(), targetRect, mmatrix, opacity);
-        if (m_lastEGLMemory) {
-            gst_egl_image_memory_unref (m_lastEGLMemory);
-            m_lastEGLMemory = NULL;
-        }
-        if (m_currentEGLMemory) {
-            m_lastEGLMemory = m_currentEGLMemory;
-            m_currentEGLMemory = NULL;
-        }
-        g_mutex_unlock (m_queueLock);
-    }
-#endif // GST_API_VERSION_1
 #endif
 }
 #endif
