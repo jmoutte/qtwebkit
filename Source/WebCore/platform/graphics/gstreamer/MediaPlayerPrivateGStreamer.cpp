@@ -115,19 +115,6 @@ static gboolean mediaPlayerPrivateAudioChangeTimeoutCallback(MediaPlayerPrivateG
     return FALSE;
 }
 
-static GstBusSyncReply mediaPlayerPrivateSyncMessageCallback (GstBus * bus, GstMessage * message, MediaPlayerPrivateGStreamer* player)
-{
-#ifndef GST_API_VERSION_1
-  if ((GST_MESSAGE_TYPE (message) == GST_MESSAGE_ELEMENT) &&
-      gst_structure_has_name (message->structure, "need-egl-pool")) {
-    player->queueObject (GST_MINI_OBJECT_CAST (gst_message_ref (message)), TRUE);
-  }
-#else
-  // TODO
-#endif
-  return GST_BUS_PASS;
-}
-
 #ifdef GST_API_VERSION_1
 static void setAudioStreamPropertiesCallback(GstChildProxy*, GObject* object, gchar*,
     MediaPlayerPrivateGStreamer* player)
@@ -411,10 +398,6 @@ bool MediaPlayerPrivateGStreamer::changePipelineState(GstState newState)
 
 void MediaPlayerPrivateGStreamer::prepareToPlay()
 {
-#ifndef GST_API_VERSION_1
-    dequeueObjects();
-#endif
-
     m_preload = MediaPlayer::Auto;
     if (m_delayingLoad) {
         m_delayingLoad = false;
@@ -439,11 +422,6 @@ void MediaPlayerPrivateGStreamer::pause()
     gst_element_get_state(m_playBin.get(), &currentState, &pendingState, 0);
     if (currentState < GST_STATE_PAUSED && pendingState <= GST_STATE_PAUSED)
         return;
-
-#ifndef GST_API_VERSION_1
-    // In case we were waiting for providing a pool dequeue.
-    dequeueObjects();
-#endif
 
     if (changePipelineState(GST_STATE_PAUSED))
         INFO_MEDIA_MESSAGE("Pause");
@@ -1359,15 +1337,8 @@ void MediaPlayerPrivateGStreamer::didEnd()
 
     if (!m_player->mediaPlayerClient()->mediaPlayerIsLooping()) {
         m_paused = true;
-#ifndef GST_API_VERSION_1
-        LOG_MEDIA_MESSAGE("Setting pipeline to NULL state");
-        queueFlushStart();
-#endif
         gst_element_set_state(m_playBin.get(), GST_STATE_NULL);
         m_downloadFinished = false;
-#ifndef GST_API_VERSION_1
-        queueFlushStop();
-#endif
     }
 }
 
@@ -1621,11 +1592,6 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     setStreamVolumeElement(GST_STREAM_VOLUME(m_playBin.get()));
 
     GRefPtr<GstBus> bus = webkitGstPipelineGetBus(GST_PIPELINE(m_playBin.get()));
-#ifdef GST_API_VERSION_1
-    gst_bus_set_sync_handler(bus.get(), (GstBusSyncHandler) mediaPlayerPrivateSyncMessageCallback, this, 0);
-#else
-    gst_bus_set_sync_handler(bus.get(), (GstBusSyncHandler) mediaPlayerPrivateSyncMessageCallback, this);
-#endif
     gst_bus_add_signal_watch(bus.get());
     g_signal_connect(bus.get(), "message", G_CALLBACK(mediaPlayerPrivateMessageCallback), this);
 
