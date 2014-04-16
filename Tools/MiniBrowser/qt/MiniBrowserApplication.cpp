@@ -133,7 +133,7 @@ bool MiniBrowserApplication::notify(QObject* target, QEvent* event)
     }
 
     if (event->type() == QEvent::KeyRelease && static_cast<QKeyEvent*>(event)->key() == Qt::Key_Control) {
-        foreach (int id, m_heldTouchPoints)
+        Q_FOREACH (int id, m_heldTouchPoints)
             if (m_touchPoints.contains(id) && !QGuiApplication::mouseButtons().testFlag(Qt::MouseButton(id))) {
                 m_touchPoints[id].setState(Qt::TouchPointReleased);
                 m_heldTouchPoints.remove(id);
@@ -277,7 +277,7 @@ bool MiniBrowserApplication::sendTouchEvent(BrowserWindow* browserWindow, QEvent
 
     const QList<QTouchEvent::TouchPoint>& currentTouchPoints = m_touchPoints.values();
     Qt::TouchPointStates touchPointStates = 0;
-    foreach (const QTouchEvent::TouchPoint& touchPoint, currentTouchPoints)
+    Q_FOREACH (const QTouchEvent::TouchPoint& touchPoint, currentTouchPoints)
         touchPointStates |= touchPoint.state();
 
     QTouchEvent event(type, device, Qt::NoModifier, touchPointStates, currentTouchPoints);
@@ -290,7 +290,7 @@ bool MiniBrowserApplication::sendTouchEvent(BrowserWindow* browserWindow, QEvent
         browserWindow->updateVisualMockTouchPoints(m_holdingControl ? currentTouchPoints : QList<QTouchEvent::TouchPoint>());
 
     // Get rid of touch-points that are no longer valid
-    foreach (const QTouchEvent::TouchPoint& touchPoint, currentTouchPoints) {
+    Q_FOREACH (const QTouchEvent::TouchPoint& touchPoint, currentTouchPoints) {
         if (touchPoint.state() ==  Qt::TouchPointReleased)
             m_touchPoints.remove(touchPoint.id());
     }
