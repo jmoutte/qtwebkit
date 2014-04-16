@@ -576,12 +576,14 @@ static GstStateChangeReturn webKitWebSrcChangeState(GstElement* element, GstStat
     case GST_STATE_CHANGE_READY_TO_PAUSED:
         GST_DEBUG_OBJECT(src, "READY->PAUSED");
         priv->startID = g_idle_add_full(G_PRIORITY_DEFAULT, (GSourceFunc) webKitWebSrcStart, gst_object_ref(src), (GDestroyNotify) gst_object_unref);
+        g_source_set_name_by_id(priv->startID, "[WebKit] webKitWebSrcStart");
         break;
     case GST_STATE_CHANGE_PAUSED_TO_READY:
         GST_DEBUG_OBJECT(src, "PAUSED->READY");
         // cancel pending sources
         removeTimeoutSources(src);
         priv->stopID = g_idle_add_full(G_PRIORITY_DEFAULT, (GSourceFunc) webKitWebSrcStop, gst_object_ref(src), (GDestroyNotify) gst_object_unref);
+        g_source_set_name_by_id(priv->stopID, "[WebKit] webKitWebSrcStop");
         break;
     default:
         break;
@@ -786,6 +788,7 @@ static void webKitWebSrcNeedDataCb(GstAppSrc*, guint length, gpointer userData)
     }
 
     priv->needDataID = g_idle_add_full(G_PRIORITY_DEFAULT, (GSourceFunc) webKitWebSrcNeedDataMainCb, gst_object_ref(src), (GDestroyNotify) gst_object_unref);
+    g_source_set_name_by_id(priv->needDataID, "[WebKit] webKitWebSrcNeedDataMainCb");
 }
 
 static gboolean webKitWebSrcEnoughDataMainCb(WebKitWebSrc* src)
@@ -821,6 +824,8 @@ static void webKitWebSrcEnoughDataCb(GstAppSrc*, gpointer userData)
     }
 
     priv->enoughDataID = g_idle_add_full(G_PRIORITY_DEFAULT, (GSourceFunc) webKitWebSrcEnoughDataMainCb, gst_object_ref(src), (GDestroyNotify) gst_object_unref);
+    g_source_set_name_by_id(priv->enoughDataID, "[WebKit] webKitWebSrcEnoughDataMainCb");
+
 }
 
 static gboolean webKitWebSrcSeekMainCb(WebKitWebSrc* src)
@@ -860,6 +865,8 @@ static gboolean webKitWebSrcSeekDataCb(GstAppSrc*, guint64 offset, gpointer user
     if (priv->seekID)
         g_source_remove(priv->seekID);
     priv->seekID = g_idle_add_full(G_PRIORITY_DEFAULT, (GSourceFunc) webKitWebSrcSeekMainCb, gst_object_ref(src), (GDestroyNotify) gst_object_unref);
+    g_source_set_name_by_id(priv->seekID, "[WebKit] webKitWebSrcSeekMainCb");
+
     return TRUE;
 }
 
