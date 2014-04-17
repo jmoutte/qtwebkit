@@ -47,6 +47,14 @@
 
 #if USE(SOUP)
 #include "ResourceHandle.h"
+#else
+#include <QDir>
+#include "CookieJarQt.h"
+#if QT_VERSION >= 0x050000
+#include <QStandardPaths>
+#else
+#include <QDesktopServices>
+#endif
 #endif
 
 #include "qwebelement_p.h"
@@ -115,6 +123,17 @@ Q_DECL_EXPORT void initializeWebCoreQt()
 
 #if USE(SOUP)
     WebCore::ResourceHandle::setIgnoreSSLErrors(true);
+#endif
+
+#if !USE(SOUP)
+    // initialize CookieJar
+#if QT_VERSION >= 0x050000
+    QString path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+#else
+    QString path = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#endif
+    QDir().mkpath(path);
+    SharedCookieJarQt::create(path);
 #endif
 
     initialized = true;
