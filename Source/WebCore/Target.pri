@@ -3159,21 +3159,6 @@ enable?(DATA_TRANSFER_ITEMS) {
         platform/qt/DataTransferItemListQt.cpp
 }
 
-enable?(DISCOVERY) {
-    HEADERS += \
-        Modules/discovery/NavigatorNetworkService.h \
-        Modules/discovery/NavigatorNetworkServiceError.h \
-        Modules/discovery/NavigatorNetworkServiceErrorCallback.h \
-        Modules/discovery/NavigatorNetworkServiceSuccessCallback.h \
-        Modules/discovery/NetworkService.h \
-        Modules/discovery/NetworkServices.h
-    SOURCES += \
-        Modules/discovery/NavigatorNetworkService.cpp \
-        Modules/discovery/NavigatorNetworkServiceError.cpp \
-        Modules/discovery/NetworkService.cpp \
-        Modules/discovery/NetworkServices.cpp
-}
-
 enable?(FILE_SYSTEM) {
     HEADERS += \
         Modules/filesystem/AsyncFileWriter.h \
