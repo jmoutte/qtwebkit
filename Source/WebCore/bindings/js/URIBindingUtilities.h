@@ -32,7 +32,7 @@
 #if ENABLE(DISCOVERY)
 
 #include "DOMRequestState.h"
-#include <bindings/ScriptValue.h>
+#include "ScriptValue.h"
 
 namespace WebCore {
 

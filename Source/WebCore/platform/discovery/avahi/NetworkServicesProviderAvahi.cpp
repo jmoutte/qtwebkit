@@ -38,6 +38,7 @@
 #include <wtf/ASCIICType.h>
 #include <wtf/text/CString.h>
 #include <wtf/text/WTFString.h>
+#include <stdio.h>
 
 namespace WebCore {
 

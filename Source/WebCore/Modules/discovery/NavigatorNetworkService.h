@@ -36,7 +36,7 @@
 #include "NavigatorNetworkServiceSuccessCallback.h"
 #include "ScriptExecutionContext.h"
 #include "Supplementable.h"
-#include <bindings/ScriptValue.h>
+#include "ScriptValue.h"
 #include <wtf/PassRefPtr.h>
 #include <wtf/RefPtr.h>
 #include <wtf/text/WTFString.h>
