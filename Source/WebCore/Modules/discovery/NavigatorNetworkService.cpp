@@ -125,7 +125,7 @@ NavigatorNetworkService* NavigatorNetworkService::from(Navigator* navigator)
 }
 
 void NavigatorNetworkService::getNetworkServices(Navigator* navigator,
-    Deprecated::ScriptValue& type,
+    ScriptValue& type,
     PassRefPtr<NavigatorNetworkServiceSuccessCallback> successCallback,
     PassRefPtr<NavigatorNetworkServiceErrorCallback> errorCallback,
     ExceptionCode& ec)
@@ -158,7 +158,7 @@ void NavigatorNetworkService::getNetworkServices(Navigator* navigator,
         navigatorService->m_networkServicesManager->update(successCallback, errorCallback, types);
 }
 
-Vector<String> NavigatorNetworkService::getRequestedTypes(ScriptExecutionContext *c, Deprecated::ScriptValue& type)
+Vector<String> NavigatorNetworkService::getRequestedTypes(ScriptExecutionContext *c, ScriptValue& type)
 {
     DOMRequestState requestState = DOMRequestState(c);
     return getURIVectorFromScriptValue(&requestState, type);

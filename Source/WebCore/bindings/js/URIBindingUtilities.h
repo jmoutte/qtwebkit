@@ -36,7 +36,7 @@
 
 namespace WebCore {
 
-Vector<String> getURIVectorFromScriptValue(DOMRequestState*, const Deprecated::ScriptValue&);
+Vector<String> getURIVectorFromScriptValue(DOMRequestState*, const ScriptValue&);
 
 }
 

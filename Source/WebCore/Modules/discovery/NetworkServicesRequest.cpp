@@ -42,7 +42,7 @@
 #include "ScriptExecutionContext.h"
 #include "SecurityOrigin.h"
 #include "SecurityPolicy.h"
-#include "URL.h"
+#include "KURL.h"
 
 
 namespace WebCore {
@@ -251,7 +251,7 @@ void NetworkServicesRequest::resetWhiteList() const
     NetworkServices* services = m_dispatchNetworkServices.get();
     
     for (size_t i = 0; i < services->length(); i++) {
-        const URL destination(URL(), services->item(i)->url());
+        const KURL destination(KURL(), services->item(i)->url());
         SecurityPolicy::removeOriginAccessWhitelistEntry(*m_scriptExecutionContext->securityOrigin(),
             destination.protocol(), destination.host(), 1);
     }
@@ -261,9 +261,9 @@ void NetworkServicesRequest::registerWhiteList() const
 {
     NetworkServices* services = m_dispatchNetworkServices.get();
     
-    /* make all service URL white-listed */
+    /* make all service KURL white-listed */
     for (size_t i = 0; i < services->length(); i++) {
-        const URL destination(URL(), services->item(i)->url());
+        const KURL destination(KURL(), services->item(i)->url());
         SecurityPolicy::addOriginAccessWhitelistEntry(*m_scriptExecutionContext->securityOrigin(),
             destination.protocol(), destination.host(), 1);
     }

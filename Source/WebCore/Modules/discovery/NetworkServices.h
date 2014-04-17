@@ -76,7 +76,7 @@ public:
     using RefCounted<NetworkServices>::ref;
     using RefCounted<NetworkServices>::deref;
 
-    virtual EventTargetInterface eventTargetInterface() const { return NetworkServicesEventTargetInterfaceType; }
+    virtual const WTF::AtomicString& interfaceName() const { return eventNames().interfaceForNetworkServices; }
     virtual ScriptExecutionContext* scriptExecutionContext() const { return ActiveDOMObject::scriptExecutionContext(); }
 
     // NetworkService handling
@@ -98,7 +98,7 @@ private:
     virtual void refEventTarget() { ref(); }
     virtual void derefEventTarget() { deref(); }
     virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
-    virtual EventTargetData& ensureEventTargetData() { return m_eventTargetData; }
+    virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }
     EventTargetData m_eventTargetData;
 
     NetworkServices* lastNetworkServices();

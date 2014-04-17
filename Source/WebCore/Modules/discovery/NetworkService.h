@@ -72,7 +72,7 @@ public:
     void setOnnotify(PassRefPtr<EventListener>);
 
     // EventTarget impl
-    virtual EventTargetInterface eventTargetInterface() const { return NetworkServiceEventTargetInterfaceType; }
+    virtual const WTF::AtomicString& interfaceName() const { return eventNames().interfaceForNetworkService; }
     virtual ScriptExecutionContext* scriptExecutionContext() const { return ActiveDOMObject::scriptExecutionContext(); }
 
     using RefCounted<NetworkService>::ref;
@@ -96,7 +96,7 @@ private:
     virtual void refEventTarget() { ref(); }
     virtual void derefEventTarget() { deref(); }
     virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
-    virtual EventTargetData& ensureEventTargetData() { return m_eventTargetData; }
+    virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }
     EventTargetData m_eventTargetData;
 
     NetworkServiceDescription m_desc;

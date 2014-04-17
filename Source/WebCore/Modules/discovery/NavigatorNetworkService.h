@@ -60,7 +60,7 @@ public:
     static const char* supplementName();
     static NavigatorNetworkService* from(Navigator*);
 
-    static void getNetworkServices(Navigator*, Deprecated::ScriptValue&, PassRefPtr<NavigatorNetworkServiceSuccessCallback>, PassRefPtr<NavigatorNetworkServiceErrorCallback>, ExceptionCode&);
+    static void getNetworkServices(Navigator*, ScriptValue&, PassRefPtr<NavigatorNetworkServiceSuccessCallback>, PassRefPtr<NavigatorNetworkServiceErrorCallback>, ExceptionCode&);
 
     // Schedule a callback. This should not cross threads (should be called on the same context thread).
     // FIXME: move this to a more generic place.
@@ -88,7 +88,7 @@ private:
         RefPtr<CBArg> m_callbackArg;
     };
 
-    static Vector<String> getRequestedTypes(ScriptExecutionContext *, Deprecated::ScriptValue&);
+    static Vector<String> getRequestedTypes(ScriptExecutionContext *, ScriptValue&);
 
     explicit NavigatorNetworkService();
 

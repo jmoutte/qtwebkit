@@ -50,8 +50,8 @@ public:
     void initNotifyEvent(const AtomicString& type, bool canBubble, bool cancelable, const String& data);
 
     String data() const { return m_data; }
-    
-    virtual EventInterface eventInterface() const { return NotifyEventInterfaceType; }
+
+    virtual const WTF::AtomicString& interfaceName() const { return eventNames().interfaceForNotifyEvent; }
 
 private:
     NotifyEvent();

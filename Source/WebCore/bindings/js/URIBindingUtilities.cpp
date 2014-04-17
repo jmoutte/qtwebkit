@@ -40,7 +40,7 @@ using namespace JSC;
 
 namespace WebCore {
 
-Vector<String> getURIVectorFromScriptValue(DOMRequestState* requestState, const Deprecated::ScriptValue& value)
+Vector<String> getURIVectorFromScriptValue(DOMRequestState* requestState, const ScriptValue& value)
 {
     return toNativeArray<String>(requestState->exec(), value.jsValue());
 }
