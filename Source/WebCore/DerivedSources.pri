@@ -680,6 +680,17 @@ enable?(MEDIA_SOURCE) {
     $$PWD/Modules/mediasource/SourceBufferList.idl
 }
 
+enable?(DISCOVERY) {
+  IDL_BINDINGS += \
+    $$PWD/Modules/discovery/NavigatorNetworkServiceErrorCallback.idl \
+    $$PWD/Modules/discovery/NavigatorNetworkServiceError.idl \
+    $$PWD/Modules/discovery/NavigatorNetworkService.idl \
+    $$PWD/Modules/discovery/NavigatorNetworkServiceSuccessCallback.idl \
+    $$PWD/Modules/discovery/NetworkService.idl \
+    $$PWD/Modules/discovery/NetworkServices.idl \
+    $$PWD/dom/NotifyEvent.idl
+}
+
 qtPrepareTool(QMAKE_MOC, moc)
 
 mathmlnames.output = MathMLNames.cpp
@@ -778,6 +789,7 @@ generateBindings.script = $$PWD/bindings/scripts/generate-bindings.pl
 generateBindings.commands = $$setEnvironmentVariable(SOURCE_ROOT, $$toSystemPath($$PWD)) && perl -I$$PWD/bindings/scripts $$generateBindings.script \
                             --defines \"$$javascriptFeatureDefines()\" \
                             --generator JS \
+                            --include Modules/discovery \
                             --include Modules/filesystem \
                             --include Modules/geolocation \
                             --include Modules/indexeddb \

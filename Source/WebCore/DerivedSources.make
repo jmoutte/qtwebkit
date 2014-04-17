@@ -270,6 +270,7 @@ BINDING_IDLS = \
     $(WebCore)/dom/NodeIterator.idl \
     $(WebCore)/dom/NodeList.idl \
     $(WebCore)/dom/Notation.idl \
+    $(WebCore)/dom/NotifyEvent.idl \
     $(WebCore)/dom/OverflowEvent.idl \
     $(WebCore)/dom/PageTransitionEvent.idl \
     $(WebCore)/dom/PopStateEvent.idl \

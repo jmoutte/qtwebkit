@@ -450,6 +450,7 @@ SOURCES += \
     dom/NodeRenderingTraversal.cpp \
     dom/NodeTraversal.cpp \
     dom/Notation.cpp \
+    dom/NotifyEvent.cpp \
     dom/OverflowEvent.cpp \
     dom/PageTransitionEvent.cpp \
     dom/PendingScript.cpp \
@@ -1655,6 +1656,7 @@ HEADERS += \
     dom/NodeRenderingTraversal.h \
     dom/NodeTraversal.h \
     dom/Notation.h \
+    dom/NotifyEvent.h \
     dom/OverflowEvent.h \
     dom/PageTransitionEvent.h \
     dom/Position.h \
@@ -4349,6 +4351,57 @@ use?(SOUP) {
         platform/network/qt/SocketStreamHandleQt.cpp
 
 
+}
+
+enable?(DISCOVERY) {
+    HEADERS += \
+        bindings/js/URIBindingUtilities.h \
+        Modules/discovery/NavigatorNetworkServiceErrorCallback.idl \
+        Modules/discovery/NavigatorNetworkServiceError.idl \
+        Modules/discovery/NavigatorNetworkService.idl \
+        Modules/discovery/NavigatorNetworkServiceSuccessCallback.idl \
+        Modules/discovery/NetworkService.idl \
+        Modules/discovery/NetworkServices.idl \
+        Modules/discovery/NavigatorNetworkServiceErrorCallback.h \
+        Modules/discovery/NavigatorNetworkServiceError.h \
+        Modules/discovery/NavigatorNetworkService.h \
+        Modules/discovery/NavigatorNetworkServiceSuccessCallback.h \
+        Modules/discovery/NetworkServiceDescription.h \
+        Modules/discovery/NetworkService.h \
+        Modules/discovery/NetworkServicesClient.h \
+        Modules/discovery/NetworkServicesController.h \
+        Modules/discovery/NetworkServices.h \
+        Modules/discovery/NetworkServicesManager.h \
+        Modules/discovery/NetworkServicesRequest.h \
+        platform/discovery/avahi/NetworkServicesProviderAvahi.h \
+        platform/discovery/gssdp/NetworkServicesProviderGssdp.h \
+        platform/discovery/gssdp/soup/SSDPResolver.h \
+        platform/discovery/gssdp/SSDPParser.h \
+        platform/discovery/gssdp/SSDPResolverBase.h \
+        platform/discovery/gupnp/NetworkServiceDescriptionGupnp.h \
+        platform/discovery/gupnp/NetworkServicesProviderGupnp.h \
+        platform/discovery/gupnp/UPnPDevice.h \
+        platform/discovery/NetworkServicesProviderBase.h \
+        platform/discovery/NetworkServicesProviderClient.h
+
+    SOURCES += \
+        bindings/js/URIBindingUtilities.cpp \
+        Modules/discovery/NavigatorNetworkService.cpp \
+        Modules/discovery/NetworkService.cpp \
+        Modules/discovery/NetworkServiceDescription.cpp \
+        Modules/discovery/NetworkServicesController.cpp \
+        Modules/discovery/NetworkServices.cpp \
+        Modules/discovery/NetworkServicesManager.cpp \
+        Modules/discovery/NetworkServicesRequest.cpp \
+        platform/discovery/gupnp/UPnPDevice.cpp \
+        platform/discovery/gupnp/NetworkServiceDescriptionGupnp.cpp \
+        platform/discovery/gupnp/NetworkServicesProviderGupnp.cpp \
+        platform/discovery/NetworkServicesProviderBase.cpp \
+        platform/discovery/gssdp/soup/SSDPResolverSoup.cpp \
+        platform/discovery/gssdp/SSDPParser.cpp \
+        platform/discovery/gssdp/NetworkServicesProviderGssdp.cpp \
+        platform/discovery/gssdp/SSDPResolverBase.cpp \
+        platform/discovery/avahi/NetworkServicesProviderAvahi.cpp
 }
 
 use?(GRAPHICS_SURFACE) {

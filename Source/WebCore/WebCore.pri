@@ -114,6 +114,22 @@ use?(SOUP) {
     INCLUDEPATH += $$SOURCE_DIR/platform/network/qt
 }
 
+enable?(DISCOVERY) {
+    use?(SOUP) {
+        INCLUDEPATH += \
+            $$SOURCE_DIR/platform/discovery/gssdp/soup \
+    }
+
+    INCLUDEPATH += \
+        $$SOURCE_DIR/Modules/discovery \
+        $$SOURCE_DIR/platform/discovery \
+        $$SOURCE_DIR/platform/discovery/avahi \
+        $$SOURCE_DIR/platform/discovery/gssdp \
+        $$SOURCE_DIR/platform/discovery/gupnp
+
+    PKGCONFIG += gupnp-1.0 gssdp-1.0 avahi-client avahi-glib avahi-gobject
+}
+
 enable?(XSLT) {
     use?(LIBXML2) {
         mac {
