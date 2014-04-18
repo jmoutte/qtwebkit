@@ -4382,7 +4382,8 @@ enable?(DISCOVERY) {
         platform/discovery/gupnp/NetworkServicesProviderGupnp.h \
         platform/discovery/gupnp/UPnPDevice.h \
         platform/discovery/NetworkServicesProviderBase.h \
-        platform/discovery/NetworkServicesProviderClient.h
+        platform/discovery/NetworkServicesProviderClient.h \
+        platform/glib/NetworkServicesProviderGlib.h
 
     SOURCES += \
         bindings/js/URIBindingUtilities.cpp \
@@ -4401,7 +4402,8 @@ enable?(DISCOVERY) {
         platform/discovery/gssdp/SSDPParser.cpp \
         platform/discovery/gssdp/NetworkServicesProviderGssdp.cpp \
         platform/discovery/gssdp/SSDPResolverBase.cpp \
-        platform/discovery/avahi/NetworkServicesProviderAvahi.cpp
+        platform/discovery/avahi/NetworkServicesProviderAvahi.cpp \
+        platform/glib/NetworkServicesProviderGlib.cpp
 }
 
 use?(GRAPHICS_SURFACE) {

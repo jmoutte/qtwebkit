@@ -41,6 +41,7 @@ SOURCES += \
     $$PWD/qt/WebCoreSupport/InitWebCoreQt.cpp \
     $$PWD/qt/WebCoreSupport/InspectorClientQt.cpp \
     $$PWD/qt/WebCoreSupport/InspectorServerQt.cpp \
+    $$PWD/qt/WebCoreSupport/NetworkServicesClientQt.cpp \
     $$PWD/qt/WebCoreSupport/NotificationPresenterClientQt.cpp \
     $$PWD/qt/WebCoreSupport/PlatformStrategiesQt.cpp \
     $$PWD/qt/WebCoreSupport/PopupMenuQt.cpp \
@@ -79,6 +80,7 @@ HEADERS += \
     $$PWD/qt/WebCoreSupport/InitWebCoreQt.h \
     $$PWD/qt/WebCoreSupport/InspectorClientQt.h \
     $$PWD/qt/WebCoreSupport/InspectorServerQt.h \
+    $$PWD/qt/WebCoreSupport/NetworkServicesClientQt.h \
     $$PWD/qt/WebCoreSupport/NotificationPresenterClientQt.h \
     $$PWD/qt/WebCoreSupport/PlatformStrategiesQt.h \
     $$PWD/qt/WebCoreSupport/PopupMenuQt.h \

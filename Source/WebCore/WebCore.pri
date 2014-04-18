@@ -125,7 +125,8 @@ enable?(DISCOVERY) {
         $$SOURCE_DIR/platform/discovery \
         $$SOURCE_DIR/platform/discovery/avahi \
         $$SOURCE_DIR/platform/discovery/gssdp \
-        $$SOURCE_DIR/platform/discovery/gupnp
+        $$SOURCE_DIR/platform/discovery/gupnp \
+        $$SOURCE_DIR/platform/glib
 
     PKGCONFIG += gupnp-1.0 gssdp-1.0 avahi-client avahi-glib avahi-gobject
 }

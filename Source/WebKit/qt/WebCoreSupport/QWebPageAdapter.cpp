@@ -112,6 +112,10 @@
 #include "GLSharedContext.h"
 #endif
 
+#if ENABLE(DISCOVERY)
+#include "NetworkServicesClientQt.h"
+#endif
+
 #if !USE(SOUP)
 #include "CookieJarQt.h"
 #endif
@@ -282,6 +286,10 @@ void QWebPageAdapter::initializeWebCorePage()
 
 #if ENABLE(NOTIFICATIONS) || ENABLE(LEGACY_NOTIFICATIONS)
     WebCore::provideNotification(page, NotificationPresenterClientQt::notificationPresenter());
+#endif
+
+#if ENABLE(DISCOVERY)
+    WebCore::provideNetworkServicesTo(page, new NetworkServicesClientQt(this));
 #endif
 
     history.d = new QWebHistoryPrivate(static_cast<WebCore::BackForwardListImpl*>(page->backForwardList()));
