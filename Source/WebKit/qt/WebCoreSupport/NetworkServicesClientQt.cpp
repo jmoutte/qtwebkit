@@ -33,6 +33,7 @@ namespace WebCore {
 NetworkServicesClientQt::NetworkServicesClientQt(const QWebPageAdapter* page)
     : m_webPage(page)
     , m_provider(this)
+    , m_request(0)
 {
 }
 
@@ -77,8 +78,9 @@ void NetworkServicesClientQt::subscribeEvent(const String& id)
     m_provider.subscribeEvent(id);
 }
 
-void NetworkServicesClientQt::notifyDiscoveryStarted(PassRefPtr<NetworkServicesRequest>)
+void NetworkServicesClientQt::notifyDiscoveryStarted(PassRefPtr<NetworkServicesRequest> request)
 {
+    m_request = request;
     notImplemented();
 }
 
@@ -86,6 +88,8 @@ void NetworkServicesClientQt::notifyDiscoveryFinished()
 {
     WebCore::Page* page = m_webPage->page;
     WebCore::NetworkServicesController::from(page)->discoveryFinished();
+    m_request->setAllowed();
+    m_request = 0;
 }
 
 void NetworkServicesClientQt::notifyNetworkServiceChanged(NetworkServiceDescription* description)

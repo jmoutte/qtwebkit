@@ -65,6 +65,8 @@ private:
 
     const QWebPageAdapter* m_webPage;
     NetworkServicesProviderGlib m_provider;
+
+    RefPtr<NetworkServicesRequest> m_request;
 };
 
 } // namespace WebCore
