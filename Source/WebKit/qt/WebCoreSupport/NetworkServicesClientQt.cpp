@@ -84,7 +84,8 @@ void NetworkServicesClientQt::notifyDiscoveryStarted(PassRefPtr<NetworkServicesR
 
 void NetworkServicesClientQt::notifyDiscoveryFinished()
 {
-    notImplemented();
+    WebCore::Page* page = m_webPage->page;
+    WebCore::NetworkServicesController::from(page)->discoveryFinished();
 }
 
 void NetworkServicesClientQt::notifyNetworkServiceChanged(NetworkServiceDescription* description)
