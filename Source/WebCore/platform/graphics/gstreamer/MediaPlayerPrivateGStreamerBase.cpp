@@ -64,8 +64,8 @@
 #if USE(OPENGL_ES_2)
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#if GST_CHECK_VERSION(1, 1, 2)
-#include <gst/egl/egl.h>
+#if GST_CHECK_VERSION(1, 3, 0)
+#include <gst/gl/egl/gsteglimagememory.h>
 #endif
 #endif
 
@@ -386,21 +386,6 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
 
     RefPtr<BitmapTexture> texture = textureMapper->acquireTextureFromPool(size);
 
-#if GST_CHECK_VERSION(1, 1, 0)
-    GstVideoGLTextureUploadMeta* meta;
-    if ((meta = gst_buffer_get_video_gl_texture_upload_meta(m_buffer))) {
-        if (meta->n_textures == 1) { // BRGx & BGRA formats use only one texture.
-            const BitmapTextureGL* textureGL = static_cast<const BitmapTextureGL*>(texture.get());
-            guint ids[4] = { textureGL->id(), 0, 0, 0 };
-
-            if (gst_video_gl_texture_upload_meta_upload(meta, ids)) {
-                g_mutex_unlock(m_bufferMutex);
-                return texture;
-            }
-        }
-    }
-#endif
-
 #if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
     GstMemory *mem;
     if (gst_buffer_n_memory (m_buffer) >= 1) {
@@ -451,6 +436,22 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
     }
 
 #else
+
+#if GST_CHECK_VERSION(1, 1, 0)
+    GstVideoGLTextureUploadMeta* meta;
+    if ((meta = gst_buffer_get_video_gl_texture_upload_meta(m_buffer))) {
+        LOG_MEDIA_MESSAGE("using texture upload meta");
+        if (meta->n_textures == 1) { // BRGx & BGRA formats use only one texture.
+            const BitmapTextureGL* textureGL = static_cast<const BitmapTextureGL*>(texture.get());
+            guint ids[4] = { textureGL->id(), 0, 0, 0 };
+
+            if (gst_video_gl_texture_upload_meta_upload(meta, ids)) {
+                g_mutex_unlock(m_bufferMutex);
+                return texture;
+            }
+        }
+    }
+#endif
 
     const void* srcData = 0;
 #ifdef GST_API_VERSION_1

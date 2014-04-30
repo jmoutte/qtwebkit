@@ -199,7 +199,7 @@ use?(GSTREAMER) {
     } else {
         DEFINES += GST_API_VERSION=1.0
         DEFINES += GST_API_VERSION_1
-        PKGCONFIG += gstreamer-1.0 gstreamer-app-1.0 gstreamer-base-1.0 gstreamer-pbutils-1.0 gstreamer-plugins-base-1.0 gstreamer-video-1.0 gstreamer-audio-1.0 gstreamer-egl-1.0
+        PKGCONFIG += gstreamer-1.0 gstreamer-app-1.0 gstreamer-base-1.0 gstreamer-pbutils-1.0 gstreamer-plugins-base-1.0 gstreamer-video-1.0 gstreamer-audio-1.0 gstreamer-gl-1.0
     }
 }
 
