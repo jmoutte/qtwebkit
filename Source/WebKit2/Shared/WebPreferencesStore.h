@@ -62,6 +62,12 @@ namespace WebKit {
 #define DEFAULT_HIDDEN_PAGE_CSS_ANIMATION_SUSPENSION_ENABLED false
 #endif
 
+#if PLATFORM(QT) && USE(GRAPHICS_SURFACE) && ENABLE(ACCELERATED_2D_CANVAS)
+#define DEFAULT_ACCELERATED_2D_CANVAS_ENABLED true
+#else
+#define DEFAULT_ACCELERATED_2D_CANVAS_ENABLED false
+#endif
+
 #define FOR_EACH_WEBKIT_BOOL_PREFERENCE(macro) \
     macro(JavaScriptEnabled, javaScriptEnabled, Bool, bool, true) \
     macro(JavaScriptMarkupEnabled, javaScriptMarkupEnabled, Bool, bool, true) \
@@ -91,7 +97,7 @@ namespace WebKit {
     macro(TiledScrollingIndicatorVisible, tiledScrollingIndicatorVisible, Bool, bool, false) \
     macro(CSSCustomFilterEnabled, cssCustomFilterEnabled, Bool, bool, true) \
     macro(WebGLEnabled, webGLEnabled, Bool, bool, false) \
-    macro(Accelerated2dCanvasEnabled, accelerated2dCanvasEnabled, Bool, bool, false) \
+    macro(Accelerated2dCanvasEnabled, accelerated2dCanvasEnabled, Bool, bool, DEFAULT_ACCELERATED_2D_CANVAS_ENABLED) \
     macro(CSSRegionsEnabled, cssRegionsEnabled, Bool, bool, true) \
     macro(CSSCompositingEnabled, cssCompositingEnabled, Bool, bool, true) \
     macro(CSSGridLayoutEnabled, cssGridLayoutEnabled, Bool, bool, false) \

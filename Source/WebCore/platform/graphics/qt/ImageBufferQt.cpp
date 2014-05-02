@@ -56,6 +56,7 @@
 #include <private/qopenglpaintengine_p.h>
 #include "OpenGLShims.h"
 #include "GLSharedContext.h"
+#include "GraphicsSurface.h"
 #endif
 
 namespace WebCore {
@@ -114,7 +115,11 @@ struct ImageBufferDataPrivateAccelerated : public TextureMapperPlatformLayer, pu
     PassRefPtr<Image> copyImage(BackingStoreCopy copyBehavior) const;
     bool isAccelerated() const { return true; }
     PlatformLayer* platformLayer() { return this; }
-
+#if USE(GRAPHICS_SURFACE)
+    virtual IntSize platformLayerSize() const;
+    virtual GraphicsSurfaceToken graphicsSurfaceToken() const;
+    virtual uint32_t copyToGraphicsSurface();
+#endif
     void commitChanges() const;
     void draw(GraphicsContext* destContext, ColorSpace styleColorSpace, const FloatRect& destRect,
               const FloatRect& srcRect, CompositeOperator op, BlendMode blendMode, bool useLowQualityScale,
@@ -129,6 +134,9 @@ struct ImageBufferDataPrivateAccelerated : public TextureMapperPlatformLayer, pu
     mutable bool m_fboDirty;
     OwnPtr<QOpenGLFramebufferObject> m_fbo;
     OwnPtr<QOpenGLPaintDevice> m_pdev;
+#if USE(GRAPHICS_SURFACE)
+    mutable RefPtr<GraphicsSurface> m_graphicsSurface;
+#endif
 };
 
 class ImageBufferPaintDevice : public QOpenGLPaintDevice
@@ -176,6 +184,43 @@ PassRefPtr<Image> ImageBufferDataPrivateAccelerated::copyImage(BackingStoreCopy 
 {
     return StillImage::create(QPixmap::fromImage(toQImage()));
 }
+
+#if USE(GRAPHICS_SURFACE)
+IntSize ImageBufferDataPrivateAccelerated::platformLayerSize() const
+{
+    return IntSize(m_fbo->size());
+}
+
+GraphicsSurfaceToken ImageBufferDataPrivateAccelerated::graphicsSurfaceToken() const
+{
+    if (!m_graphicsSurface) {
+        QOpenGLContext *previousContext = QOpenGLContext::currentContext();
+        GLBufferContext::getContext()->makeCurrentIfNeeded();
+
+        GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing;
+        m_graphicsSurface = GraphicsSurface::create(m_fbo->size(), flags, QOpenGLContext::currentContext());
+
+        previousContext->makeCurrent(previousContext->surface());
+    }
+
+    return m_graphicsSurface->exportToken();
+}
+
+uint32_t ImageBufferDataPrivateAccelerated::copyToGraphicsSurface()
+{
+    QOpenGLContext *previousContext = QOpenGLContext::currentContext();
+    GLBufferContext::getContext()->makeCurrentIfNeeded();
+    if (!m_graphicsSurface) {
+        GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing;
+        m_graphicsSurface = GraphicsSurface::create(m_fbo->size(), flags, QOpenGLContext::currentContext());
+    }
+
+    commitChanges();
+    m_graphicsSurface->copyFromTexture(m_fbo->texture(), IntRect(IntPoint(), m_fbo->size()));
+    previousContext->makeCurrent(previousContext->surface());
+    return m_graphicsSurface->frontBuffer();
+}
+#endif
 
 void ImageBufferDataPrivateAccelerated::commitChanges() const
 {
