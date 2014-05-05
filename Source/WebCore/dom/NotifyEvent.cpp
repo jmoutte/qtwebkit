@@ -2,6 +2,8 @@
 #include "config.h"
 #include "NotifyEvent.h"
 
+#if ENABLE(DISCOVERY)
+
 #include "EventNames.h"
 
 namespace WebCore {
@@ -28,3 +30,5 @@ void NotifyEvent::initNotifyEvent(const AtomicString& type, bool canBubble, bool
 }
 
 } // namespace WebCore
+
+#endif // ENABLE(DISCOVERY)

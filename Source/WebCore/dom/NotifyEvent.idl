@@ -1,5 +1,7 @@
 
-interface NotifyEvent : Event {
+[
+    Conditional=DISCOVERY,
+] interface NotifyEvent : Event {
 
     readonly attribute DOMString data;
 

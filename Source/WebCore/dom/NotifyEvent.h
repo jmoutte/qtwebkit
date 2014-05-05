@@ -29,6 +29,8 @@
 #ifndef NotifyEvent_h
 #define NotifyEvent_h
 
+#if ENABLE(DISCOVERY)
+
 #include "Event.h"
 
 namespace WebCore {
@@ -62,5 +64,7 @@ private:
 };
 
 } // namespace WebCore
+
+#endif // ENABLE(DISCOVERY)
 
 #endif // NotifyEvent_h

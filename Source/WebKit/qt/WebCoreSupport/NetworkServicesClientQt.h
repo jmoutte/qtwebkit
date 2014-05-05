@@ -22,6 +22,8 @@
 #ifndef NetworkServicesClientQt_h
 #define NetworkServicesClientQt_h
 
+#if ENABLE(DISCOVERY)
+
 #include "NetworkServiceDescription.h"
 #include "NetworkServicesClient.h"
 #include "NetworkServicesProviderClient.h"
@@ -70,5 +72,7 @@ private:
 };
 
 } // namespace WebCore
+
+#endif // ENABLE(DISCOVERY)
 
 #endif // NetworkServicesClientQt_h
