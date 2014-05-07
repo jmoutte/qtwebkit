@@ -32,6 +32,7 @@
 QT_BEGIN_NAMESPACE
 class QQuickView;
 class QEventLoop;
+class QEvent;
 QT_END_NAMESPACE
 class QQuickWebView;
 typedef QQuickWebView* PlatformWKView;
