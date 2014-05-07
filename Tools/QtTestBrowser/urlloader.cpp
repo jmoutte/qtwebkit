@@ -82,7 +82,7 @@ void UrlLoader::loadNext()
 void UrlLoader::checkIfFinished()
 {
     if (!m_numFramesLoading)
-        emit pageLoadFinished();
+        Q_EMIT pageLoadFinished();
 }
 
 void UrlLoader::frameLoadStarted()

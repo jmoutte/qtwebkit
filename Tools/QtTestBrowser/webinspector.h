@@ -43,12 +43,12 @@ protected:
     void showEvent(QShowEvent* event)
     {
         QWebInspector::showEvent(event);
-        emit visibleChanged(true);
+        Q_EMIT visibleChanged(true);
     }
     void hideEvent(QHideEvent* event)
     {
         QWebInspector::hideEvent(event);
-        emit visibleChanged(false);
+        Q_EMIT visibleChanged(false);
     }
 };
 

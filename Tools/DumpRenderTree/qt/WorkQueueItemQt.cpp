@@ -38,7 +38,7 @@ QWebFrame* findFrameNamed(const QString& frameName, QWebFrame* frame)
     if (frame->frameName() == frameName)
         return frame;
 
-    foreach (QWebFrame* childFrame, frame->childFrames())
+    Q_FOREACH (QWebFrame* childFrame, frame->childFrames())
         if (QWebFrame* f = findFrameNamed(frameName, childFrame))
             return f;
 

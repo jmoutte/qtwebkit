@@ -305,7 +305,7 @@ int main(int argc, char **argv)
     }
 
     LauncherWindow* window = 0;
-    foreach (QString url, urls) {
+    Q_FOREACH (QString url, urls) {
         LauncherWindow* newWindow;
         if (!window)
             newWindow = window = new LauncherWindow(&windowOptions);

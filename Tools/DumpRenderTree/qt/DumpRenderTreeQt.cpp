@@ -94,7 +94,7 @@ void NetworkAccessManager::sslErrorsEncountered(QNetworkReply* reply, const QLis
         bool ignore = true;
 
         // Accept any HTTPS certificate.
-        foreach (const QSslError& error, errors) {
+        Q_FOREACH (const QSslError& error, errors) {
             if (error.error() < QSslError::UnableToGetIssuerCertificate || error.error() > QSslError::HostNameMismatch) {
                 ignore = false;
                 break;
@@ -261,7 +261,7 @@ void WebPage::permissionSet(QWebPage::Feature feature)
     case Geolocation:
         {
         Q_ASSERT(m_drt->testRunner()->isGeolocationPermissionSet());
-        foreach (QWebFrame* frame, m_pendingGeolocationRequests)
+        Q_FOREACH (QWebFrame* frame, m_pendingGeolocationRequests)
             if (m_drt->testRunner()->geolocationPermission())
                 setFeaturePermission(frame, feature, PermissionGrantedByUser);
             else
@@ -650,7 +650,7 @@ void DumpRenderTree::readLine()
         m_stdin->open(stdin, QFile::ReadOnly);
 
         if (!m_stdin->isReadable()) {
-            emit quit();
+            Q_EMIT quit();
             return;
         }
     }
@@ -658,7 +658,7 @@ void DumpRenderTree::readLine()
     QByteArray line = m_stdin->readLine().trimmed();
 
     if (line.isEmpty()) {
-        emit quit();
+        Q_EMIT quit();
         return;
     }
 
@@ -692,7 +692,7 @@ void DumpRenderTree::processArgsLine(const QStringList &args)
 void DumpRenderTree::loadNextTestInStandAloneMode()
 {
     if (m_standAloneModeTestList.isEmpty()) {
-        emit quit();
+        Q_EMIT quit();
         return;
     }
     QString first = m_standAloneModeTestList.takeFirst();
@@ -724,7 +724,7 @@ void DumpRenderTree::processLine(const QString &input)
                 fi = QFileInfo(currentDir, pathOrURL.prepend(QLatin1String("LayoutTests/")));
 
             if (!fi.exists()) {
-                emit ready();
+                Q_EMIT ready();
                 return;
             }
         }
@@ -739,7 +739,7 @@ void DumpRenderTree::processLine(const QString &input)
 
 void DumpRenderTree::closeRemainingWindows()
 {
-    foreach (QObject* widget, windows)
+    Q_FOREACH (QObject* widget, windows)
         delete widget;
     windows.clear();
 }
@@ -893,7 +893,7 @@ static QString dumpHistoryItem(const QWebHistoryItem& item, int indent, bool cur
     result.append(QLatin1String("\n"));
 
     QMap<QString, QWebHistoryItem> children = DumpRenderTreeSupportQt::getChildHistoryItems(item);
-    foreach (QWebHistoryItem item, children)
+    Q_FOREACH (QWebHistoryItem item, children)
         result += dumpHistoryItem(item, 12, false);
 
     return result;
@@ -912,7 +912,7 @@ QString DumpRenderTree::dumpBackForwardList(QWebPage* page)
 
     int maxItems = history->maximumItemCount();
 
-    foreach (const QWebHistoryItem item, history->backItems(maxItems)) {
+    Q_FOREACH (const QWebHistoryItem item, history->backItems(maxItems)) {
         if (!item.isValid())
             continue;
         result.append(dumpHistoryItem(item, 8, false));
@@ -922,7 +922,7 @@ QString DumpRenderTree::dumpBackForwardList(QWebPage* page)
     if (item.isValid())
         result.append(dumpHistoryItem(item, 8, true));
 
-    foreach (const QWebHistoryItem item, history->forwardItems(maxItems)) {
+    Q_FOREACH (const QWebHistoryItem item, history->forwardItems(maxItems)) {
         if (!item.isValid())
             continue;
         result.append(dumpHistoryItem(item, 8, false));
@@ -984,7 +984,7 @@ void DumpRenderTree::dump()
 
         if (m_jscController->dumpBackForwardList()) {
             fprintf(stdout, "%s", dumpBackForwardList(webPage()).toUtf8().constData());
-            foreach (QObject* widget, windows) {
+            Q_FOREACH (QObject* widget, windows) {
                 QWebPage* page = qobject_cast<QWebPage*>(widget->findChild<QWebPage*>());
                 fprintf(stdout, "%s", dumpBackForwardList(page).toUtf8().constData());
             }
@@ -1078,7 +1078,7 @@ void DumpRenderTree::dump()
     fflush(stdout);
     fflush(stderr);
 
-     emit ready();
+     Q_EMIT ready();
 }
 
 void DumpRenderTree::titleChanged(const QString &s)
@@ -1210,7 +1210,7 @@ QList<WebPage*> DumpRenderTree::getAllPages() const
 {
     QList<WebPage*> pages;
     pages.append(m_page);
-    foreach (QObject* widget, windows) {
+    Q_FOREACH (QObject* widget, windows) {
         if (WebPage* page = widget->findChild<WebPage*>())
             pages.append(page);
     }

@@ -95,7 +95,7 @@ void TestRunnerQt::reset()
     removeAllWebNotificationPermissions();
     // The default state for DRT is to block third-party cookies, mimicing the Mac port
     setAlwaysAcceptCookies(false);
-    emit hidePage();
+    Q_EMIT hidePage();
 }
 
 void TestRunnerQt::dumpNotifications()
@@ -109,7 +109,7 @@ void TestRunnerQt::processWork()
 
     // if we didn't start a new load, then we finished all the commands, so we're ready to dump state
     if (WorkQueue::shared()->processWork() && !shouldWaitUntilDone()) {
-        emit done();
+        Q_EMIT done();
         m_hasDumped = true;
     }
 }
@@ -141,7 +141,7 @@ void TestRunnerQt::maybeDump(bool /*success*/)
     if (WorkQueue::shared()->count())
         QTimer::singleShot(0, this, SLOT(processWork()));
     else if (!shouldWaitUntilDone()) {
-        emit done();
+        Q_EMIT done();
         m_hasDumped = true;
     }
 }
@@ -194,7 +194,7 @@ void TestRunnerQt::notifyDone()
     if (!m_loadFinished)
         return;
 
-    emit done();
+    Q_EMIT done();
 
     // FIXME: investigate why always resetting these result in timeouts
     m_hasDumped = true;
@@ -236,7 +236,7 @@ void TestRunnerQt::simulateLegacyWebNotificationClick(const QString& title)
 void TestRunnerQt::display()
 {
     DumpRenderTreeSupportQt::setTrackRepaintRects(m_topLoadingFrame->handle(), true);
-    emit showPage();
+    Q_EMIT showPage();
 }
 
 void TestRunnerQt::displayInvalidatedRegion()
@@ -694,7 +694,7 @@ void TestRunnerQt::setIconDatabaseEnabled(bool enable)
 void TestRunnerQt::setMockDeviceOrientation(bool canProvideAlpha, double alpha, bool canProvideBeta, double beta, bool canProvideGamma, double gamma)
 {
     QList<WebPage*> pages = m_drt->getAllPages();
-    foreach (WebPage* page, pages)
+    Q_FOREACH (WebPage* page, pages)
         DumpRenderTreeSupportQt::setMockDeviceOrientation(page->handle(), canProvideAlpha, alpha, canProvideBeta, beta, canProvideGamma, gamma);
 }
 
@@ -702,7 +702,7 @@ void TestRunnerQt::setGeolocationPermission(bool allow)
 {
     setGeolocationPermissionCommon(allow);
     QList<WebPage*> pages = m_drt->getAllPages();
-    foreach (WebPage* page, pages)
+    Q_FOREACH (WebPage* page, pages)
         DumpRenderTreeSupportQt::setMockGeolocationPermission(page->handle(), allow);
 }
 
@@ -710,7 +710,7 @@ int TestRunnerQt::numberOfPendingGeolocationPermissionRequests()
 {
     int pendingPermissionCount = 0;
     QList<WebPage*> pages = m_drt->getAllPages();
-    foreach (WebPage* page, pages)
+    Q_FOREACH (WebPage* page, pages)
         pendingPermissionCount += DumpRenderTreeSupportQt::numberOfPendingGeolocationPermissionRequests(page->handle());
 
     return pendingPermissionCount;
@@ -725,14 +725,14 @@ void TestRunnerQt::setGeolocationPermissionCommon(bool allow)
 void TestRunnerQt::setMockGeolocationPositionUnavailableError(const QString& message)
 {
     QList<WebPage*> pages = m_drt->getAllPages();
-    foreach (WebPage* page, pages)
+    Q_FOREACH (WebPage* page, pages)
         DumpRenderTreeSupportQt::setMockGeolocationPositionUnavailableError(page->handle(), message);
 }
 
 void TestRunnerQt::setMockGeolocationPosition(double latitude, double longitude, double accuracy)
 {
     QList<WebPage*> pages = m_drt->getAllPages();
-    foreach (WebPage* page, pages)
+    Q_FOREACH (WebPage* page, pages)
         DumpRenderTreeSupportQt::setMockGeolocationPosition(page->handle(), latitude, longitude, accuracy);
 }
 

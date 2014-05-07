@@ -598,7 +598,7 @@ bool LauncherWindow::eventFilter(QObject* obj, QEvent* event)
             && ev->pos().x() > (width() - gExitClickArea)
             && ev->pos().y() > (height() - gExitClickArea)) {
 
-            emit enteredFullScreenMode(false);
+            Q_EMIT enteredFullScreenMode(false);
         }
     }
 
@@ -801,9 +801,9 @@ void LauncherWindow::setEditable(bool on)
 /*
 void LauncherWindow::dumpPlugins() {
     QList<QWebPluginInfo> plugins = QWebSettings::pluginDatabase()->plugins();
-    foreach (const QWebPluginInfo plugin, plugins) {
+    Q_FOREACH (const QWebPluginInfo plugin, plugins) {
         qDebug() << "Plugin:" << plugin.name();
-        foreach (const QWebPluginInfo::MimeType mime, plugin.mimeTypes()) {
+        Q_FOREACH (const QWebPluginInfo::MimeType mime, plugin.mimeTypes()) {
             qDebug() << "   " << mime.name;
         }
     }
@@ -825,7 +825,7 @@ void LauncherWindow::selectElements()
     if (ok && !str.isEmpty()) {
         clearSelection();
         QWebElementCollection result =  page()->mainFrame()->findAllElements(str);
-        foreach (QWebElement e, result) {
+        Q_FOREACH (QWebElement e, result) {
             HighlightedElement el = { e, e.styleProperty("background-color", QWebElement::InlineStyle) };
             m_highlightedElements.append(el);
             e.setStyleProperty("background-color", "yellow");
