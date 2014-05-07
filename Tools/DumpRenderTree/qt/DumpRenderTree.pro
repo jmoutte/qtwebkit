@@ -14,6 +14,7 @@ WEBKIT += wtf javascriptcore webcore
 INCLUDEPATH += \
     $$PWD/ \
     $$PWD/.. \
+    $${ROOT_BUILD_DIR}/../Source/WebCore/generated \
     $${ROOT_WEBKIT_DIR}/Source/WebCore/platform/qt \
     $${ROOT_WEBKIT_DIR}/Source/WebKit/qt/WebCoreSupport \
     $${ROOT_WEBKIT_DIR}/Source/WebKit/qt/WidgetSupport \
