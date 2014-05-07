@@ -440,11 +440,15 @@ ImageBuffer::ImageBuffer(const IntSize& size, float /* resolutionScale */, Color
 
 ImageBuffer::~ImageBuffer()
 {
+#if ENABLE(ACCELERATED_2D_CANVAS)
     QOpenGLContext *previousContext = QOpenGLContext::currentContext();
     GLBufferContext::getContext()->makeCurrentIfNeeded();
+#endif
     m_data.m_painter->end();
+#if ENABLE(ACCELERATED_2D_CANVAS)
     if (previousContext)
         previousContext->makeCurrent(previousContext->surface());
+#endif
 }
 
 GraphicsContext* ImageBuffer::context() const
