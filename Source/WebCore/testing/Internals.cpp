@@ -155,12 +155,6 @@
 #include <QNetworkAccessManager>
 #endif
 
-#if ENABLE(MEDIA_STREAM)
-#include "MockMediaStreamCenter.h"
-#include "RTCPeerConnection.h"
-#include "RTCPeerConnectionHandlerMock.h"
-#endif
-
 namespace WebCore {
 
 using namespace HTMLNames;
@@ -307,10 +301,6 @@ Internals::Internals(Document* document)
         document->page()->group().captionPreferences()->setTestingMode(true);
 #endif
 
-#if ENABLE(MEDIA_STREAM)
-    MockMediaStreamCenter::registerMockMediaStreamCenter();
-    enableMockRTCPeerConnectionHandler();
-#endif
 }
 
 Document* Internals::contextDocument() const
@@ -784,7 +774,6 @@ void Internals::enableMockSpeechSynthesizer()
 #if ENABLE(MEDIA_STREAM)
 void Internals::enableMockRTCPeerConnectionHandler()
 {
-    RTCPeerConnectionHandler::create = RTCPeerConnectionHandlerMock::create;
 }
 #endif
 
