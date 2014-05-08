@@ -53,6 +53,7 @@ SOURCES += \
     $$PWD/qt/WebCoreSupport/TextCheckerClientQt.cpp \
     $$PWD/qt/WebCoreSupport/TextureMapperLayerClientQt.cpp \
     $$PWD/qt/WebCoreSupport/UndoStepQt.cpp \
+    $$PWD/qt/WebCoreSupport/UserMediaClientQt.cpp \
     $$PWD/qt/WebCoreSupport/WebEventConversion.cpp
 
 HEADERS += \
@@ -91,6 +92,7 @@ HEADERS += \
     $$PWD/qt/WebCoreSupport/TextCheckerClientQt.h \
     $$PWD/qt/WebCoreSupport/TextureMapperLayerClientQt.h \
     $$PWD/qt/WebCoreSupport/UndoStepQt.h \
+    $$PWD/qt/WebCoreSupport/UserMediaClientQt.h \
     $$PWD/qt/WebCoreSupport/WebEventConversion.h
 
 INCLUDEPATH += \

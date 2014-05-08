@@ -121,6 +121,10 @@ Q_DECL_EXPORT void initializeWebCoreQt()
         WebCore::memoryCache()->setDeadDecodedDataDeletionInterval(60);
     WebCore::RuntimeEnabledFeatures::setCSSCompositingEnabled(true);
 
+#if ENABLE(MEDIA_STREAM)
+    WebCore::RuntimeEnabledFeatures::setMediaStreamEnabled(true);
+#endif
+
 #if USE(SOUP)
     WebCore::ResourceHandle::setIgnoreSSLErrors(true);
 #endif
