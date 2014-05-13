@@ -22,8 +22,6 @@
 #include "config.h"
 #include "NetworkServicesClientQt.h"
 
-#if ENABLE(DISCOVERY)
-
 #include "NetworkServicesController.h"
 #include "NotImplemented.h"
 
@@ -116,5 +114,3 @@ void NetworkServicesClientQt::dispatchExistingNetworkService(NetworkServiceDescr
 } // namespace WebCore
 
 #include "moc_NetworkServicesClientQt.cpp"
-
-#endif // ENABLE(DISCOVERY)
