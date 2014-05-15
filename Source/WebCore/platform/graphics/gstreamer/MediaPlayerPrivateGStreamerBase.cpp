@@ -653,17 +653,6 @@ GstElement* MediaPlayerPrivateGStreamerBase::createVideoSink(GstElement* pipelin
     m_webkitVideoSink = webkitVideoSinkNew();
     m_repaintHandler = g_signal_connect(m_webkitVideoSink.get(), "repaint-requested", G_CALLBACK(mediaPlayerPrivateRepaintCallback), this);
     m_drainHandler = g_signal_connect(m_webkitVideoSink.get(), "drain", G_CALLBACK(mediaPlayerPrivateDrainCallback), this);
-#else
-    m_webkitVideoSink = gst_element_factory_make("fakesink", "vsink");
-    g_object_set (m_webkitVideoSink.get(), "sync", TRUE, "silent", TRUE,
-        "enable-last-buffer", FALSE,
-        "qos", TRUE,
-        "max-lateness", 20 * GST_MSECOND, "signal-handoffs", TRUE, NULL);
-    g_signal_connect (m_webkitVideoSink.get(), "preroll-handoff", G_CALLBACK (mediaPlayerPrivateVideoPrerollCallback), this);
-    g_signal_connect (m_webkitVideoSink.get(), "handoff", G_CALLBACK (mediaPlayerPrivateVideoBufferCallback), this);
-
-    GRefPtr<GstPad> videoSinkPad = adoptGRef(gst_element_get_static_pad(m_webkitVideoSink.get(), "sink"));
-    gst_pad_add_event_probe(videoSinkPad.get(), G_CALLBACK (mediaPlayerPrivateVideoEventCallback), this);
 #endif
 #endif
 
