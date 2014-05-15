@@ -374,7 +374,7 @@ void GraphicsSurface::platformPaintToTextureMapper(TextureMapper* textureMapper,
     TextureMapperGL* texMapGL = static_cast<TextureMapperGL*>(textureMapper);
     TransformationMatrix adjustedTransform = transform;
     adjustedTransform.multiply(TransformationMatrix::rectToRect(FloatRect(FloatPoint::zero(), m_private->size()), targetRect));
-    texMapGL->drawTexture(platformGetTextureID(), TextureMapperGL::ShouldFlipTexture | TextureMapperGL::ShouldBlend, m_private->size(), targetRect, adjustedTransform, opacity);
+    texMapGL->drawTexture(platformGetTextureID(), TextureMapperGL::ShouldBlend, m_private->size(), targetRect, adjustedTransform, opacity);
 }
 
 uint32_t GraphicsSurface::platformFrontBuffer() const
