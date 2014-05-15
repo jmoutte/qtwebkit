@@ -56,7 +56,6 @@ public:
     virtual GraphicsSurface::Flags graphicsSurfaceFlags() const { return  GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing; }
 #endif
 
-protected:
     TextureMapperPlatformLayer::Client* client() { return m_client; }
 
 private:

@@ -64,6 +64,8 @@ struct GraphicsSurfacePrivate {
         }
 
         m_display = eglGetCurrentDisplay();
+        if (m_display == EGL_NO_DISPLAY)
+            m_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         ASSERT(m_display != EGL_NO_DISPLAY);
 
         EGLint egl_cfg_attribs[] = {
@@ -336,9 +338,6 @@ static bool resolveGLMethods()
         return true;
 
     EGLDisplay display = eglGetCurrentDisplay();
-
-    if (display == EGL_NO_DISPLAY)
-        return false;
 
     eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress("eglCreateImageKHR");
     eglDestroyImageKHR = (PFNEGLDESTROYIMAGEKHRPROC) eglGetProcAddress("eglDestroyImageKHR");

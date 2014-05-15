@@ -41,6 +41,11 @@ typedef struct _GstMessage GstMessage;
 typedef struct _GstStreamVolume GstStreamVolume;
 typedef struct _WebKitVideoSink WebKitVideoSink;
 
+#if PLATFORM(QT)
+class QOffscreenSurface;
+class QOpenGLContext;
+#endif
+
 namespace WebCore {
 
 class FullscreenVideoControllerGStreamer;
@@ -109,6 +114,12 @@ public:
     virtual PlatformLayer* platformLayer() const { return const_cast<MediaPlayerPrivateGStreamerBase*>(this); }
     virtual bool supportsAcceleratedRendering() const { return true; }
     virtual void paintToTextureMapper(TextureMapper*, const FloatRect&, const TransformationMatrix&, float);
+#if USE(GRAPHICS_SURFACE)
+    virtual IntSize platformLayerSize() const;
+    virtual uint32_t copyToGraphicsSurface();
+    virtual GraphicsSurfaceToken graphicsSurfaceToken() const;
+    virtual GraphicsSurface::Flags graphicsSurfaceFlags() const { return  GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture; }
+#endif
 #endif
 
     GstElement* pipeline() const { return m_pipeline; }
@@ -149,6 +160,14 @@ protected:
     RefPtr<BitmapTexture> m_texture;
 #endif
     guint m_orientation;
+#endif
+
+#if USE(GRAPHICS_SURFACE)
+    mutable RefPtr<GraphicsSurface> m_surface;
+#if PLATFORM(QT)
+    QOffscreenSurface* m_offscreenSurface;
+    QOpenGLContext* m_context;
+#endif
 #endif
     GstElement* m_pipeline;
 };

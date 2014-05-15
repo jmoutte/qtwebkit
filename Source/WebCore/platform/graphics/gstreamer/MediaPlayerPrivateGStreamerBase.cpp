@@ -69,8 +69,15 @@
 #endif
 #endif
 
-#define EGL_EGLEXT_PROTOTYPES
+#if USE(EGL)
 #include <EGL/egl.h>
+#endif
+
+#if PLATFORM(QT)
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include "GLSharedContext.h"
+#endif
 
 GST_DEBUG_CATEGORY(webkit_media_player_debug);
 #define GST_CAT_DEFAULT webkit_media_player_debug
@@ -138,12 +145,24 @@ MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* pl
     , m_repaintHandler(0)
     , m_volumeSignalHandler(0)
     , m_muteSignalHandler(0)
+#if USE(GRAPHICS_SURFACE)
+    , m_surface(0)
+#endif
 {
 #if GLIB_CHECK_VERSION(2, 31, 0)
     m_bufferMutex = WTF::fastNew<GMutex>();
     g_mutex_init(m_bufferMutex);
 #else
     m_bufferMutex = g_mutex_new();
+#endif
+
+#if USE(GRAPHICS_SURFACE) && PLATFORM(QT)
+    m_offscreenSurface = new QOffscreenSurface;
+    m_offscreenSurface->create();
+    m_context = new QOpenGLContext;
+    m_context->create();
+    m_context->makeCurrent(m_offscreenSurface);
+    initializeOpenGLShims();
 #endif
 }
 
@@ -384,7 +403,14 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
         return 0;
     }
 
-    RefPtr<BitmapTexture> texture = textureMapper->acquireTextureFromPool(size);
+    RefPtr<BitmapTexture> texture;
+    uint32_t textureID;
+    if (textureMapper) {
+        texture = textureMapper->acquireTextureFromPool(size);
+        const BitmapTextureGL* textureGL = static_cast<const BitmapTextureGL*>(texture.get()); // FIXME
+        textureID = textureGL->id();
+    } else
+        glGenTextures(1, &textureID);
 
 #if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
     GstMemory *mem;
@@ -394,10 +420,9 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
 
             n = gst_buffer_n_memory (m_buffer);
 
-            LOG_MEDIA_MESSAGE("MediaPlayerPrivateGStreamerBase::updateTexture: buffer contains %d memories", n);
+            LOG_MEDIA_MESSAGE("buffer contains %d memories", n);
 
             n = 1; // FIXME
-            const BitmapTextureGL* textureGL = static_cast<const BitmapTextureGL*>(texture.get()); // FIXME
 
             for (i = 0; i < n; i++) {
                 mem = gst_buffer_peek_memory (m_buffer, i);
@@ -411,21 +436,24 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
                 else if (i == 2)
                     glActiveTexture (GL_TEXTURE2);
 
-                glBindTexture (GL_TEXTURE_2D, textureGL->id()); // FIXME
+                glBindTexture (GL_TEXTURE_2D, textureID); // FIXME
                 glEGLImageTargetTexture2DOES (GL_TEXTURE_2D,
                     gst_egl_image_memory_get_image (mem));
 
                 GLuint error = glGetError ();
                 if (error != GL_NO_ERROR)
-                    LOG_ERROR("MediaPlayerPrivateGStreamerBase::updateTexture: glEGLImageTargetTexture2DOES returned 0x%04x\n", error);
+                    LOG_ERROR("glEGLImageTargetTexture2DOES returned 0x%04x\n", error);
+
+                if (!textureMapper)
+                    m_surface->copyFromTexture(textureID, IntRect(0, 0, size.width(), size.height()));
 
                 m_orientation = gst_egl_image_memory_get_orientation (mem);
                 if (m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_NORMAL
                     && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP) {
-                    LOG_ERROR("MediaPlayerPrivateGStreamerBase::updateTexture: invalid GstEGLImage orientation");
+                    LOG_ERROR("invalid GstEGLImage orientation");
                 }
                 else
-                  LOG_MEDIA_MESSAGE("MediaPlayerPrivateGStreamerBase::updateTexture: texture orientation is Y FLIP?: %d",
+                  LOG_MEDIA_MESSAGE("texture orientation is Y FLIP?: %d",
                       (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP));
             }
 
@@ -484,7 +512,7 @@ void MediaPlayerPrivateGStreamerBase::triggerRepaint(GstBuffer* buffer)
     gst_buffer_replace(&m_buffer, buffer);
     g_mutex_unlock(m_bufferMutex);
 
-#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL) && !USE(COORDINATED_GRAPHICS)
+#if USE(ACCELERATED_COMPOSITING) && USE(TEXTURE_MAPPER_GL)
     if (supportsAcceleratedRendering() && m_player->mediaPlayerClient()->mediaPlayerRenderingCanBeAccelerated(m_player) && client()) {
         client()->setPlatformLayerNeedsDisplay();
         return;
@@ -507,6 +535,9 @@ void MediaPlayerPrivateGStreamerBase::triggerDrain()
 
 void MediaPlayerPrivateGStreamerBase::setSize(const IntSize& size)
 {
+    if (m_size == size)
+        return;
+
     m_size = size;
 }
 
@@ -574,6 +605,55 @@ void MediaPlayerPrivateGStreamerBase::paintToTextureMapper(TextureMapper* textur
         client()->setPlatformLayerNeedsDisplay();
 #endif
 }
+
+#if USE(GRAPHICS_SURFACE)
+IntSize MediaPlayerPrivateGStreamerBase::platformLayerSize() const
+{
+    return m_size;
+}
+
+uint32_t MediaPlayerPrivateGStreamerBase::copyToGraphicsSurface()
+{
+#if PLATFORM(QT)
+    QOpenGLContext* previousContext = QOpenGLContext::currentContext();
+    if (QOpenGLContext::currentContext() != previousContext)
+        m_context->makeCurrent(m_offscreenSurface);
+#endif
+    if (!m_surface) {
+        GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture;
+        m_surface = GraphicsSurface::create(m_size, flags, QOpenGLContext::currentContext());
+    }
+
+    updateTexture(0);
+
+#if PLATFORM(QT)
+    previousContext->makeCurrent(previousContext->surface());
+#endif
+    return m_surface->frontBuffer();
+}
+
+GraphicsSurfaceToken MediaPlayerPrivateGStreamerBase::graphicsSurfaceToken() const
+{
+    if (!m_surface) {
+#if PLATFORM(QT)
+        QOpenGLContext* previousContext = QOpenGLContext::currentContext();
+        if (QOpenGLContext::currentContext() != previousContext)
+            m_context->makeCurrent(m_offscreenSurface);
+#endif
+
+        GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture;
+        m_surface = GraphicsSurface::create(m_size, flags, QOpenGLContext::currentContext());
+
+#if PLATFORM(QT)
+        if (previousContext)
+            previousContext->makeCurrent(previousContext->surface());
+#endif
+    }
+
+    return m_surface->exportToken();
+}
+#endif // USE(GRAPHICS_SURFACE)
+
 #endif
 
 #if USE(NATIVE_FULLSCREEN_VIDEO)

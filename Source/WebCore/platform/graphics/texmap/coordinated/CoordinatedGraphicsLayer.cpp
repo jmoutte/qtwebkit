@@ -487,6 +487,18 @@ void CoordinatedGraphicsLayer::setContentsToImage(Image* image)
     didChangeImageBacking();
 }
 
+void CoordinatedGraphicsLayer::setContentsToMedia(PlatformLayer* layer)
+{
+    if (!m_canvasPlatformLayer && (!layer || layer->platformLayerSize().isEmpty()))
+        return;
+
+    if (m_canvasPlatformLayer == layer)
+        return;
+
+    setContentsToCanvas(layer);
+    m_canvasPlatformLayer->setClient(this);
+}
+
 void CoordinatedGraphicsLayer::setMaskLayer(GraphicsLayer* layer)
 {
     if (layer == maskLayer())

@@ -31,6 +31,7 @@
 #include "Image.h"
 #include "IntSize.h"
 #include "RunLoop.h"
+#include "TextureMapperPlatformLayer.h"
 #include "TiledBackingStore.h"
 #include "TiledBackingStoreClient.h"
 #include "TransformationMatrix.h"
@@ -60,7 +61,8 @@ public:
 class CoordinatedGraphicsLayer : public GraphicsLayer
     , public TiledBackingStoreClient
     , public CoordinatedImageBacking::Host
-    , public CoordinatedTileClient {
+    , public CoordinatedTileClient
+    , public TextureMapperPlatformLayer::Client {
 public:
     explicit CoordinatedGraphicsLayer(GraphicsLayerClient*);
     virtual ~CoordinatedGraphicsLayer();
@@ -89,6 +91,7 @@ public:
     virtual void setContentsTilePhase(const IntPoint&) OVERRIDE;
     virtual void setContentsTileSize(const IntSize&) OVERRIDE;
     virtual void setContentsToImage(Image*) OVERRIDE;
+    virtual void setContentsToMedia(PlatformLayer*) OVERRIDE;
     virtual void setContentsToSolidColor(const Color&) OVERRIDE;
     virtual void setShowDebugBorder(bool) OVERRIDE;
     virtual void setShowRepaintCounter(bool) OVERRIDE;
@@ -144,6 +147,10 @@ public:
     virtual void updateTile(uint32_t tileID, const SurfaceUpdateInfo&, const IntRect&) OVERRIDE;
     virtual void removeTile(uint32_t tileID) OVERRIDE;
     virtual bool paintToSurface(const IntSize&, uint32_t& /* atlasID */, IntPoint&, CoordinatedSurface::Client*) OVERRIDE;
+
+    // TexturePlatformLayerClient
+    virtual void setPlatformLayerNeedsDisplay() OVERRIDE { setContentsNeedsDisplay(); }
+    virtual void platformLayerWasDestroyed() OVERRIDE { setContentsNeedsDisplay(); }
 
     void setCoordinator(CoordinatedGraphicsLayerClient*);
 
