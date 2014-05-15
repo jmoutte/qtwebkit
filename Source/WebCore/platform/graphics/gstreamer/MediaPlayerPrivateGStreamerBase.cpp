@@ -563,15 +563,10 @@ void MediaPlayerPrivateGStreamerBase::paintToTextureMapper(TextureMapper* textur
     RefPtr<BitmapTexture> texture = updateTexture(textureMapper);
     if (texture) {
 #if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
-        if (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP) {
-            TransformationMatrix matrix(modelViewMatrix);
-            matrix.rotate3d(180, 0, 0);
-            matrix.translateRight(0, targetRect.height());
-            textureMapper->drawTexture(*texture.get(), targetRect, matrix, opacity);
-        }
-        else {
-            textureMapper->drawTexture(*texture.get(), targetRect, modelViewMatrix, opacity);
-        }
+        int flags = 0;
+        if (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
+            flags |= TextureMapperGL::ShouldFlipTexture;
+        textureMapper->drawTexture(*texture.get(), targetRect, modelViewMatrix, opacity, flags);
 #else
         textureMapper->drawTexture(*texture.get(), targetRect, modelViewMatrix, opacity);
 #endif

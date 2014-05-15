@@ -573,7 +573,7 @@ static void prepareFilterProgram(TextureMapperShaderProgram* program, const Filt
 }
 #endif
 
-void TextureMapperGL::drawTexture(const BitmapTexture& texture, const FloatRect& targetRect, const TransformationMatrix& matrix, float opacity, unsigned exposedEdges)
+void TextureMapperGL::drawTexture(const BitmapTexture& texture, const FloatRect& targetRect, const TransformationMatrix& matrix, float opacity, unsigned exposedEdges, int flags)
 {
     if (!texture.isValid())
         return;
@@ -586,7 +586,10 @@ void TextureMapperGL::drawTexture(const BitmapTexture& texture, const FloatRect&
     TemporaryChange<const BitmapTextureGL::FilterInfo*> filterInfo(data().filterInfo, textureGL.filterInfo());
 #endif
 
-    drawTexture(textureGL.id(), textureGL.isOpaque() ? 0 : ShouldBlend, textureGL.size(), targetRect, matrix, opacity, exposedEdges);
+    if (textureGL.isOpaque())
+        flags |= ShouldBlend;
+
+    drawTexture(textureGL.id(), flags, textureGL.size(), targetRect, matrix, opacity, exposedEdges);
 }
 
 void TextureMapperGL::drawTexture(Platform3DObject texture, Flags flags, const IntSize& textureSize, const FloatRect& targetRect, const TransformationMatrix& modelViewMatrix, float opacity, unsigned exposedEdges)

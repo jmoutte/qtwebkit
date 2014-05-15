@@ -123,7 +123,7 @@ void TextureMapperImageBuffer::endClip()
     context->restore();
 }
 
-void TextureMapperImageBuffer::drawTexture(const BitmapTexture& texture, const FloatRect& targetRect, const TransformationMatrix& matrix, float opacity, unsigned /* exposedEdges */)
+void TextureMapperImageBuffer::drawTexture(const BitmapTexture& texture, const FloatRect& targetRect, const TransformationMatrix& matrix, float opacity, unsigned /* exposedEdges */, int /* flags */)
 {
     GraphicsContext* context = currentContext();
     if (!context)
