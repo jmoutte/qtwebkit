@@ -147,6 +147,9 @@ MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* pl
     , m_muteSignalHandler(0)
 #if USE(GRAPHICS_SURFACE)
     , m_surface(0)
+    , m_offscreenSurface(0)
+    , m_context(0)
+    , m_texture(0)
 #endif
 {
 #if GLIB_CHECK_VERSION(2, 31, 0)
@@ -163,6 +166,16 @@ MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* pl
     m_context->create();
     m_context->makeCurrent(m_offscreenSurface);
     initializeOpenGLShims();
+
+    QOpenGLContext* previousContext = QOpenGLContext::currentContext();
+    m_context->makeCurrent(m_offscreenSurface);
+    glGenTextures(1, &m_texture);
+    glBindTexture(GL_TEXTURE_2D, m_texture);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    previousContext->makeCurrent(previousContext->surface());
 #endif
 }
 
@@ -212,6 +225,15 @@ MediaPlayerPrivateGStreamerBase::~MediaPlayerPrivateGStreamerBase()
 #if USE(NATIVE_FULLSCREEN_VIDEO)
     if (m_fullscreenVideoController)
         exitFullscreen();
+#endif
+
+#if USE(GRAPHICS_SURFACE) && PLATFORM(QT)
+    QOpenGLContext* previousContext = QOpenGLContext::currentContext();
+    m_context->makeCurrent(m_offscreenSurface);
+    glDeleteTextures(1, &m_texture);
+    previousContext->makeCurrent(previousContext->surface());
+    delete m_context;
+    delete m_offscreenSurface;
 #endif
 }
 
@@ -410,7 +432,7 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
         const BitmapTextureGL* textureGL = static_cast<const BitmapTextureGL*>(texture.get()); // FIXME
         textureID = textureGL->id();
     } else
-        glGenTextures(1, &textureID);
+        textureID = m_texture;
 
 #if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
     GstMemory *mem;
@@ -617,12 +639,12 @@ uint32_t MediaPlayerPrivateGStreamerBase::copyToGraphicsSurface()
 {
 #if PLATFORM(QT)
     QOpenGLContext* previousContext = QOpenGLContext::currentContext();
-    if (QOpenGLContext::currentContext() != previousContext)
+    if (m_context != previousContext)
         m_context->makeCurrent(m_offscreenSurface);
 #endif
     if (!m_surface) {
         GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture;
-        m_surface = GraphicsSurface::create(m_size, flags, QOpenGLContext::currentContext());
+        m_surface = GraphicsSurface::create(m_size, flags, m_context);
     }
 
     updateTexture(0);
@@ -636,19 +658,8 @@ uint32_t MediaPlayerPrivateGStreamerBase::copyToGraphicsSurface()
 GraphicsSurfaceToken MediaPlayerPrivateGStreamerBase::graphicsSurfaceToken() const
 {
     if (!m_surface) {
-#if PLATFORM(QT)
-        QOpenGLContext* previousContext = QOpenGLContext::currentContext();
-        if (QOpenGLContext::currentContext() != previousContext)
-            m_context->makeCurrent(m_offscreenSurface);
-#endif
-
         GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture;
-        m_surface = GraphicsSurface::create(m_size, flags, QOpenGLContext::currentContext());
-
-#if PLATFORM(QT)
-        if (previousContext)
-            previousContext->makeCurrent(previousContext->surface());
-#endif
+        m_surface = GraphicsSurface::create(m_size, flags, m_context);
     }
 
     return m_surface->exportToken();
