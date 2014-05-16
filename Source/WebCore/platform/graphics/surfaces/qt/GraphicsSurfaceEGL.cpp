@@ -159,7 +159,7 @@ struct GraphicsSurfacePrivate {
 
     }
 
-    void copyFromTexture(uint32_t texture, const IntRect& sourceRect)
+    void copyFromTexture(uint32_t texture, const IntRect& sourceRect, bool flip)
     {
         makeCurrent();
 
@@ -168,7 +168,7 @@ struct GraphicsSurfacePrivate {
 
         glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
-        drawTexture(texture);
+        drawTexture(texture, flip);
         glFinish();
 
         glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
@@ -272,7 +272,7 @@ struct GraphicsSurfacePrivate {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
 
-    void drawTexture(uint32_t texture)
+    void drawTexture(uint32_t texture, bool flip)
     {
         glUseProgram(m_shaderProgram);
 
@@ -292,13 +292,23 @@ struct GraphicsSurfacePrivate {
         };
         glVertexAttribPointer(m_vertexAttr, 2, GL_FLOAT, GL_FALSE, 0, afVertices);
 
-        GLfloat aftextureCoordinates[] = {
-            0, 1,
-            1, 1,
-            0, 0,
-            1, 0
-        };
-        glVertexAttribPointer(m_textureCoordinatesAttr, 2, GL_FLOAT, GL_FALSE, 0, aftextureCoordinates);
+        if (flip) {
+            GLfloat aftextureCoordinates[] = {
+                0, 1,
+                1, 1,
+                0, 0,
+                1, 0
+            };
+            glVertexAttribPointer(m_textureCoordinatesAttr, 2, GL_FLOAT, GL_FALSE, 0, aftextureCoordinates);
+        } else {
+            GLfloat aftextureCoordinates[] = {
+                0, 0,
+                1, 0,
+                0, 1,
+                1, 1
+            };
+            glVertexAttribPointer(m_textureCoordinatesAttr, 2, GL_FLOAT, GL_FALSE, 0, aftextureCoordinates);
+        }
 
         glUniform1i(m_textureUniform, 0);
 
@@ -364,7 +374,7 @@ void GraphicsSurface::platformCopyToGLTexture(uint32_t /*target*/, uint32_t /*id
 
 void GraphicsSurface::platformCopyFromTexture(uint32_t texture, const IntRect& sourceRect)
 {
-    m_private->copyFromTexture(texture, sourceRect);
+    m_private->copyFromTexture(texture, sourceRect, m_flipTexture);
 }
 
 

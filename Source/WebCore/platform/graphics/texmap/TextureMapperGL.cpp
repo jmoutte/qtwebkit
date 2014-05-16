@@ -586,7 +586,7 @@ void TextureMapperGL::drawTexture(const BitmapTexture& texture, const FloatRect&
     TemporaryChange<const BitmapTextureGL::FilterInfo*> filterInfo(data().filterInfo, textureGL.filterInfo());
 #endif
 
-    if (textureGL.isOpaque())
+    if (!textureGL.isOpaque())
         flags |= ShouldBlend;
 
     drawTexture(textureGL.id(), flags, textureGL.size(), targetRect, matrix, opacity, exposedEdges);

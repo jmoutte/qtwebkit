@@ -85,6 +85,7 @@ IntSize GraphicsSurface::size() const
 
 GraphicsSurface::GraphicsSurface(const IntSize&, Flags flags)
     : m_flags(flags)
+    , m_flipTexture(true)
     , m_fbo(0)
     , m_private(0)
 {

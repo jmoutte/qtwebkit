@@ -74,6 +74,7 @@ public:
 
     Flags flags() const { return m_flags; }
     IntSize size() const;
+    void setFlipTexture(bool value) { m_flipTexture = value; }
 
     static PassRefPtr<GraphicsSurface> create(const IntSize&, Flags, const PlatformGraphicsContext3D shareContext = 0);
     static PassRefPtr<GraphicsSurface> create(const IntSize&, Flags, const GraphicsSurfaceToken&);
@@ -109,6 +110,7 @@ protected:
 protected:
     LockOptions m_lockOptions;
     Flags m_flags;
+    bool m_flipTexture;
 
 private:
     GraphicsSurface(const IntSize&, Flags);
