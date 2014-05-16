@@ -440,21 +440,22 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
                 glEGLImageTargetTexture2DOES (GL_TEXTURE_2D,
                     gst_egl_image_memory_get_image (mem));
 
-                GLuint error = glGetError ();
+                GLuint error = glGetError();
                 if (error != GL_NO_ERROR)
                     LOG_ERROR("glEGLImageTargetTexture2DOES returned 0x%04x\n", error);
 
-                if (!textureMapper)
-                    m_surface->copyFromTexture(textureID, IntRect(0, 0, size.width(), size.height()));
-
-                m_orientation = gst_egl_image_memory_get_orientation (mem);
+                m_orientation = gst_egl_image_memory_get_orientation(mem);
                 if (m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_NORMAL
-                    && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP) {
+                    && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
                     LOG_ERROR("invalid GstEGLImage orientation");
-                }
                 else
-                  LOG_MEDIA_MESSAGE("texture orientation is Y FLIP?: %d",
-                      (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP));
+                    LOG_MEDIA_MESSAGE("texture orientation is Y FLIP?: %d", (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP));
+
+                if (m_surface && !textureMapper) {
+                    if (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
+                        m_surface->setFlipTexture(false);
+                    m_surface->copyFromTexture(textureID, IntRect(0, 0, size.width(), size.height()));
+                }
             }
 
             g_mutex_unlock(m_bufferMutex);
