@@ -562,6 +562,13 @@ void MediaPlayerPrivateGStreamerBase::setSize(const IntSize& size)
         return;
 
     m_size = size;
+
+#if USE(GRAPHICS_SURFACE)
+    if (m_surface && m_surface->size() != m_size) {
+        m_surface.clear();
+        m_surface = GraphicsSurface::create(m_size, graphicsSurfaceFlags(), m_context);
+    }
+#endif
 }
 
 void MediaPlayerPrivateGStreamerBase::paint(GraphicsContext* context, const IntRect& rect)
@@ -637,15 +644,15 @@ IntSize MediaPlayerPrivateGStreamerBase::platformLayerSize() const
 
 uint32_t MediaPlayerPrivateGStreamerBase::copyToGraphicsSurface()
 {
+    if (!m_surface) {
+        m_surface = GraphicsSurface::create(m_size, graphicsSurfaceFlags(), m_context);
+    }
+
 #if PLATFORM(QT)
     QOpenGLContext* previousContext = QOpenGLContext::currentContext();
     if (m_context != previousContext)
         m_context->makeCurrent(m_offscreenSurface);
 #endif
-    if (!m_surface) {
-        GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture;
-        m_surface = GraphicsSurface::create(m_size, flags, m_context);
-    }
 
     updateTexture(0);
 
@@ -658,8 +665,7 @@ uint32_t MediaPlayerPrivateGStreamerBase::copyToGraphicsSurface()
 GraphicsSurfaceToken MediaPlayerPrivateGStreamerBase::graphicsSurfaceToken() const
 {
     if (!m_surface) {
-        GraphicsSurface::Flags flags = GraphicsSurface::SupportsAlpha | GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture;
-        m_surface = GraphicsSurface::create(m_size, flags, m_context);
+        m_surface = GraphicsSurface::create(m_size, graphicsSurfaceFlags(), m_context);
     }
 
     return m_surface->exportToken();

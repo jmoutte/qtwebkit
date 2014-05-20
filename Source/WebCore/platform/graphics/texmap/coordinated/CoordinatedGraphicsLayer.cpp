@@ -492,7 +492,7 @@ void CoordinatedGraphicsLayer::setContentsToMedia(PlatformLayer* layer)
     if (!m_canvasPlatformLayer && (!layer || layer->platformLayerSize().isEmpty()))
         return;
 
-    if (m_canvasPlatformLayer == layer)
+    if ((m_canvasPlatformLayer == layer) && (m_canvasSize == layer->platformLayerSize()))
         return;
 
     setContentsToCanvas(layer);
