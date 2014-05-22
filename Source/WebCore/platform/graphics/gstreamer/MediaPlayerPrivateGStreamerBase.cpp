@@ -402,6 +402,7 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
 {
     g_mutex_lock(m_bufferMutex);
     if (!m_buffer) {
+        LOG_MEDIA_MESSAGE("no buffer");
         g_mutex_unlock(m_bufferMutex);
         return 0;
     }
@@ -412,6 +413,7 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
     GRefPtr<GstCaps> caps = GST_BUFFER_CAPS(m_buffer);
 #endif
     if (!caps) {
+        LOG_MEDIA_MESSAGE("invalid caps");
         g_mutex_unlock(m_bufferMutex);
         return 0;
     }
@@ -420,6 +422,7 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
     GstVideoFormat format;
     int pixelAspectRatioNumerator, pixelAspectRatioDenominator, stride;
     if (!getVideoSizeAndFormatFromCaps(caps.get(), size, format, pixelAspectRatioNumerator, pixelAspectRatioDenominator, stride)) {
+        LOG_MEDIA_MESSAGE("invalid video format");
         g_mutex_unlock(m_bufferMutex);
         return 0;
     }
@@ -434,54 +437,53 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
         textureID = m_texture;
 
 #if USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
-    GstMemory *mem;
-    if (gst_buffer_n_memory (m_buffer) >= 1) {
-        if ((mem = gst_buffer_peek_memory (m_buffer, 0)) && gst_is_egl_image_memory (mem)) {
-            guint n, i;
+    GstMemory* mem;
+    guint storedMemories = gst_buffer_n_memory(m_buffer);
+    LOG_MEDIA_MESSAGE("buffer contains %d memories", storedMemories);
+    if (storedMemories >= 1) {
+        mem = gst_buffer_peek_memory(m_buffer, 0);
+        LOG_MEDIA_MESSAGE("first memory: %p, is EGL: %d", mem, gst_is_egl_image_memory(mem));
+        if (mem && gst_is_egl_image_memory(mem)) {
+            // FIXME: for now we use only the first memory.
+            mem = gst_buffer_peek_memory (m_buffer, 0);
 
-            n = gst_buffer_n_memory (m_buffer);
+            g_assert (gst_is_egl_image_memory (mem));
 
-            LOG_MEDIA_MESSAGE("buffer contains %d memories", n);
+            //if (i == 0)
+            glActiveTexture(GL_TEXTURE0);
+                // else if (i == 1)
+                //     glActiveTexture (GL_TEXTURE1);
+                // else if (i == 2)
+                //     glActiveTexture (GL_TEXTURE2);
 
-            n = 1; // FIXME
+            glBindTexture(GL_TEXTURE_2D, textureID); // FIXME
+            glEGLImageTargetTexture2DOES (GL_TEXTURE_2D,
+                                          gst_egl_image_memory_get_image (mem));
 
-            for (i = 0; i < n; i++) {
-                mem = gst_buffer_peek_memory (m_buffer, i);
+            GLuint error = glGetError();
+            if (error != GL_NO_ERROR)
+                LOG_ERROR("glEGLImageTargetTexture2DOES returned 0x%04x\n", error);
 
-                g_assert (gst_is_egl_image_memory (mem));
+            m_orientation = gst_egl_image_memory_get_orientation(mem);
+            if (m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_NORMAL
+                && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
+                LOG_ERROR("invalid GstEGLImage orientation");
+            else
+                LOG_MEDIA_MESSAGE("texture orientation is Y FLIP?: %d", (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP));
 
-                if (i == 0)
-                    glActiveTexture (GL_TEXTURE0);
-                else if (i == 1)
-                    glActiveTexture (GL_TEXTURE1);
-                else if (i == 2)
-                    glActiveTexture (GL_TEXTURE2);
-
-                glBindTexture (GL_TEXTURE_2D, textureID); // FIXME
-                glEGLImageTargetTexture2DOES (GL_TEXTURE_2D,
-                    gst_egl_image_memory_get_image (mem));
-
-                m_orientation = gst_egl_image_memory_get_orientation(mem);
-                if (m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_NORMAL
-                    && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
-                    LOG_ERROR("invalid GstEGLImage orientation");
-                else
-                    LOG_MEDIA_MESSAGE("texture orientation is Y FLIP?: %d", (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP));
-
-                if (m_surface && !textureMapper) {
-                    if (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
-                        m_surface->setFlipTexture(false);
-                    m_surface->copyFromTexture(textureID, IntRect(0, 0, size.width(), size.height()));
-                }
+#if USE(GRAPHICS_SURFACE)
+            if (m_surface && !textureMapper) {
+                if (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
+                    m_surface->setFlipTexture(false);
+                m_surface->copyFromTexture(textureID, IntRect(0, 0, size.width(), size.height()));
             }
+#endif
 
             g_mutex_unlock(m_bufferMutex);
             client()->setPlatformLayerNeedsDisplay();
             return texture;
         }
     }
-
-#else
 
 #if GST_CHECK_VERSION(1, 1, 0)
     GstVideoGLTextureUploadMeta* meta;
@@ -497,7 +499,10 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
             }
         }
     }
-#endif
+#endif // GST_CHECK_VERSION(1, 1, 0)
+#endif // USE(OPENGL_ES_2) && GST_CHECK_VERSION(1, 1, 2)
+
+    LOG_MEDIA_MESSAGE("fallback buffer copy");
 
     const void* srcData = 0;
 #ifdef GST_API_VERSION_1
@@ -515,9 +520,8 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
 #endif
 
     g_mutex_unlock(m_bufferMutex);
+    client()->setPlatformLayerNeedsDisplay();
     return texture;
-#endif
-    return 0;
 }
 #endif
 #endif
