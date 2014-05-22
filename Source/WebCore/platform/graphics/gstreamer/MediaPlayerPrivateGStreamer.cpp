@@ -195,6 +195,7 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
     , m_mediaLocationCurrentIndex(0)
     , m_resetPipeline(false)
     , m_paused(true)
+    , m_playbackRatePause(false)
     , m_seeking(false)
     , m_seekIsPending(false)
     , m_timeOfOverlappingSeek(-1)
@@ -394,6 +395,11 @@ void MediaPlayerPrivateGStreamer::prepareToPlay()
 
 void MediaPlayerPrivateGStreamer::play()
 {
+    if (!m_playbackRate) {
+        m_playbackRatePause = true;
+        return;
+    }
+
     if (changePipelineState(GST_STATE_PLAYING)) {
         m_isEndReached = false;
         m_delayingLoad = false;
@@ -405,6 +411,7 @@ void MediaPlayerPrivateGStreamer::play()
 
 void MediaPlayerPrivateGStreamer::pause()
 {
+    m_playbackRatePause = false;
     GstState currentState, pendingState;
     gst_element_get_state(m_playBin.get(), &currentState, &pendingState, 0);
     if (currentState < GST_STATE_PAUSED && pendingState <= GST_STATE_PAUSED)
@@ -552,6 +559,9 @@ bool MediaPlayerPrivateGStreamer::doSeek(gint64 position, float rate, GstSeekFla
             endTime = position;
     }
 
+    if (!rate)
+        rate = 1.0;
+
     return gst_element_seek(m_playBin.get(), rate, GST_FORMAT_TIME, seekType,
         GST_SEEK_TYPE_SET, startTime, GST_SEEK_TYPE_SET, endTime);
 }
@@ -584,6 +594,17 @@ void MediaPlayerPrivateGStreamer::updatePlaybackRate()
         m_playbackRate = m_lastPlaybackRate;
         ERROR_MEDIA_MESSAGE("Set rate to %f failed", m_playbackRate);
     }
+
+    if (m_playbackRatePause) {
+        GstState state;
+        GstState pending;
+
+        gst_element_get_state(m_playBin.get(), &state, &pending, 0);
+        if (state != GST_STATE_PLAYING && pending != GST_STATE_PLAYING)
+            changePipelineState(GST_STATE_PLAYING);
+        m_playbackRatePause = false;
+    }
+
     m_changingRate = false;
     m_player->rateChanged();
 }
@@ -594,6 +615,9 @@ bool MediaPlayerPrivateGStreamer::paused() const
         LOG_MEDIA_MESSAGE("Ignoring pause at EOS");
         return true;
     }
+
+    if (m_playbackRatePause)
+        return false;
 
     GstState state;
     gst_element_get_state(m_playBin.get(), &state, 0, 0);
@@ -672,14 +696,18 @@ void MediaPlayerPrivateGStreamer::setRate(float rate)
     m_changingRate = true;
 
     gst_element_get_state(m_playBin.get(), &state, &pending, 0);
+
+    if (!rate) {
+        m_changingRate = false;
+        m_playbackRatePause = true;
+        if (state != GST_STATE_PAUSED && pending != GST_STATE_PAUSED)
+            changePipelineState(GST_STATE_PAUSED);
+        return;
+    }
+
     if ((state != GST_STATE_PLAYING && state != GST_STATE_PAUSED)
         || (pending == GST_STATE_PAUSED))
         return;
-
-    if (!rate) {
-        gst_element_set_state(m_playBin.get(), GST_STATE_PAUSED);
-        return;
-    }
 
     updatePlaybackRate();
 }
@@ -1169,14 +1197,14 @@ void MediaPlayerPrivateGStreamer::updateStates()
                 m_volumeAndMuteInitialized = true;
             }
 
-            if (didBuffering && !m_buffering && !m_paused) {
+            if (didBuffering && !m_buffering && !m_paused && m_playbackRate) {
                 LOG_MEDIA_MESSAGE("[Buffering] Restarting playback.");
                 gst_element_set_state(m_playBin.get(), GST_STATE_PLAYING);
             }
         } else if (state == GST_STATE_PLAYING) {
             m_paused = false;
 
-            if (m_buffering && !isLiveStream()) {
+            if ((m_buffering && !isLiveStream()) || !m_playbackRate) {
                 LOG_MEDIA_MESSAGE("[Buffering] Pausing stream for buffering.");
                 gst_element_set_state(m_playBin.get(), GST_STATE_PAUSED);
             }
@@ -1213,8 +1241,8 @@ void MediaPlayerPrivateGStreamer::updateStates()
         } else if (state == GST_STATE_PLAYING)
             m_paused = false;
 
-        if (!m_paused)
-            gst_element_set_state(m_playBin.get(), GST_STATE_PLAYING);
+        if (!m_paused && m_playbackRate)
+            changePipelineState(GST_STATE_PLAYING);
 
         m_networkState = MediaPlayer::Loading;
         break;
