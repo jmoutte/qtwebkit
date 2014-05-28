@@ -1255,14 +1255,6 @@ void QWebSettings::enablePersistentStorage(const QString& path)
 
     WebCore::makeAllDirectories(storagePath);
 
-#if USE(SOUP)
-    /* Store cookies in moz-compatible SQLite format */
-    SoupSession* session = WebCore::ResourceHandle::defaultSession();
-    SoupCookieJar* jar = soup_cookie_jar_db_new(WebCore::pathByAppendingComponent(storagePath, "cookies.sqlite").ascii().data(), FALSE);
-    soup_session_add_feature(session, SOUP_SESSION_FEATURE(jar));
-    g_object_unref(jar);
-#endif
-
     QWebSettings::setIconDatabasePath(storagePath);
     QWebSettings::setOfflineWebApplicationCachePath(storagePath);
     QWebSettings::setOfflineStoragePath(WebCore::pathByAppendingComponent(storagePath, "Databases"));
