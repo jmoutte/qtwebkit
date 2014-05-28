@@ -19,58 +19,56 @@
 
 #include "config.h"
 #include "qwebcookiejar.h"
-#include "CookieJarQt.h"
 
+#if !USE(SOUP)
+#include "CookieJarQt.h"
+#else
+#include "ResourceHandle.h"
+#include <libsoup/soup.h>
+#endif
+
+#if USE(SOUP)
+static SoupCookieJar*              actualImplementation = NULL;
+static SharedCookieJar*            facadeImplementation = NULL;
+#else
 static WebCore::SharedCookieJarQt* actualImplementation = NULL;
 static SharedCookieJar*            facadeImplementation = NULL;
+#endif
 
 /* static */ SharedCookieJar* SharedCookieJar::create(const QString& storageLocation)
 {
-  if (facadeImplementation == NULL)
-  {
-    facadeImplementation = new SharedCookieJar (storageLocation);
-  }
 
-  return (facadeImplementation);
+   if (facadeImplementation == NULL)
+   {
+      facadeImplementation = new SharedCookieJar (storageLocation);
+   }
+
+   return (facadeImplementation);
+}
+
+void SharedCookieJar::destroy ()
+{
+   /* not implemented */
 }
 
 SharedCookieJar::SharedCookieJar (const QString& location)
 {
-  actualImplementation = WebCore::SharedCookieJarQt::create(location);
+#if !USE(SOUP)
++   actualImplementation = WebCore::SharedCookieJarQt::create (location);
+#else
+   QByteArray full_path_name;
+   full_path_name.append (location);
+   full_path_name.append ("/cookies.sqlite");
+
+   SoupSession* session = WebCore::ResourceHandle::defaultSession ();
+   SoupCookieJar* actualImplementation = soup_cookie_jar_db_new (full_path_name.constData (), FALSE);
+   soup_session_add_feature (session, SOUP_SESSION_FEATURE (actualImplementation) );
+
+   g_object_unref (actualImplementation);
+#endif
 }
 
-SharedCookieJar::~SharedCookieJar()
+SharedCookieJar::~SharedCookieJar ()
 {
-}
-
-SharedCookieJar::operator QNetworkCookieJar* ()
-{
-  return (actualImplementation);
-}
-
-void SharedCookieJar::destroy()
-{
-  actualImplementation->destroy();
-}
-
-// void SharedCookieJar::getHostnamesWithCookies(HashSet<String>&);
-
-void SharedCookieJar::deleteCookiesForHostname(const QString& name)
-{
-  actualImplementation->deleteCookiesForHostname(name);
-}
-
-void SharedCookieJar::deleteAllCookies()
-{
-  actualImplementation->deleteAllCookies();
-}
-
-bool SharedCookieJar::setCookiesFromUrl(const QList<QNetworkCookie>& cookies, const QUrl& url)
-{
-  return (actualImplementation->setCookiesFromUrl(cookies, url));
-}
-
-void SharedCookieJar::loadCookies()
-{
-  actualImplementation->loadCookies();
+   destroy();
 }

@@ -21,21 +21,11 @@
 #define cookiejarqt_h
 
 #include <QtCore/QString>
-#include <QtNetwork/QNetworkCookieJar>
-
 
 class __attribute__((visibility("default"))) SharedCookieJar
 {
 public:
     static SharedCookieJar* create(const QString&);
-
-    operator QNetworkCookieJar* ();
-
-    // void getHostnamesWithCookies(HashSet<String>&);
-    void deleteCookiesForHostname(const QString&);
-    void deleteAllCookies();
-    bool setCookiesFromUrl(const QList<QNetworkCookie>&, const QUrl&);
-    void loadCookies();
     void destroy();
 
 private:
