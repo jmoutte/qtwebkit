@@ -165,6 +165,7 @@ public:
     static void garbageCollectNow();
 
     static void enablePersistentStorage(const QString& path = QString());
+    static void enablePersistentCookieStorage(const QString& path);
 
     void setThirdPartyCookiePolicy(ThirdPartyCookiePolicy);
     QWebSettings::ThirdPartyCookiePolicy thirdPartyCookiePolicy() const;

@@ -62,6 +62,8 @@
 #include <libsoup/soup.h>
 #endif
 
+#include <qwebcookiejar.h>
+
 QWEBKIT_EXPORT void qt_networkAccessAllowed(bool isAllowed)
 {
 #if !USE(SOUP)
@@ -1276,6 +1278,19 @@ void QWebSettings::enablePersistentStorage(const QString& path)
     }
 #endif
 #endif
+}
+
+void QWebSettings::enablePersistentCookieStorage(const QString& path)
+{
+   static SharedCookieJar* cookieJar = NULL;
+
+   if ( cookieJar == NULL && path.isEmpty() != true )
+      static SharedCookieJar* cookieJar = SharedCookieJar::create(path);
+
+/*
+   if ( cookieJar != NULL )
+      //cookieJar->setParent(0); // Probably not needed
+*/
 }
 
 /*!
