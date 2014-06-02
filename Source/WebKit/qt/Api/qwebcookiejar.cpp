@@ -56,8 +56,7 @@ SharedCookieJar::SharedCookieJar (const QString& location)
 #if !USE(SOUP)
    actualImplementation = WebCore::SharedCookieJarQt::create (location);
 #else
-   QByteArray full_path_name;
-   full_path_name.append (location);
+   QByteArray full_path_name = location.toLocal8Bit ();
    full_path_name.append ("/cookies.sqlite");
 
    SoupSession* session = WebCore::ResourceHandle::defaultSession ();
