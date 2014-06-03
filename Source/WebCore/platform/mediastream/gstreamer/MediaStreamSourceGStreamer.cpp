@@ -63,19 +63,28 @@ static GRefPtr<GstElement> createAudioSourceBin(GRefPtr<GstElement> source)
 
 static GRefPtr<GstElement> createVideoSourceBin(GRefPtr<GstElement> source)
 {
-    GRefPtr<GstElement> colorspace = gst_element_factory_make("videoconvert", 0);
-    if (!colorspace) {
-        LOG_MEDIA_MESSAGE("ERROR, Got no videoconvert element for video source pipeline");
-        return 0;
-    }
-    GRefPtr<GstElement> videoscale = gst_element_factory_make("videoscale", 0);
-    if (!videoscale) {
-        LOG_MEDIA_MESSAGE("ERROR, Got no videoscale element for video source pipeline");
-        return 0;
+    GRefPtr<GstElement> colorspace;
+    GRefPtr<GstElement> videoscale;
+    const char* mediaType;
+    if (g_getenv("RPI")) {
+        mediaType = "video/x-h264";
+        g_object_set(source.get(), "fullscreen", FALSE, "preview", FALSE, NULL);
+    } else {
+        mediaType = "video/x-raw";
+        colorspace = gst_element_factory_make("videoconvert", 0);
+        if (!colorspace) {
+            LOG_MEDIA_MESSAGE("ERROR, Got no videoconvert element for video source pipeline");
+            return 0;
+        }
+        videoscale = gst_element_factory_make("videoscale", 0);
+        if (!videoscale) {
+            LOG_MEDIA_MESSAGE("ERROR, Got no videoscale element for video source pipeline");
+            return 0;
+        }
     }
 
     // FIXME: The caps should be coherent with device capabilities, see bug #123345.
-    GRefPtr<GstCaps> videocaps = gst_caps_new_simple("video/x-raw", "width", G_TYPE_INT, 320, "height", G_TYPE_INT, 240, NULL);
+    GRefPtr<GstCaps> videocaps = gst_caps_new_simple(mediaType, "width", G_TYPE_INT, 320, "height", G_TYPE_INT, 240, NULL);
     if (!videocaps) {
         LOG_MEDIA_MESSAGE("ERROR, Unable to create filter caps for video source pipeline");
         return 0;
@@ -83,18 +92,30 @@ static GRefPtr<GstElement> createVideoSourceBin(GRefPtr<GstElement> source)
 
     GstElement* videoSourceBin = gst_bin_new(0);
 
-    gst_bin_add_many(GST_BIN(videoSourceBin), source.get(), videoscale.get(), colorspace.get(), NULL);
+    GRefPtr<GstElement> capsfilter = gst_element_factory_make("capsfilter", 0);
+    g_object_set(capsfilter.get(), "caps", videocaps.get(), NULL);
 
-    if (!gst_element_link_many(source.get(), videoscale.get(), NULL)
-        || !gst_element_link_filtered(videoscale.get(), colorspace.get(), videocaps.get())) {
-        LOG_MEDIA_MESSAGE("ERROR, Cannot link video source elements");
-        gst_object_unref(videoSourceBin);
-        return 0;
+    gst_bin_add_many(GST_BIN(videoSourceBin), source.get(), capsfilter.get(), NULL);
+
+    GRefPtr<GstPad> srcPad;
+    if (g_getenv("RPI")) {
+        if (!gst_element_link(source.get(), capsfilter.get())) {
+            LOG_MEDIA_MESSAGE("ERROR, Cannot link video source elements");
+            gst_object_unref(videoSourceBin);
+            return 0;
+        }
+        srcPad = gst_element_get_static_pad(capsfilter.get(), "src");
+    } else {
+        gst_bin_add_many(GST_BIN(videoSourceBin), videoscale.get(), colorspace.get(), NULL);
+        if (!gst_element_link_many(source.get(), videoscale.get(), capsfilter.get(), colorspace.get(), NULL)) {
+            LOG_MEDIA_MESSAGE("ERROR, Cannot link video source elements");
+            gst_object_unref(videoSourceBin);
+            return 0;
+        }
+        srcPad = gst_element_get_static_pad(colorspace.get(), "src");
     }
 
-    GRefPtr<GstPad> srcPad = gst_element_get_static_pad(colorspace.get(), "src");
     gst_element_add_pad(videoSourceBin, gst_ghost_pad_new("src", srcPad.get()));
-
     return videoSourceBin;
 }
 
