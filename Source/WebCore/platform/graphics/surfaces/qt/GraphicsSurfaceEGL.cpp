@@ -169,7 +169,6 @@ struct GraphicsSurfacePrivate {
         glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
         drawTexture(texture, flip);
-        glFinish();
 
         glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
         doneCurrent();
