@@ -164,6 +164,7 @@ protected:
 
 #if USE(GRAPHICS_SURFACE)
     mutable RefPtr<GraphicsSurface> m_surface;
+    GstBuffer* m_lastRenderedBuffer;
 #if PLATFORM(QT)
     QOffscreenSurface* m_offscreenSurface;
     QOpenGLContext* m_context;

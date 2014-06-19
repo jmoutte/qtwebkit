@@ -147,6 +147,7 @@ MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* pl
     , m_muteSignalHandler(0)
 #if USE(GRAPHICS_SURFACE)
     , m_surface(0)
+    , m_lastRenderedBuffer(0)
     , m_offscreenSurface(0)
     , m_context(0)
     , m_texture(0)
@@ -406,6 +407,14 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
         g_mutex_unlock(m_bufferMutex);
         return 0;
     }
+
+#if USE(GRAPHICS_SURFACE)
+    if (!textureMapper && (m_lastRenderedBuffer == m_buffer)) {
+        g_mutex_unlock(m_bufferMutex);
+        return 0;
+    } else
+        m_lastRenderedBuffer = m_buffer;
+#endif
 
 #ifdef GST_API_VERSION_1
     GRefPtr<GstCaps> caps = currentVideoSinkCaps();
