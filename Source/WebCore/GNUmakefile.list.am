@@ -1228,6 +1228,10 @@ webcore_svg_built_sources += \
 dom_binding_idls += \
 	$(WebCore)/Modules/battery/BatteryManager.idl \
 	$(WebCore)/Modules/battery/NavigatorBattery.idl \
+	$(WebCore)/Modules/encryptedmedia/MediaKeyMessageEvent.idl \
+	$(WebCore)/Modules/encryptedmedia/MediaKeyNeededEvent.idl \
+	$(WebCore)/Modules/encryptedmedia/MediaKeySession.idl \
+	$(WebCore)/Modules/encryptedmedia/MediaKeys.idl \
 	$(WebCore)/Modules/filesystem/DOMFileSystem.idl \
 	$(WebCore)/Modules/filesystem/DOMFileSystemSync.idl \
 	$(WebCore)/Modules/filesystem/DOMWindowFileSystem.idl \
@@ -1848,6 +1852,17 @@ webcore_modules_sources += \
 	Source/WebCore/Modules/battery/BatteryStatus.h \
 	Source/WebCore/Modules/battery/NavigatorBattery.cpp \
 	Source/WebCore/Modules/battery/NavigatorBattery.h \
+	Source/WebCore/Modules/encryptedmedia/CDM.cpp
+	Source/WebCore/Modules/encryptedmedia/CDM.h
+	Source/WebCore/Modules/encryptedmedia/CDMPrivate.h
+	Source/WebCore/Modules/encryptedmedia/MediaKeyMessageEvent.cpp
+	Source/WebCore/Modules/encryptedmedia/MediaKeyMessageEvent.h
+	Source/WebCore/Modules/encryptedmedia/MediaKeyNeededEvent.cpp
+	Source/WebCore/Modules/encryptedmedia/MediaKeyNeededEvent.h
+	Source/WebCore/Modules/encryptedmedia/MediaKeys.cpp
+	Source/WebCore/Modules/encryptedmedia/MediaKeySession.cpp
+	Source/WebCore/Modules/encryptedmedia/MediaKeySession.h
+	Source/WebCore/Modules/encryptedmedia/MediaKeys.h
 	Source/WebCore/Modules/filesystem/AsyncFileWriter.h \
 	Source/WebCore/Modules/filesystem/AsyncFileWriterClient.h \
 	Source/WebCore/Modules/filesystem/DOMFilePath.cpp \

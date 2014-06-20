@@ -660,6 +660,14 @@ enable?(GAMEPAD) {
     $$PWD/Modules/gamepad/NavigatorGamepad.idl
 }
 
+enable?(ENCRYPTED_MEDIA_V2) {
+  IDL_BINDINGS += \
+    $$PWD/Modules/encryptedmedia/MediaKeyMessageEvent.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeyNeededEvent.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeySession.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeys.idl
+}
+
 enable?(VIDEO_TRACK) {
   IDL_BINDINGS += \
     $$PWD/html/track/AudioTrack.idl \

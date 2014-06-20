@@ -189,6 +189,11 @@ enable?(GAMEPAD) {
         $$SOURCE_DIR/Modules/gamepad
 }
 
+enable?(ENCRYPTED_MEDIA_V2) {
+    INCLUDEPATH += \
+        $$SOURCE_DIR/Modules/encryptedmedia
+}
+
 use?(GLIB) {
     PKGCONFIG *= glib-2.0 gio-2.0
 }
