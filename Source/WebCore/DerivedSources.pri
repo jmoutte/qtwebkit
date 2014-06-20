@@ -662,6 +662,8 @@ enable?(GAMEPAD) {
 
 enable?(ENCRYPTED_MEDIA_V2) {
   IDL_BINDINGS += \
+    $$PWD/html/MediaKeyError.idl \
+    $$PWD/html/MediaKeyEvent.idl \
     $$PWD/Modules/encryptedmedia/MediaKeyMessageEvent.idl \
     $$PWD/Modules/encryptedmedia/MediaKeyNeededEvent.idl \
     $$PWD/Modules/encryptedmedia/MediaKeySession.idl \
