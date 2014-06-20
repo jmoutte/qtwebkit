@@ -104,6 +104,9 @@ private:
 
     static void getSupportedTypes(HashSet<String>&);
     static MediaPlayer::SupportsType supportsType(const String& type, const String& codecs, const KURL&);
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    static MediaPlayer::SupportsType extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL&);
+#endif
 
     static bool isAvailable();
 

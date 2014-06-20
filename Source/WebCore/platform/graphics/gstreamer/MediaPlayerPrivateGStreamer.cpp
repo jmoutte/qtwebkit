@@ -158,7 +158,11 @@ PassOwnPtr<MediaPlayerPrivateInterface> MediaPlayerPrivateGStreamer::create(Medi
 void MediaPlayerPrivateGStreamer::registerMediaEngine(MediaEngineRegistrar registrar)
 {
     if (isAvailable())
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+        registrar(create, getSupportedTypes, extendedSupportsType, 0, 0, 0);
+#else
         registrar(create, getSupportedTypes, supportsType, 0, 0, 0);
+#endif
 }
 
 bool initializeGStreamerAndRegisterWebKitElements()
@@ -1560,6 +1564,38 @@ void MediaPlayerPrivateGStreamer::getSupportedTypes(HashSet<String>& types)
 {
     types = mimeTypeCache();
 }
+
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+static bool keySystemIsSupported(const String& keySystem)
+{
+    if (equalIgnoringCase(keySystem, "com.apple.lskd") || equalIgnoringCase(keySystem, "com.apple.lskd.1_0"))
+        return true;
+
+    return false;
+}
+
+MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL& url)
+{
+    // From: <http://dvcs.w3.org/hg/html-media/raw-file/eme-v0.1b/encrypted-media/encrypted-media.html#dom-canplaytype>
+    // In addition to the steps in the current specification, this method must run the following steps:
+
+    // 1. Check whether the Key System is supported with the specified container and codec type(s) by following the steps for the first matching condition from the following list:
+    //    If keySystem is null, continue to the next step.
+    if (keySystem.isNull() || keySystem.isEmpty())
+        return supportsType(type, codecs, url);
+
+    // If keySystem contains an unrecognized or unsupported Key System, return the empty string
+    if (!keySystemIsSupported(keySystem))
+        return MediaPlayer::IsNotSupported;
+
+    // If the Key System specified by keySystem does not support decrypting the container and/or codec specified in the rest of the type string.
+    // (AVFoundation does not provide an API which would allow us to determine this, so this is a no-op)
+
+    // 2. Return "maybe" or "probably" as appropriate per the existing specification of canPlayType().
+    return supportsType(type, codecs, url);
+}
+
+#endif
 
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::supportsType(const String& type, const String& codecs, const KURL&)
 {
