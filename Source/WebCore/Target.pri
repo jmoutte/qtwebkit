@@ -3325,7 +3325,8 @@ enable?(ENCRYPTED_MEDIA_V2) {
         Modules/encryptedmedia/MediaKeyMessageEvent.h \
         Modules/encryptedmedia/MediaKeyNeededEvent.h \
         Modules/encryptedmedia/MediaKeySession.h \
-        Modules/encryptedmedia/MediaKeys.h
+        Modules/encryptedmedia/MediaKeys.h \
+        testing/MockCDM.h
 
     SOURCES += \
         Modules/encryptedmedia/CDM.cpp \
@@ -3333,6 +3334,7 @@ enable?(ENCRYPTED_MEDIA_V2) {
         Modules/encryptedmedia/MediaKeyNeededEvent.cpp \
         Modules/encryptedmedia/MediaKeys.cpp \
         Modules/encryptedmedia/MediaKeySession.cpp \
+        testing/MockCDM.cpp
 }
 
 use?(GSTREAMER) {
