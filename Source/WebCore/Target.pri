@@ -3335,7 +3335,15 @@ enable?(ENCRYPTED_MEDIA_V2) {
         Modules/encryptedmedia/MediaKeys.cpp \
         Modules/encryptedmedia/MediaKeySession.cpp \
         testing/MockCDM.cpp
+    use?(DXDRM) {
+        HEADERS += \
+            platform/linux/DxDRMCDM.h
+
+        SOURCES += \
+            platform/linux/DxDRMCDM.cpp
+    }
 }
+
 
 use?(GSTREAMER) {
     HEADERS += \
