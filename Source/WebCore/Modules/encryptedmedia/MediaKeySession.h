@@ -28,7 +28,8 @@
 
 #if ENABLE(ENCRYPTED_MEDIA_V2)
 
-#include "ContextDestructionObserver.h"
+#include "ActiveDOMObject.h"
+#include "CDMSession.h"
 #include "EventTarget.h"
 #include "ExceptionCode.h"
 #include "Timer.h"
@@ -43,9 +44,8 @@ namespace WebCore {
 class GenericEventQueue;
 class MediaKeyError;
 class MediaKeys;
-class CDMSession;
 
-class MediaKeySession : public RefCounted<MediaKeySession>, public EventTarget, public ContextDestructionObserver {
+class MediaKeySession : public RefCounted<MediaKeySession>, public EventTarget, public ActiveDOMObject, public CDMSessionClient {
 public:
     static PassRefPtr<MediaKeySession> create(ScriptExecutionContext*, MediaKeys*, const String& keySystem);
     ~MediaKeySession();
@@ -61,6 +61,8 @@ public:
 
     void generateKeyRequest(const String& mimeType, Uint8Array* initData);
     void update(Uint8Array* key, ExceptionCode&);
+
+    bool isClosed() const { return !m_session; }
     void close();
 
     using RefCounted<MediaKeySession>::ref;
@@ -68,17 +70,24 @@ public:
 
     void enqueueEvent(PassRefPtr<Event>);
 
+    // ActiveDOMObject
+    virtual bool hasPendingActivity() const OVERRIDE { return (m_keys && !isClosed()) || m_asyncEventQueue->hasPendingEvents(); }
+
     DEFINE_ATTRIBUTE_EVENT_LISTENER(webkitkeyadded);
     DEFINE_ATTRIBUTE_EVENT_LISTENER(webkitkeyerror);
     DEFINE_ATTRIBUTE_EVENT_LISTENER(webkitkeymessage);
 
     virtual const AtomicString& interfaceName() const OVERRIDE;
-    virtual ScriptExecutionContext* scriptExecutionContext() const OVERRIDE;
+    virtual ScriptExecutionContext* scriptExecutionContext() const OVERRIDE { return ActiveDOMObject::scriptExecutionContext(); }
 
 protected:
     MediaKeySession(ScriptExecutionContext*, MediaKeys*, const String& keySystem);
     void keyRequestTimerFired(Timer<MediaKeySession>*);
     void addKeyTimerFired(Timer<MediaKeySession>*);
+
+    // CDMSessionClient
+    virtual void sendMessage(Uint8Array*, String destinationURL);
+    virtual void sendError(MediaKeyErrorCode, unsigned long systemCode);
 
     MediaKeys* m_keys;
     String m_keySystem;
