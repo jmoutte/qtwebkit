@@ -39,9 +39,14 @@ class CDM;
 
 class DxDRMCDM : public CDMPrivateInterface {
 public:
+    explicit DxDRMCDM(CDM* cdm)
+        : m_cdm(cdm)
+    { }
+
     // CDMFactory support:
     static PassOwnPtr<CDMPrivateInterface> create(CDM* cdm) { return adoptPtr(new DxDRMCDM(cdm)); }
-    static bool supportsKeySytem(const String&);
+    static bool supportsKeySystem(const String&);
+    static bool supportsKeySystemAndMimeType(const String& keySystem, const String& mimeType);
 
     virtual ~DxDRMCDM() { }
 
@@ -49,7 +54,6 @@ public:
     virtual PassOwnPtr<CDMSession> createSession() OVERRIDE;
 
 protected:
-    DxDRMCDM(CDM* cdm) : m_cdm(cdm) { }
     CDM* m_cdm;
 };
 
