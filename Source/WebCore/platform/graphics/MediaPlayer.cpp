@@ -512,6 +512,13 @@ MediaPlayer::MediaKeyException MediaPlayer::cancelKeyRequest(const String& keySy
 }
 #endif
 
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+PassOwnPtr<CDMSession> MediaPlayer::createSession(const String& keySystem)
+{
+    return m_private->createSession(keySystem);
+}
+#endif
+
 double MediaPlayer::duration() const
 {
     return m_private->durationDouble();

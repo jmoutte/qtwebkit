@@ -190,6 +190,10 @@ public:
     virtual MediaPlayer::MediaKeyException cancelKeyRequest(const String&, const String&) { return MediaPlayer::KeySystemNotSupported; }
 #endif
 
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+    virtual PassOwnPtr<CDMSession> createSession(const String&) { return nullptr; }
+#endif
+
 #if ENABLE(VIDEO_TRACK)
     virtual bool requiresTextTrackRepresentation() const { return false; }
     virtual void setTextTrackRepresentation(TextTrackRepresentation*) { }

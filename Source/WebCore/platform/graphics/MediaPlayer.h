@@ -33,6 +33,7 @@
 #endif
 
 #include "AudioTrackPrivate.h"
+#include "CDMSession.h"
 #include "InbandTextTrackPrivate.h"
 #include "IntRect.h"
 #include "KURL.h"
@@ -298,6 +299,10 @@ public:
     MediaKeyException generateKeyRequest(const String& keySystem, const unsigned char* initData, unsigned initDataLength);
     MediaKeyException addKey(const String& keySystem, const unsigned char* key, unsigned keyLength, const unsigned char* initData, unsigned initDataLength, const String& sessionId);
     MediaKeyException cancelKeyRequest(const String& keySystem, const String& sessionId);
+#endif
+
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+    PassOwnPtr<CDMSession> createSession(const String& keySystem);
 #endif
 
     bool paused() const;
