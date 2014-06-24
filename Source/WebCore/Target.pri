@@ -3320,8 +3320,10 @@ enable?(GAMEPAD) {
 
 enable?(ENCRYPTED_MEDIA_V2) {
     HEADERS += \
+        platform/graphics/CDMSession.h \
         Modules/encryptedmedia/CDM.h \
         Modules/encryptedmedia/CDMPrivate.h \
+        Modules/encryptedmedia/CDMPrivateMediaPlayer.h \
         Modules/encryptedmedia/MediaKeyMessageEvent.h \
         Modules/encryptedmedia/MediaKeyNeededEvent.h \
         Modules/encryptedmedia/MediaKeySession.h \
@@ -3330,10 +3332,11 @@ enable?(ENCRYPTED_MEDIA_V2) {
 
     SOURCES += \
         Modules/encryptedmedia/CDM.cpp \
+        Modules/encryptedmedia/CDMPrivateMediaPlayer.cpp \
         Modules/encryptedmedia/MediaKeyMessageEvent.cpp \
         Modules/encryptedmedia/MediaKeyNeededEvent.cpp \
-        Modules/encryptedmedia/MediaKeys.cpp \
         Modules/encryptedmedia/MediaKeySession.cpp \
+        Modules/encryptedmedia/MediaKeys.cpp \
         testing/MockCDM.cpp
     use?(DXDRM) {
         HEADERS += \
