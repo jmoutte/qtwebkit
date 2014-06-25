@@ -194,6 +194,11 @@ void MediaKeySession::addKeyTimerFired(Timer<MediaKeySession>*)
     }
 }
 
+bool MediaKeySession::hasPendingActivity() const
+{
+    return (m_keys && !isClosed()) || m_asyncEventQueue->hasPendingEvents();
+}
+
 const AtomicString& MediaKeySession::interfaceName() const
 {
     return eventNames().interfaceForMediaKeySession;

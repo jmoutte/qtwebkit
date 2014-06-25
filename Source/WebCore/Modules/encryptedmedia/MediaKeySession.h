@@ -71,7 +71,7 @@ public:
     void enqueueEvent(PassRefPtr<Event>);
 
     // ActiveDOMObject
-    virtual bool hasPendingActivity() const OVERRIDE { return (m_keys && !isClosed()) || m_asyncEventQueue->hasPendingEvents(); }
+    virtual bool hasPendingActivity() const OVERRIDE;
 
     DEFINE_ATTRIBUTE_EVENT_LISTENER(webkitkeyadded);
     DEFINE_ATTRIBUTE_EVENT_LISTENER(webkitkeyerror);
