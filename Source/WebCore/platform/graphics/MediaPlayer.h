@@ -258,6 +258,7 @@ public:
     static void getSitesInMediaCache(Vector<String>&);
     static void clearMediaCache();
     static void clearMediaCacheForSite(const String&);
+    static bool supportsKeySystem(const String& keySystem, const String& mimeType);
 
     bool supportsFullscreen() const;
     bool supportsSave() const;
@@ -531,9 +532,10 @@ typedef MediaPlayer::SupportsType (*MediaEngineSupportsType)(const String& type,
 typedef void (*MediaEngineGetSitesInMediaCache)(Vector<String>&);
 typedef void (*MediaEngineClearMediaCache)();
 typedef void (*MediaEngineClearMediaCacheForSite)(const String&);
+typedef bool (*MediaEngineSupportsKeySystem)(const String&, const String&);
 
 typedef void (*MediaEngineRegistrar)(CreateMediaEnginePlayer, MediaEngineSupportedTypes, MediaEngineSupportsType,
-    MediaEngineGetSitesInMediaCache, MediaEngineClearMediaCache, MediaEngineClearMediaCacheForSite);
+    MediaEngineGetSitesInMediaCache, MediaEngineClearMediaCache, MediaEngineClearMediaCacheForSite, MediaEngineSupportsKeySystem);
 
 }
 
