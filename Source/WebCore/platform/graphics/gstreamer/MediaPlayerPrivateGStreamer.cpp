@@ -159,9 +159,9 @@ void MediaPlayerPrivateGStreamer::registerMediaEngine(MediaEngineRegistrar regis
 {
     if (isAvailable())
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
-        registrar(create, getSupportedTypes, extendedSupportsType, 0, 0, 0);
+        registrar(create, getSupportedTypes, extendedSupportsType, 0, 0, 0, supportsKeySystem);
 #else
-        registrar(create, getSupportedTypes, supportsType, 0, 0, 0);
+        registrar(create, getSupportedTypes, supportsType, 0, 0, 0, supportsKeySystem);
 #endif
 }
 
@@ -1565,17 +1565,22 @@ void MediaPlayerPrivateGStreamer::getSupportedTypes(HashSet<String>& types)
     types = mimeTypeCache();
 }
 
-#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
-static bool keySystemIsSupported(const String& keySystem)
+bool MediaPlayerPrivateGStreamer::supportsKeySystem(const String& keySystem, const String& mimeType)
 {
-    if (equalIgnoringCase(keySystem, "com.apple.lskd") || equalIgnoringCase(keySystem, "com.apple.lskd.1_0"))
+    GST_DEBUG ("Checking for KeySystem support with %s and type %s", keySystem.utf8().data(), mimeType.utf8().data());
+
+#if USE(DXDRM)
+    if (equalIgnoringCase(keySystem, "com.microsoft.playready"))
         return true;
+#endif
 
     return false;
 }
 
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL& url)
 {
+
     // From: <http://dvcs.w3.org/hg/html-media/raw-file/eme-v0.1b/encrypted-media/encrypted-media.html#dom-canplaytype>
     // In addition to the steps in the current specification, this method must run the following steps:
 
@@ -1585,7 +1590,7 @@ MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(cons
         return supportsType(type, codecs, url);
 
     // If keySystem contains an unrecognized or unsupported Key System, return the empty string
-    if (!keySystemIsSupported(keySystem))
+    if (!supportsKeySystem(keySystem, emptyString()))
         return MediaPlayer::IsNotSupported;
 
     // If the Key System specified by keySystem does not support decrypting the container and/or codec specified in the rest of the type string.

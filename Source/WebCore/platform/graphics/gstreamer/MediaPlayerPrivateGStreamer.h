@@ -107,6 +107,7 @@ private:
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
     static MediaPlayer::SupportsType extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL&);
 #endif
+    static bool supportsKeySystem(const String& keySystem, const String& mimeType);
 
     static bool isAvailable();
 
