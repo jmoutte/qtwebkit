@@ -38,23 +38,17 @@ namespace WebCore {
 
 bool CDMPrivateMediaPlayer::supportsKeySystem(const String& keySystem)
 {
-    ContentType contentType = ContentType(emptyString());
-
-    return MediaPlayer::supportsType(contentType, keySystem, blankURL(), NULL);
+    return MediaPlayer::supportsKeySystem(keySystem, emptyString());
 }
 
 bool CDMPrivateMediaPlayer::supportsKeySystemAndMimeType(const String& keySystem, const String& mimeType)
 {
-    ContentType contentType = ContentType(emptyString());
-    
-    return MediaPlayer::supportsType(contentType, keySystem, blankURL(), NULL);
+    return MediaPlayer::supportsKeySystem(keySystem, mimeType);
 }
 
 bool CDMPrivateMediaPlayer::supportsMIMEType(const String& mimeType)
 {
-    ContentType contentType = ContentType(emptyString());
-    
-    return MediaPlayer::supportsType(contentType, m_cdm->keySystem(), blankURL(), NULL);
+    return MediaPlayer::supportsKeySystem(m_cdm->keySystem(), mimeType);
 }
 
 PassOwnPtr<CDMSession> CDMPrivateMediaPlayer::createSession()
