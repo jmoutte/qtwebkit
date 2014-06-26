@@ -136,6 +136,10 @@ private:
     virtual bool isLiveStream() const { return m_isStreaming; }
     virtual bool didPassCORSAccessCheck() const;
 
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+    PassOwnPtr<CDMSession> createSession(const String&);
+#endif
+
 private:
     GRefPtr<GstElement> m_playBin;
     GRefPtr<GstElement> m_source;

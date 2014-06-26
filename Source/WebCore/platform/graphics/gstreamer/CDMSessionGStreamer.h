@@ -10,10 +10,10 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY APPLE INC. AND ITS CONTRIBUTORS ``AS IS''
+ * THIS SOFTWARE IS PROVIDED BY FLUENDO S.A. AND ITS CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL APPLE INC. OR ITS CONTRIBUTORS
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FLUENDO S.A. OR ITS CONTRIBUTORS
  * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -23,42 +23,38 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DxDRMCDM_h
-#define DxDRMCDM_h
+#ifndef CDMSessionGStreamer_h
+#define CDMSessionGStreamer_h
 
-#if ENABLE(ENCRYPTED_MEDIA_V2) && USE(DXDRM)
-
-#include "CDMPrivate.h"
+#include "CDMSession.h"
 #include <wtf/PassOwnPtr.h>
+#include <wtf/RetainPtr.h>
 
-#include "dxdrm/DxDrmClient.h"
+#if ENABLE(ENCRYPTED_MEDIA_V2) && USE(GSTREAMER)
 
 namespace WebCore {
 
-class CDM;
+class MediaPlayerPrivateGStreamer;
 
-class DxDRMCDM : public CDMPrivateInterface {
+class CDMSessionGStreamer : public CDMSession {
 public:
-    explicit DxDRMCDM(CDM* cdm)
-        : m_cdm(cdm)
-    { }
+    CDMSessionGStreamer(MediaPlayerPrivateGStreamer* parent);
+    virtual ~CDMSessionGStreamer() { }
 
-    // CDMFactory support:
-    static PassOwnPtr<CDMPrivateInterface> create(CDM* cdm) { return adoptPtr(new DxDRMCDM(cdm)); }
-    static bool supportsKeySystem(const String&);
-    static bool supportsKeySystemAndMimeType(const String& keySystem, const String& mimeType);
-
-    virtual ~DxDRMCDM() { }
-
-    virtual bool supportsMIMEType(const String& mimeType) OVERRIDE;
-    virtual PassOwnPtr<CDMSession> createSession() OVERRIDE;
+    virtual void setClient(CDMSessionClient* client) OVERRIDE { m_client = client; }
+    virtual const String& sessionId() const OVERRIDE { return m_sessionId; }
+    virtual PassRefPtr<Uint8Array> generateKeyRequest(const String& mimeType, Uint8Array* initData, String& destinationURL, unsigned short& errorCode, unsigned long& systemCode) OVERRIDE;
+    virtual void releaseKeys() OVERRIDE;
+    virtual bool update(Uint8Array*, RefPtr<Uint8Array>& nextMessage, unsigned short& errorCode, unsigned long& systemCode) OVERRIDE;
 
 protected:
-    CDM* m_cdm;
+    MediaPlayerPrivateGStreamer* m_parent;
+    CDMSessionClient* m_client;
+    String m_sessionId;
 };
 
 }
 
-#endif // ENABLE(ENCRYPTED_MEDIA) && USE(DXDRM)
+#endif
 
-#endif // DxDRMCDM_h
+#endif // CDMSessionGStreamer_h

@@ -41,6 +41,7 @@
 #include <limits>
 #include <wtf/gobject/GOwnPtr.h>
 #include <wtf/text/CString.h>
+#include "CDMSessionGStreamer.h"
 
 #ifdef GST_API_VERSION_1
 #include <gst/audio/streamvolume.h>
@@ -1577,6 +1578,16 @@ bool MediaPlayerPrivateGStreamer::supportsKeySystem(const String& keySystem, con
     return false;
 }
 
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+PassOwnPtr<CDMSession> MediaPlayerPrivateGStreamer::createSession(const String& keySystem)
+{
+    if (!supportsKeySystem(keySystem, emptyString()))
+        return nullptr;
+
+    return adoptPtr(new CDMSessionGStreamer(this));
+}
+#endif
+
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL& url)
 {
@@ -1599,7 +1610,6 @@ MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(cons
     // 2. Return "maybe" or "probably" as appropriate per the existing specification of canPlayType().
     return supportsType(type, codecs, url);
 }
-
 #endif
 
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::supportsType(const String& type, const String& codecs, const KURL&)
