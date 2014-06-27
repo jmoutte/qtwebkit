@@ -47,6 +47,8 @@ QT_END_NAMESPACE
 
 namespace WebCore {
 class ChromeClientQt;
+class DeviceOrientationClient;
+class DeviceMotionClient;
 class GeolocationClientQt;
 class Page;
 class UndoStep;
@@ -377,6 +379,8 @@ public:
 
 private:
     QNetworkAccessManager *networkManager;
+    WebCore::DeviceOrientationClient* m_deviceOrientationClient;
+    WebCore::DeviceMotionClient* m_deviceMotionClient;
 
 public:
     static bool drtRun;
