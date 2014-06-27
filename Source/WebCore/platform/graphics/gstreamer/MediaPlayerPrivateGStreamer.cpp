@@ -254,8 +254,10 @@ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
         m_playBin.clear();
     }
 
-    GRefPtr<GstPad> videoSinkPad = adoptGRef(gst_element_get_static_pad(m_webkitVideoSink.get(), "sink"));
-    g_signal_handlers_disconnect_by_func(videoSinkPad.get(), reinterpret_cast<gpointer>(mediaPlayerPrivateVideoSinkCapsChangedCallback), this);
+    if (m_webkitVideoSink) {
+        GRefPtr<GstPad> videoSinkPad = adoptGRef(gst_element_get_static_pad(m_webkitVideoSink.get(), "sink"));
+        g_signal_handlers_disconnect_by_func(videoSinkPad.get(), reinterpret_cast<gpointer>(mediaPlayerPrivateVideoSinkCapsChangedCallback), this);
+    }
 
     if (m_videoTimerHandler)
         g_source_remove(m_videoTimerHandler);
@@ -266,27 +268,29 @@ MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
     m_audioTimerHandler = 0;
 }
 
-void MediaPlayerPrivateGStreamer::load(const String& url)
+void MediaPlayerPrivateGStreamer::load(const String& urlString)
 {
     if (!initializeGStreamerAndRegisterWebKitElements())
         return;
 
-    KURL kurl(KURL(), url);
-    String cleanUrl(url);
+    KURL kurl(KURL(), urlString);
+    if (kurl.isBlankURL())
+        return;
 
     // Clean out everything after file:// url path.
+    String cleanURL(urlString);
     if (kurl.isLocalFile())
-        cleanUrl = cleanUrl.substring(0, kurl.pathEnd());
+        cleanURL = cleanURL.substring(0, kurl.pathEnd());
 
     if (!m_playBin)
         createGSTPlayBin();
 
     ASSERT(m_playBin);
 
-    m_url = KURL(KURL(), cleanUrl);
-    g_object_set(m_playBin.get(), "uri", cleanUrl.utf8().data(), NULL);
+    m_url = KURL(KURL(), cleanURL);
+    g_object_set(m_playBin.get(), "uri", cleanURL.utf8().data(), NULL);
 
-    INFO_MEDIA_MESSAGE("Load %s", cleanUrl.utf8().data());
+    INFO_MEDIA_MESSAGE("Load %s", cleanURL.utf8().data());
 
     if (m_preload == MediaPlayer::None) {
         LOG_MEDIA_MESSAGE("Delaying load.");
