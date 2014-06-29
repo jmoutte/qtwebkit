@@ -32,6 +32,10 @@
 
 #if ENABLE(ENCRYPTED_MEDIA_V2) && USE(GSTREAMER)
 
+#if USE(DXDRM)
+#include "dxdrm/DxDrmClient.h"
+#endif
+
 namespace WebCore {
 
 class MediaPlayerPrivateGStreamer;
@@ -51,6 +55,11 @@ protected:
     MediaPlayerPrivateGStreamer* m_parent;
     CDMSessionClient* m_client;
     String m_sessionId;
+
+#if USE(DXDRM)
+    HDxDrmStream dx_drm_stream;
+#endif
+
 };
 
 }
