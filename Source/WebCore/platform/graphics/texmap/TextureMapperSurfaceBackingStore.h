@@ -35,6 +35,7 @@ class TextureMapperSurfaceBackingStore : public TextureMapperBackingStore {
 public:
     static PassRefPtr<TextureMapperSurfaceBackingStore> create() { return adoptRef(new TextureMapperSurfaceBackingStore); }
     void setGraphicsSurface(PassRefPtr<GraphicsSurface>);
+    RefPtr<GraphicsSurface> graphicsSurface() { return m_graphicsSurface;}
     void swapBuffersIfNeeded(uint32_t frontBuffer);
     virtual PassRefPtr<BitmapTexture> texture() const;
     virtual void paintToTextureMapper(TextureMapper*, const FloatRect&, const TransformationMatrix&, float);

@@ -148,6 +148,8 @@ MediaPlayerPrivateGStreamerBase::MediaPlayerPrivateGStreamerBase(MediaPlayer* pl
 #if USE(GRAPHICS_SURFACE)
     , m_surface(0)
     , m_lastRenderedBuffer(0)
+    , m_bufferToUnref(0)
+    , m_intermediateBuffer(0)
     , m_offscreenSurface(0)
     , m_context(0)
     , m_texture(0)
@@ -202,6 +204,18 @@ MediaPlayerPrivateGStreamerBase::~MediaPlayerPrivateGStreamerBase()
     if (m_buffer)
         gst_buffer_unref(m_buffer);
     m_buffer = 0;
+
+    if (m_lastRenderedBuffer)
+        gst_buffer_unref(m_lastRenderedBuffer);
+    m_lastRenderedBuffer = 0;
+
+    if (m_intermediateBuffer)
+        gst_buffer_unref(m_intermediateBuffer);
+    m_intermediateBuffer = 0;
+
+    if (m_bufferToUnref)
+        gst_buffer_unref(m_bufferToUnref);
+    m_bufferToUnref = 0;
 
     m_player = 0;
 
@@ -409,11 +423,21 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
     }
 
 #if USE(GRAPHICS_SURFACE)
-    if (!textureMapper && (m_lastRenderedBuffer == m_buffer)) {
-        g_mutex_unlock(m_bufferMutex);
-        return 0;
-    } else
-        m_lastRenderedBuffer = m_buffer;
+    if (!textureMapper) {
+        if (m_lastRenderedBuffer == m_buffer) {
+            g_mutex_unlock(m_bufferMutex);
+            return 0;
+        } else {
+            if (m_bufferToUnref)
+                gst_buffer_unref(m_bufferToUnref);
+
+            if (m_intermediateBuffer)
+                m_bufferToUnref = m_intermediateBuffer;
+
+            m_intermediateBuffer = m_lastRenderedBuffer;
+            m_lastRenderedBuffer = gst_buffer_ref(m_buffer);
+        }
+    }
 #endif
 
 #ifdef GST_API_VERSION_1
@@ -447,44 +471,15 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
     GstMemory *mem;
     if (gst_buffer_n_memory (m_buffer) >= 1) {
         if ((mem = gst_buffer_peek_memory (m_buffer, 0)) && gst_is_egl_image_memory (mem)) {
-            guint n, i;
-
-            n = gst_buffer_n_memory (m_buffer);
-
-            LOG_MEDIA_MESSAGE("buffer contains %d memories", n);
-
-            n = 1; // FIXME
-
-            for (i = 0; i < n; i++) {
-                mem = gst_buffer_peek_memory (m_buffer, i);
-
-                g_assert (gst_is_egl_image_memory (mem));
-
-                if (i == 0)
-                    glActiveTexture (GL_TEXTURE0);
-                else if (i == 1)
-                    glActiveTexture (GL_TEXTURE1);
-                else if (i == 2)
-                    glActiveTexture (GL_TEXTURE2);
-
+            if (textureMapper) {
+                glActiveTexture (GL_TEXTURE0);
                 glBindTexture (GL_TEXTURE_2D, textureID); // FIXME
-                glEGLImageTargetTexture2DOES (GL_TEXTURE_2D,
-                    gst_egl_image_memory_get_image (mem));
-
-                m_orientation = gst_egl_image_memory_get_orientation(mem);
-                if (m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_NORMAL
-                    && m_orientation != GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
-                    LOG_ERROR("invalid GstEGLImage orientation");
-                else
-                    LOG_MEDIA_MESSAGE("texture orientation is Y FLIP?: %d", (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP));
-
-                if (m_surface && !textureMapper) {
-                    if (m_orientation == GST_VIDEO_GL_TEXTURE_ORIENTATION_X_NORMAL_Y_FLIP)
-                        m_surface->setFlipTexture(false);
-                    m_surface->copyFromTexture(textureID, IntRect(0, 0, size.width(), size.height()));
-                }
+                glEGLImageTargetTexture2DOES (GL_TEXTURE_2D, gst_egl_image_memory_get_image (mem));
             }
-
+#if USE(GRAPHICS_SURFACE)
+            else
+                m_surface->copyFromTexture(reinterpret_cast<uint32_t>(gst_egl_image_memory_get_image(mem)), IntRect(0, 0, size.width(), size.height()));
+#endif
             g_mutex_unlock(m_bufferMutex);
             client()->setPlatformLayerNeedsDisplay();
             return texture;
@@ -558,6 +553,15 @@ void MediaPlayerPrivateGStreamerBase::triggerDrain()
     if (m_buffer)
         gst_buffer_unref(m_buffer);
     m_buffer = 0;
+    if (m_lastRenderedBuffer)
+        gst_buffer_unref(m_lastRenderedBuffer);
+    m_lastRenderedBuffer = 0;
+    if (m_intermediateBuffer)
+        gst_buffer_unref(m_intermediateBuffer);
+    m_intermediateBuffer = 0;
+    if (m_bufferToUnref)
+        gst_buffer_unref(m_bufferToUnref);
+    m_bufferToUnref = 0;
     g_mutex_unlock(m_bufferMutex);
 }
 

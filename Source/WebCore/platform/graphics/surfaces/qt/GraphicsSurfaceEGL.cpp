@@ -45,6 +45,7 @@ struct GraphicsSurfacePrivate {
         , m_context(EGL_NO_CONTEXT)
         , m_surface(EGL_NO_SURFACE)
         , m_eglImage(EGL_NO_IMAGE_KHR)
+        , m_foreignEglImage(EGL_NO_IMAGE_KHR)
         , m_display(EGL_NO_DISPLAY)
         , m_origin(0)
         , m_fbo(0)
@@ -132,7 +133,8 @@ struct GraphicsSurfacePrivate {
         , m_size(size)
         , m_context(EGL_NO_CONTEXT)
         , m_surface(EGL_NO_SURFACE)
-        , m_eglImage((EGLImageKHR)(imageId))
+        , m_eglImage(reinterpret_cast<EGLImageKHR>(imageId))
+        , m_foreignEglImage(EGL_NO_IMAGE_KHR)
         , m_display(EGL_NO_DISPLAY)
         , m_origin(0)
         , m_fbo(0)
@@ -174,7 +176,12 @@ struct GraphicsSurfacePrivate {
         doneCurrent();
     }
 
-    uint32_t textureId()
+    void saveEGLImage(uint32_t image)
+    {
+        m_foreignEglImage = reinterpret_cast<EGLImageKHR>(image);
+    }
+
+    uint32_t textureId(GraphicsSurface::Flags flags)
     {
         if (!m_texture) {
             glGenTextures(1, &m_texture);
@@ -183,7 +190,13 @@ struct GraphicsSurfacePrivate {
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            eglImageTargetTexture2DOES(GL_TEXTURE_2D, m_eglImage);
+            if (flags & ~GraphicsSurface::SupportsEGLImagePassthrough)
+                eglImageTargetTexture2DOES(GL_TEXTURE_2D, m_eglImage);
+        }
+
+        if (flags & GraphicsSurface::SupportsEGLImagePassthrough) {
+            glBindTexture(GL_TEXTURE_2D, m_texture);
+            eglImageTargetTexture2DOES(GL_TEXTURE_2D, m_foreignEglImage);
         }
 
         return m_texture;
@@ -327,6 +340,7 @@ struct GraphicsSurfacePrivate {
     EGLContext m_context;
     EGLSurface m_surface;
     EGLImageKHR m_eglImage;
+    EGLImageKHR m_foreignEglImage;
     EGLDisplay m_display;
     GLuint m_origin;
     GLuint m_fbo;
@@ -346,8 +360,6 @@ static bool resolveGLMethods()
     if (resolved)
         return true;
 
-    EGLDisplay display = eglGetCurrentDisplay();
-
     eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC) eglGetProcAddress("eglCreateImageKHR");
     eglDestroyImageKHR = (PFNEGLDESTROYIMAGEKHRPROC) eglGetProcAddress("eglDestroyImageKHR");
     eglImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
@@ -359,12 +371,12 @@ static bool resolveGLMethods()
 
 GraphicsSurfaceToken GraphicsSurface::platformExport()
 {
-    return GraphicsSurfaceToken((uint32_t)(m_private->m_eglImage));
+    return GraphicsSurfaceToken(reinterpret_cast<uint32_t>(m_private->m_eglImage));
 }
 
 uint32_t GraphicsSurface::platformGetTextureID()
 {
-    return m_private->textureId();
+    return m_private->textureId(flags());
 }
 
 void GraphicsSurface::platformCopyToGLTexture(uint32_t /*target*/, uint32_t /*id*/, const IntRect& /*targetRect*/, const IntPoint& /*offset*/)
@@ -373,7 +385,10 @@ void GraphicsSurface::platformCopyToGLTexture(uint32_t /*target*/, uint32_t /*id
 
 void GraphicsSurface::platformCopyFromTexture(uint32_t texture, const IntRect& sourceRect)
 {
-    m_private->copyFromTexture(texture, sourceRect, m_flipTexture);
+    if (flags() & SupportsEGLImagePassthrough)
+        m_private->saveEGLImage(texture);
+    else
+        m_private->copyFromTexture(texture, sourceRect, m_flipTexture);
 }
 
 
@@ -385,6 +400,8 @@ void GraphicsSurface::platformPaintToTextureMapper(TextureMapper* textureMapper,
 
 uint32_t GraphicsSurface::platformFrontBuffer() const
 {
+    if (flags() & SupportsEGLImagePassthrough)
+        return reinterpret_cast<uint32_t>(m_private->m_foreignEglImage);
     return 0;
 }
 

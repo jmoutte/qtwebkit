@@ -61,7 +61,8 @@ public:
         SupportsCopyToTexture = 0x20,
         SupportsCopyFromTexture = 0x40,
         SupportsSharing = 0x80,
-        SupportsSingleBuffered = 0x100
+        SupportsSingleBuffered = 0x100,
+        SupportsEGLImagePassthrough = 0x200
     };
 
     enum LockOption {

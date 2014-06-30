@@ -565,9 +565,11 @@ static gboolean webkitVideoSinkProposeAllocation(GstBaseSink* baseSink, GstQuery
         }
     }
 
-    // We need at least 2 buffer because we hold on to the last one.
+    // [WiP] Let's require 8 buffers for now. The player holds to the last 3
+    // ones and the sink holds only the last one so in theory 5 should
+    // be enough.
     if (pool) {
-        gst_query_add_allocation_pool(query, pool, size, 2, 0);
+        gst_query_add_allocation_pool(query, pool, size, 8, 0);
         gst_object_unref(pool);
     }
 

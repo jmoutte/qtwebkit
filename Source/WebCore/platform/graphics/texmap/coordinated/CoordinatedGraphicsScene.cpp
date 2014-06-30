@@ -193,6 +193,11 @@ void CoordinatedGraphicsScene::syncCanvasIfNeeded(TextureMapperLayer* layer, con
         SurfaceBackingStoreMap::iterator it = m_surfaceBackingStores.find(layer);
         RefPtr<TextureMapperSurfaceBackingStore> canvasBackingStore = it->value;
         canvasBackingStore->swapBuffersIfNeeded(state.canvasFrontBuffer);
+
+        RefPtr<GraphicsSurface> surface = canvasBackingStore->graphicsSurface();
+        if (surface->flags() & GraphicsSurface::SupportsEGLImagePassthrough) {
+            surface->copyFromTexture(state.canvasFrontBuffer, IntRect(0, 0, 0, 0));
+        }
     }
 }
 

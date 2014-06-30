@@ -118,7 +118,7 @@ public:
     virtual IntSize platformLayerSize() const;
     virtual uint32_t copyToGraphicsSurface();
     virtual GraphicsSurfaceToken graphicsSurfaceToken() const;
-    virtual GraphicsSurface::Flags graphicsSurfaceFlags() const { return  GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture; }
+    virtual GraphicsSurface::Flags graphicsSurfaceFlags() const { return  GraphicsSurface::SupportsTextureTarget | GraphicsSurface::SupportsSharing | GraphicsSurface::SupportsCopyFromTexture | GraphicsSurface::SupportsEGLImagePassthrough; }
 #endif
 #endif
 
@@ -165,6 +165,8 @@ protected:
 #if USE(GRAPHICS_SURFACE)
     mutable RefPtr<GraphicsSurface> m_surface;
     GstBuffer* m_lastRenderedBuffer;
+    GstBuffer* m_bufferToUnref;
+    GstBuffer* m_intermediateBuffer;
 #if PLATFORM(QT)
     QOffscreenSurface* m_offscreenSurface;
     QOpenGLContext* m_context;
