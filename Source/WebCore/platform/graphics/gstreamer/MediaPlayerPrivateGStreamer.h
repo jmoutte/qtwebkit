@@ -43,7 +43,8 @@ class MediaPlayerPrivateGStreamer : public MediaPlayerPrivateGStreamerBase {
 public:
     ~MediaPlayerPrivateGStreamer();
     static void registerMediaEngine(MediaEngineRegistrar);
-    gboolean handleMessage(GstMessage*);
+    void handleMessage(GstMessage*);
+    void handleSyncMessage(GstMessage*);
     void handlePluginInstallerResult(GstInstallPluginsReturn);
 
     bool hasVideo() const { return m_hasVideo; }

@@ -69,9 +69,14 @@ using namespace std;
 
 namespace WebCore {
 
-static gboolean mediaPlayerPrivateMessageCallback(GstBus*, GstMessage* message, MediaPlayerPrivateGStreamer* player)
+static void mediaPlayerPrivateSyncMessageCallback(GstBus*, GstMessage* message, MediaPlayerPrivateGStreamer* player)
 {
-    return player->handleMessage(message);
+    player->handleSyncMessage(message);
+}
+
+static void mediaPlayerPrivateMessageCallback(GstBus*, GstMessage* message, MediaPlayerPrivateGStreamer* player)
+{
+    player->handleMessage(message);
 }
 
 static void mediaPlayerPrivateSourceChangedCallback(GObject*, GParamSpec*, MediaPlayerPrivateGStreamer* player)
@@ -770,7 +775,27 @@ PassRefPtr<TimeRanges> MediaPlayerPrivateGStreamer::buffered() const
     return timeRanges.release();
 }
 
-gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
+{
+    switch (GST_MESSAGE_TYPE(message)) {
+        case GST_MESSAGE_ELEMENT:
+        {
+            const GstStructure* s = gst_message_get_structure (message);
+            if (gst_structure_has_name (s, "drm-access-denied")) {
+                bool eventRet;
+                RefPtr<Uint8Array> initData = Uint8Array::create(0);
+                GST_DEBUG ("firing the keyNeeded event");
+                eventRet = m_player->keyNeeded (initData.get());
+                GST_DEBUG ("event returned %d", eventRet);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
 {
     GOwnPtr<GError> err;
     GOwnPtr<gchar> debug;
@@ -789,7 +814,7 @@ gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
         // notify of the new location(s) of the media.
         if (!g_strcmp0(messageTypeName, "redirect")) {
             mediaLocationChanged(message);
-            return TRUE;
+            return;
         }
     }
 
@@ -890,7 +915,6 @@ gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
                     GST_MESSAGE_TYPE_NAME(message));
         break;
     }
-    return TRUE;
 }
 
 void MediaPlayerPrivateGStreamer::handlePluginInstallerResult(GstInstallPluginsReturn result)
@@ -1713,6 +1737,8 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     GRefPtr<GstBus> bus = webkitGstPipelineGetBus(GST_PIPELINE(m_playBin.get()));
     gst_bus_add_signal_watch(bus.get());
     g_signal_connect(bus.get(), "message", G_CALLBACK(mediaPlayerPrivateMessageCallback), this);
+    gst_bus_enable_sync_message_emission (bus.get());
+    g_signal_connect(bus.get(), "sync-message", G_CALLBACK(mediaPlayerPrivateSyncMessageCallback), this);
 
     unsigned flagNativeVideo = getGstPlaysFlag("native-video");
     unsigned flagSoftVolume = getGstPlaysFlag("soft-volume");
