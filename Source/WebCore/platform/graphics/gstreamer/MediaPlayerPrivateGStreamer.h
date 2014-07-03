@@ -98,6 +98,10 @@ public:
 
     void simulateAudioInterruption();
 
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+    void needKey(RefPtr<Uint8Array>);
+#endif
+
 private:
     MediaPlayerPrivateGStreamer(MediaPlayer*);
 
@@ -107,6 +111,7 @@ private:
     static MediaPlayer::SupportsType supportsType(const String& type, const String& codecs, const KURL&);
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
     static MediaPlayer::SupportsType extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL&);
+    static void needKeyEventFromMain(void *invocation);
 #endif
     static bool supportsKeySystem(const String& keySystem, const String& mimeType);
 

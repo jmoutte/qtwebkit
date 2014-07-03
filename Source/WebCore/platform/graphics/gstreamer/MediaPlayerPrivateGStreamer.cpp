@@ -775,18 +775,30 @@ PassRefPtr<TimeRanges> MediaPlayerPrivateGStreamer::buffered() const
     return timeRanges.release();
 }
 
+struct MainThreadNeedKeyCallbackInfo {
+    MainThreadNeedKeyCallbackInfo(MediaPlayerPrivateGStreamer* handle, PassRefPtr<Uint8Array> initData) : handle(handle), initData(initData) { }
+    MediaPlayerPrivateGStreamer* handle;
+    RefPtr<Uint8Array> initData;
+};
+
 void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
 {
     switch (GST_MESSAGE_TYPE(message)) {
         case GST_MESSAGE_ELEMENT:
         {
             const GstStructure* s = gst_message_get_structure (message);
-            if (gst_structure_has_name (s, "drm-access-denied")) {
-                bool eventRet;
-                RefPtr<Uint8Array> initData = Uint8Array::create(0);
-                GST_DEBUG ("firing the keyNeeded event");
-                eventRet = m_player->keyNeeded (initData.get());
-                GST_DEBUG ("event returned %d", eventRet);
+            if (gst_structure_has_name (s, "drm-key-needed")) {
+                const gchar *challenge = gst_structure_get_string (s, "challenge");
+                guint32 challenge_length = 0;
+                gst_structure_get_uint (s, "challenge-length", &challenge_length);
+                GST_DEBUG("queueing keyNeeded event with %u bytes of challenge",
+                    challenge_length);
+                RefPtr<Uint8Array> initData = Uint8Array::create(reinterpret_cast<const unsigned char *>(challenge), challenge_length);
+                GST_DEBUG("created initdata array");
+                MainThreadNeedKeyCallbackInfo info(this, initData);
+                GST_DEBUG("created callback info");
+                callOnMainThreadAndWait(needKeyEventFromMain, &info);
+                GST_DEBUG("done, resuming process");
             }
             break;
         }
@@ -1610,9 +1622,27 @@ PassOwnPtr<CDMSession> MediaPlayerPrivateGStreamer::createSession(const String& 
 
     return adoptPtr(new CDMSessionGStreamer(this));
 }
+
+void MediaPlayerPrivateGStreamer::needKey(RefPtr<Uint8Array> initData)
+{
+    m_player->keyNeeded (initData.get());
+}
 #endif
 
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+
+/* Called from main while the GStreamer thread is blocked */
+void MediaPlayerPrivateGStreamer::needKeyEventFromMain(void* invocation)
+{
+    GST_DEBUG("callback called");
+    MainThreadNeedKeyCallbackInfo* info = static_cast<MainThreadNeedKeyCallbackInfo*>(invocation);
+    /* Dispatch to the instance handler which will emit the need key event */
+    if (info && info->handle) {
+      GST_DEBUG("calling needkey on instance %p", info->handle);
+      info->handle->needKey(info->initData);
+    }
+}
+
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL& url)
 {
 
