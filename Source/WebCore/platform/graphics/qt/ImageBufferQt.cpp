@@ -550,8 +550,9 @@ PassRefPtr<Uint8ClampedArray> getImageData(const IntRect& rect, const ImageBuffe
         image.fill(0);
 
     // Let drawImage deal with the conversion.
-    imageData.m_painter->setCompositionMode(QPainter::CompositionMode_Source);
-    imageData.m_painter->drawImage(QPoint(0,0), image, rect);
+    QPainter p(&image);
+    p.setCompositionMode(QPainter::CompositionMode_Source);
+    p.drawImage(QPoint(0,0), imageData.m_impl->toQImage(), rect);
 
     return result.release();
 }
