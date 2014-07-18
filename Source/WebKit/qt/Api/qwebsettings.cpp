@@ -1282,10 +1282,10 @@ void QWebSettings::enablePersistentStorage(const QString& path)
 
 void QWebSettings::enablePersistentCookieStorage(const QString& path)
 {
-   static SharedCookieJar* cookieJar = NULL;
+   if ( true == path.isEmpty() )
+       qFatal("A valid path name is required.");
 
-   if ( cookieJar == NULL && path.isEmpty() != true )
-      static SharedCookieJar* cookieJar = SharedCookieJar::create(path);
+   SharedCookieJar::create(path);
 
 /*
    if ( cookieJar != NULL )

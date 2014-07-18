@@ -29,6 +29,10 @@ public:
     void destroy();
 
 private:
+    QString oldLocation;
+
+    QString& getLocation(void);
+
     SharedCookieJar(const QString&);
     ~SharedCookieJar();
 };
