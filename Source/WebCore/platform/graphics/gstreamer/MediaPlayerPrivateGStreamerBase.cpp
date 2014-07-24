@@ -477,8 +477,10 @@ PassRefPtr<BitmapTexture> MediaPlayerPrivateGStreamerBase::updateTexture(Texture
                 glEGLImageTargetTexture2DOES (GL_TEXTURE_2D, gst_egl_image_memory_get_image (mem));
             }
 #if USE(GRAPHICS_SURFACE)
-            else
-                m_surface->copyFromTexture(reinterpret_cast<uint32_t>(gst_egl_image_memory_get_image(mem)), IntRect(0, 0, size.width(), size.height()));
+            else {
+                EGLImageKHR image = gst_egl_image_memory_get_image(mem);
+                m_surface->copyFromTexture(*((uint32_t*)&image), IntRect(0, 0, size.width(), size.height()));
+            }
 #endif
             g_mutex_unlock(m_bufferMutex);
             client()->setPlatformLayerNeedsDisplay();

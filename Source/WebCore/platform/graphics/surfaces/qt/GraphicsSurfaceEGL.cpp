@@ -133,7 +133,7 @@ struct GraphicsSurfacePrivate {
         , m_size(size)
         , m_context(EGL_NO_CONTEXT)
         , m_surface(EGL_NO_SURFACE)
-        , m_eglImage(reinterpret_cast<EGLImageKHR>(imageId))
+        , m_eglImage((EGLImageKHR)imageId)
         , m_foreignEglImage(EGL_NO_IMAGE_KHR)
         , m_display(EGL_NO_DISPLAY)
         , m_origin(0)
@@ -178,7 +178,7 @@ struct GraphicsSurfacePrivate {
 
     void saveEGLImage(uint32_t image)
     {
-        m_foreignEglImage = reinterpret_cast<EGLImageKHR>(image);
+        m_foreignEglImage = (EGLImageKHR)image;
     }
 
     uint32_t textureId(GraphicsSurface::Flags flags)
@@ -371,7 +371,7 @@ static bool resolveGLMethods()
 
 GraphicsSurfaceToken GraphicsSurface::platformExport()
 {
-    return GraphicsSurfaceToken(reinterpret_cast<uint32_t>(m_private->m_eglImage));
+    return GraphicsSurfaceToken(*((uint32_t*)&m_private->m_eglImage));
 }
 
 uint32_t GraphicsSurface::platformGetTextureID()
@@ -401,7 +401,7 @@ void GraphicsSurface::platformPaintToTextureMapper(TextureMapper* textureMapper,
 uint32_t GraphicsSurface::platformFrontBuffer() const
 {
     if (flags() & SupportsEGLImagePassthrough)
-        return reinterpret_cast<uint32_t>(m_private->m_foreignEglImage);
+        return *((uint32_t*)&m_private->m_foreignEglImage);
     return 0;
 }
 
