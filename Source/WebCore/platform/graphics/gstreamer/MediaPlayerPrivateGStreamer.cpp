@@ -677,6 +677,9 @@ void MediaPlayerPrivateGStreamer::notifyPlayerOfAudio()
 
 void MediaPlayerPrivateGStreamer::setRate(float rate)
 {
+    // Higher rate causes crash.
+    rate = clampTo(rate, -20.0, 20.0);
+
     // Avoid useless playback rate update.
     if (m_playbackRate == rate) {
         // and make sure that upper layers were notified if rate was set
