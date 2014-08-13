@@ -76,6 +76,22 @@ FFTFrame::FFTFrame(const FFTFrame& frame)
     memcpy(imagData(), frame.imagData(), sizeof(float) * unpackedFFTDataSize(m_FFTSize));
 }
 
+FFTFrame::FFTFrame(const FFTFrame* frame, unsigned startFrame, unsigned fftSize)
+    : m_FFTSize(fftSize)
+    , m_log2FFTSize(static_cast<unsigned>(log2(m_FFTSize)))
+    , m_fft(0)
+    , m_inverseFft(0)
+    , m_realData(unpackedFFTDataSize(fftSize))
+    , m_imagData(unpackedFFTDataSize(fftSize))
+{
+    size_t len = unpackedFFTDataSize(m_FFTSize);
+    m_complexData = WTF::fastNewArray<GstFFTF32Complex>(len);
+
+    // Copy/setup frame data.
+    memcpy(realData(), frame->realData() + startFrame, sizeof(float) * len);
+    memcpy(imagData(), frame->imagData() + startFrame, sizeof(float) * len);
+}
+
 void FFTFrame::initializeFFT(bool isForward)
 {
     int fftLength = gst_fft_next_fast_length(m_FFTSize);

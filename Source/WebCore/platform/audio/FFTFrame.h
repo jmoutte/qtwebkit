@@ -83,6 +83,7 @@ public:
     FFTFrame(unsigned fftSize);
     FFTFrame(); // creates a blank/empty frame for later use with createInterpolatedFrame()
     FFTFrame(const FFTFrame& frame);
+    FFTFrame(const FFTFrame* frame, unsigned startFrame, unsigned fftSize);
     ~FFTFrame();
 
     static void initialize();

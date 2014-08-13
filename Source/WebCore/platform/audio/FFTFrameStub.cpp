@@ -59,6 +59,13 @@ FFTFrame::FFTFrame(const FFTFrame& frame)
     ASSERT_NOT_REACHED();
 }
 
+FFTFrame(const FFTFrame* frame, unsigned startFrame, unsigned fftSize)
+    : m_FFTSize(fftSize)
+    , m_log2FFTSize(static_cast<unsigned>(log2(fftSize)))
+{
+    ASSERT_NOT_REACHED();
+}
+
 FFTFrame::~FFTFrame()
 {
     ASSERT_NOT_REACHED();

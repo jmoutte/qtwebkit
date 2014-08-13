@@ -148,6 +148,9 @@ bool HRTFElevation::calculateKernelsForAzimuthElevation(int azimuth, int elevati
     // It's passed in as an internal ASCII identifier and is an implementation detail.
     int positiveElevation = elevation < 0 ? elevation + 360 : elevation;
 
+    // Note that depending on the fftSize returned by the panner, we may be truncating the impulse response we just loaded in.
+    const size_t fftSize = HRTFPanner::fftSizeForSampleRate(sampleRate);
+
 #ifdef USE_CONCATENATED_IMPULSE_RESPONSES
     AudioBus* bus(getConcatenatedImpulseResponsesForSubject(subjectName));
 
@@ -176,6 +179,21 @@ bool HRTFElevation::calculateKernelsForAzimuthElevation(int azimuth, int elevati
     RefPtr<AudioBus> response = AudioBus::createBufferFromRange(bus, startFrame, stopFrame);
     AudioChannel* leftEarImpulseResponse = response->channel(AudioBus::ChannelLeft);
     AudioChannel* rightEarImpulseResponse = response->channel(AudioBus::ChannelRight);
+
+    static bool probed = false;
+    static RefPtr<HRTFKernel> leftKernel;
+    static RefPtr<HRTFKernel> rightKernel;
+    if (!probed) {
+        probed = true;
+        AudioChannel* left = bus->channel(AudioBus::ChannelLeft);
+        AudioChannel* right = bus->channel(AudioBus::ChannelRight);
+        unsigned totalFFTSize = fftSize * TotalNumberOfResponses;
+        leftKernel = HRTFKernel::create(left, totalFFTSize, sampleRate);
+        rightKernel = HRTFKernel::create(right, totalFFTSize, sampleRate);
+    }
+
+    kernelL = HRTFKernel::create(leftKernel.get(), startFrame, fftSize);
+    kernelR = HRTFKernel::create(rightKernel.get(), startFrame, fftSize);
 #else
     String resourceName = String::format("IRC_%s_C_R0195_T%03d_P%03d", subjectName.utf8().data(), azimuth, positiveElevation);
 
@@ -196,12 +214,10 @@ bool HRTFElevation::calculateKernelsForAzimuthElevation(int azimuth, int elevati
     
     AudioChannel* leftEarImpulseResponse = impulseResponse->channelByType(AudioBus::ChannelLeft);
     AudioChannel* rightEarImpulseResponse = impulseResponse->channelByType(AudioBus::ChannelRight);
-#endif
 
-    // Note that depending on the fftSize returned by the panner, we may be truncating the impulse response we just loaded in.
-    const size_t fftSize = HRTFPanner::fftSizeForSampleRate(sampleRate);
     kernelL = HRTFKernel::create(leftEarImpulseResponse, fftSize, sampleRate);
     kernelR = HRTFKernel::create(rightEarImpulseResponse, fftSize, sampleRate);
+#endif
     
     return true;
 }
