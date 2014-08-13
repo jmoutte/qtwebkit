@@ -73,6 +73,11 @@ struct _WebKitWebAudioSourcePrivate {
 
     GSList* pads; // List of queue sink pads. One queue for each planar audio channel.
     GstPad* sourcePad; // src pad of the element, interleaved wav data is pushed to it.
+
+#ifdef GST_API_VERSION_1
+    bool newStreamEventPending;
+    GstSegment segment;
+#endif
 };
 
 enum {
@@ -204,6 +209,11 @@ static void webkit_web_audio_src_init(WebKitWebAudioSrc* src)
 
     priv->provider = 0;
     priv->bus = 0;
+
+#ifdef GST_API_VERSION_1
+    priv->newStreamEventPending = true;
+    gst_segment_init(&priv->segment, GST_FORMAT_TIME);
+#endif
 
 #ifdef GST_API_VERSION_1
     g_rec_mutex_init(&priv->mutex);
@@ -373,6 +383,12 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
     // FIXME: Add support for local/live audio input.
     priv->provider->render(0, priv->bus, priv->framesToPull);
 
+#if GST_CHECK_VERSION(1, 2, 0)
+    guint groupId = 0;
+    if (priv->newStreamEventPending)
+        groupId = gst_util_group_id_next();
+#endif
+
     GSList* padsIt = priv->pads;
     GSList* buffersIt = channelBufferList;
     for (i = 0; padsIt && buffersIt; padsIt = g_slist_next(padsIt), buffersIt = g_slist_next(buffersIt), ++i) {
@@ -387,10 +403,42 @@ static void webKitWebAudioSrcLoop(WebKitWebAudioSrc* src)
         gst_buffer_set_caps(channelBuffer, monoCaps.get());
 #endif
 
+#ifdef GST_API_VERSION_1
+        // Send stream-start, segment and caps events downstream, along with the first buffer.
+        if (priv->newStreamEventPending) {
+            GRefPtr<GstElement> queue = adoptGRef(gst_pad_get_parent_element(pad));
+            GRefPtr<GstPad> sinkPad = adoptGRef(gst_element_get_static_pad(queue.get(), "sink"));
+            GOwnPtr<gchar> queueName(gst_element_get_name(queue.get()));
+            GOwnPtr<gchar> streamId(g_strdup_printf("webaudio/%s", queueName.get()));
+            GstEvent* streamStartEvent = gst_event_new_stream_start(streamId.get());
+#if GST_CHECK_VERSION(1, 2, 0)
+            gst_event_set_group_id(streamStartEvent, groupId);
+#endif
+            gst_pad_send_event(sinkPad.get(), streamStartEvent);
+
+            GRefPtr<GstCaps> monoCaps = adoptGRef(getGStreamerMonoAudioCaps(priv->sampleRate));
+            GstAudioInfo info;
+            gst_audio_info_from_caps(&info, monoCaps.get());
+            GST_AUDIO_INFO_POSITION(&info, 0) = webKitWebAudioGStreamerChannelPosition(i);
+            GRefPtr<GstCaps> capsWithChannelPosition = adoptGRef(gst_audio_info_to_caps(&info));
+            gst_pad_send_event(sinkPad.get(), gst_event_new_caps(capsWithChannelPosition.get()));
+            // GRefPtr<GstCaps> monoCaps = adoptGRef(getGStreamerMonoAudioCaps(priv->sampleRate));
+            // gst_pad_send_event(sinkPad.get(), gst_event_new_caps(monoCaps.get()));
+
+            gst_pad_send_event(sinkPad.get(), gst_event_new_segment(&priv->segment));
+        }
+#endif
+
         GstFlowReturn ret = gst_pad_chain(pad, channelBuffer);
-        if (ret != GST_FLOW_OK)
-            GST_ELEMENT_ERROR(src, CORE, PAD, ("Internal WebAudioSrc error"), ("Failed to push buffer on %s", GST_DEBUG_PAD_NAME(pad)));
+        if (ret != GST_FLOW_OK) {
+            GST_ELEMENT_ERROR(src, CORE, PAD, ("Internal WebAudioSrc error"), ("Failed to push buffer on %s:%s flow: %s", GST_DEBUG_PAD_NAME(pad), gst_flow_get_name(ret)));
+            break;
+        }
     }
+
+#ifdef GST_API_VERSION_1
+    priv->newStreamEventPending = false;
+#endif
 
     g_slist_free(channelBufferList);
 }
@@ -430,6 +478,9 @@ static GstStateChangeReturn webKitWebAudioSrcChangeState(GstElement* element, Gs
             returnValue = GST_STATE_CHANGE_FAILURE;
         break;
     case GST_STATE_CHANGE_PAUSED_TO_READY:
+#ifdef GST_API_VERSION_1
+        src->priv->newStreamEventPending = true;
+#endif
         GST_DEBUG_OBJECT(src, "PAUSED->READY");
         if (!gst_task_join(src->priv->task.get()))
             returnValue = GST_STATE_CHANGE_FAILURE;
