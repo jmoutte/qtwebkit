@@ -145,6 +145,7 @@ AudioContext::AudioContext(Document* document)
     // It's not that useful to have a callback function for this since the audio thread automatically starts rendering on the graph
     // when this has finished (see AudioDestinationNode).
     m_hrtfDatabaseLoader = HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(sampleRate());
+    m_hrtfDatabaseLoader->waitForLoaderThreadCompletion();
 }
 
 // Constructor for offline (non-realtime) rendering.
