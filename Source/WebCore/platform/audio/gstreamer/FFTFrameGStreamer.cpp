@@ -42,14 +42,12 @@ namespace WebCore {
 FFTFrame::FFTFrame(unsigned fftSize)
     : m_FFTSize(fftSize)
     , m_log2FFTSize(static_cast<unsigned>(log2(fftSize)))
+    , m_fft(0)
+    , m_inverseFft(0)
     , m_realData(unpackedFFTDataSize(m_FFTSize))
     , m_imagData(unpackedFFTDataSize(m_FFTSize))
 {
     m_complexData = WTF::fastNewArray<GstFFTF32Complex>(unpackedFFTDataSize(m_FFTSize));
-
-    int fftLength = gst_fft_next_fast_length(m_FFTSize);
-    m_fft = gst_fft_f32_new(fftLength, FALSE);
-    m_inverseFft = gst_fft_f32_new(fftLength, TRUE);
 }
 
 // Creates a blank/empty frame (interpolate() must later be called).
@@ -57,28 +55,42 @@ FFTFrame::FFTFrame()
     : m_FFTSize(0)
     , m_log2FFTSize(0)
     , m_complexData(0)
+    , m_fft(0)
+    , m_inverseFft(0)
 {
-    int fftLength = gst_fft_next_fast_length(m_FFTSize);
-    m_fft = gst_fft_f32_new(fftLength, FALSE);
-    m_inverseFft = gst_fft_f32_new(fftLength, TRUE);
 }
 
 // Copy constructor.
 FFTFrame::FFTFrame(const FFTFrame& frame)
     : m_FFTSize(frame.m_FFTSize)
     , m_log2FFTSize(frame.m_log2FFTSize)
+    , m_fft(0)
+    , m_inverseFft(0)
     , m_realData(unpackedFFTDataSize(frame.m_FFTSize))
     , m_imagData(unpackedFFTDataSize(frame.m_FFTSize))
 {
     m_complexData = WTF::fastNewArray<GstFFTF32Complex>(unpackedFFTDataSize(m_FFTSize));
 
-    int fftLength = gst_fft_next_fast_length(m_FFTSize);
-    m_fft = gst_fft_f32_new(fftLength, FALSE);
-    m_inverseFft = gst_fft_f32_new(fftLength, TRUE);
-
     // Copy/setup frame data.
     memcpy(realData(), frame.realData(), sizeof(float) * unpackedFFTDataSize(m_FFTSize));
     memcpy(imagData(), frame.imagData(), sizeof(float) * unpackedFFTDataSize(m_FFTSize));
+}
+
+void FFTFrame::initializeFFT(bool isForward)
+{
+    int fftLength = gst_fft_next_fast_length(m_FFTSize);
+
+    if (isForward) {
+        if (m_fft)
+            return;
+
+        m_fft = gst_fft_f32_new(fftLength, FALSE);
+    } else {
+        if (m_inverseFft)
+            return;
+
+        m_inverseFft = gst_fft_f32_new(fftLength, TRUE);
+    }
 }
 
 void FFTFrame::initialize()
@@ -128,6 +140,8 @@ void FFTFrame::multiply(const FFTFrame& frame)
 
 void FFTFrame::doFFT(const float* data)
 {
+    initializeFFT(true);
+
     gst_fft_f32_fft(m_fft, data, m_complexData);
 
     // Scale the frequency domain data to match vecLib's scale factor
@@ -147,6 +161,8 @@ void FFTFrame::doFFT(const float* data)
 
 void FFTFrame::doInverseFFT(float* data)
 {
+    initializeFFT(false);
+
     //  Merge the real and imaginary vectors to complex vector.
     float* realData = m_realData.data();
     float* imagData = m_imagData.data();

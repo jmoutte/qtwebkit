@@ -161,6 +161,8 @@ private:
 #endif // USE(WEBAUDIO_FFMPEG)
 
 #if USE(WEBAUDIO_GSTREAMER)
+    void initializeFFT(bool isForward);
+
     GstFFTF32* m_fft;
     GstFFTF32* m_inverseFft;
     GstFFTF32Complex* m_complexData;
