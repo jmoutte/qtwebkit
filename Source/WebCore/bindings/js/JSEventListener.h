@@ -56,7 +56,7 @@ namespace WebCore {
         DOMWrapperWorld* isolatedWorld() const { return m_isolatedWorld.get(); }
 
         JSC::JSObject* wrapper() const { return m_wrapper.get(); }
-        void setWrapper(JSC::VM&, JSC::JSObject* wrapper) const { m_wrapper = JSC::PassWeak<JSC::JSObject>(wrapper); }
+        void setWrapper(JSC::VM&, JSC::JSObject* wrapper) const { m_wrapper = JSC::Strong<JSC::JSObject>(*m_isolatedWorld->vm(), wrapper); }
 
     private:
         virtual JSC::JSObject* initializeJSFunction(ScriptExecutionContext*) const;
@@ -69,7 +69,7 @@ namespace WebCore {
 
     private:
         mutable JSC::Weak<JSC::JSObject> m_jsFunction;
-        mutable JSC::Weak<JSC::JSObject> m_wrapper;
+        mutable JSC::Strong<JSC::JSObject> m_wrapper;
 
         bool m_isAttribute;
         RefPtr<DOMWrapperWorld> m_isolatedWorld;
