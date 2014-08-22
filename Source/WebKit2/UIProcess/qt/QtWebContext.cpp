@@ -36,6 +36,8 @@
 #include <WKStringQt.h>
 #include <WKType.h>
 
+#include "QtWebCustomPaths.h"
+
 namespace WebKit {
 
 // Prevent the destruction of the WKContext for two reasons:
@@ -164,26 +166,34 @@ static QString defaultLocation(QStandardPaths::StandardLocation type)
 
 QString QtWebContext::preparedStoragePath(StorageType type)
 {
-    QString path;
+    QtWebCustomPaths& webcustompaths(QtWebCustomPaths::instance());
+
+    QString path(webcustompaths.getPath(QtWebCustomPaths::PersistentPath));
     switch (type) {
     case DatabaseStorage:
-        path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("Databases");
+        if(true == path.isEmpty())
+            path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("Databases");
         QDir::root().mkpath(path);
         break;
     case LocalStorage:
-        path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("LocalStorage");
+        if(true == path.isEmpty())
+            path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("LocalStorage");
         QDir::root().mkpath(path);
         break;
     case CookieStorage:
-        path = defaultLocation(QStandardPaths::DataLocation);
+        path=webcustompaths.getPath(QtWebCustomPaths::CookiePath);
+        if(true == path.isEmpty())
+            path = defaultLocation(QStandardPaths::DataLocation);
         QDir::root().mkpath(path);
         break;
     case DiskCacheStorage:
-        path = defaultLocation(QStandardPaths::CacheLocation) % QStringLiteral("DiskCache");
+        if(true == path.isEmpty())
+            path = defaultLocation(QStandardPaths::CacheLocation) % QStringLiteral("DiskCache");
         QDir::root().mkpath(path);
         break;
     case IconDatabaseStorage:
-        path = defaultLocation(QStandardPaths::DataLocation);
+        if(true == path.isEmpty())
+            path = defaultLocation(QStandardPaths::DataLocation);
         QDir::root().mkpath(path);
         path += QStringLiteral("WebpageIcons.db");
         break;

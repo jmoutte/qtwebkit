@@ -796,6 +796,7 @@ have?(QTQUICK) {
         UIProcess/API/qt/qwebkittest_p.h \
         UIProcess/qt/PageViewportControllerClientQt.h \
         UIProcess/qt/QtWebContext.h \
+        UIProcess/qt/QtWebCustomPaths.h \
         UIProcess/qt/QtWebPageEventHandler.h \
         UIProcess/qt/QtGestureRecognizer.h \
         UIProcess/qt/QtPanGestureRecognizer.h \
@@ -840,6 +841,7 @@ have?(QTQUICK) {
         UIProcess/qt/QtPinchGestureRecognizer.cpp \
         UIProcess/qt/QtTapGestureRecognizer.cpp \
         UIProcess/qt/QtWebContext.cpp \
+        UIProcess/qt/QtWebCustomPaths.cpp \
         UIProcess/qt/QtWebError.cpp \
         UIProcess/qt/WebContextMenuProxyQt.cpp \
         UIProcess/qt/WebGeolocationProviderQt.cpp \
