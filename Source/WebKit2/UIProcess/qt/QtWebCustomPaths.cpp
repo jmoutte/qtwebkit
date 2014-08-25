@@ -16,7 +16,7 @@ void QtWebCustomPaths::setPath(const QtWebPathType& type, const QString& path)
 {
     Q_ASSERT(true != path.isEmpty());
     Q_ASSERT(true == paths[type].isEmpty());
-    Q_ASSERT(MaxPath != type);
+    Q_ASSERT(MaxPath > type);
 
     if(PersistentStorage != type)
         paths[type] = path;
@@ -31,7 +31,7 @@ void QtWebCustomPaths::setPath(const QtWebPathType& type, const QString& path)
 
 const QString& QtWebCustomPaths::getPath(const QtWebPathType& type) const
 {
-    Q_ASSERT(MaxPath != type);
+    Q_ASSERT(MaxPath > type);
 
     return paths[type];
 }

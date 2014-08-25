@@ -172,12 +172,12 @@ QString QtWebContext::preparedStoragePath(StorageType type)
 
     switch(type)
     {
-        case CookieStorage       : path = webcustompaths.getPath(QtWebCustomPaths::CookieStorage);       break;
-        case DatabaseStorage     : path = webcustompaths.getPath(QtWebCustomPaths::DatabaseStorage);     break;
-        case DiskCacheStorage    : path = webcustompaths.getPath(QtWebCustomPaths::DiskCacheStorage);    break;
+        case CookieStorage       : path = webcustompaths.getPath(QtWebCustomPaths::CookieStorage); break;
+        case DatabaseStorage     : path = webcustompaths.getPath(QtWebCustomPaths::DatabaseStorage); break;
+        case DiskCacheStorage    : path = webcustompaths.getPath(QtWebCustomPaths::DiskCacheStorage); break;
         case IconDatabaseStorage : path = webcustompaths.getPath(QtWebCustomPaths::IconDatabaseStorage) % QStringLiteral("WebpageIcons.db"); break;
-        case LocalStorage        : path = webcustompaths.getPath(QtWebCustomPaths::LocalStorage);        break;
-        default                  : Q_ASSERT(false);
+        case LocalStorage        : path = webcustompaths.getPath(QtWebCustomPaths::LocalStorage); break;
+        default                  : QString(); // Avoid assert on change in StorageType
     }
 
     if (true != path.isEmpty())
