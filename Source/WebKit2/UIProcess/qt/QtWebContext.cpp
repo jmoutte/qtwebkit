@@ -166,34 +166,42 @@ static QString defaultLocation(QStandardPaths::StandardLocation type)
 
 QString QtWebContext::preparedStoragePath(StorageType type)
 {
+    QString path;
+
     QtWebCustomPaths& webcustompaths(QtWebCustomPaths::instance());
 
-    QString path(webcustompaths.getPath(QtWebCustomPaths::PersistentPath));
+    switch(type)
+    {
+        case CookieStorage       : path = webcustompaths.getPath(QtWebCustomPaths::CookieStorage);       break;
+        case DatabaseStorage     : path = webcustompaths.getPath(QtWebCustomPaths::DatabaseStorage);     break;
+        case DiskCacheStorage    : path = webcustompaths.getPath(QtWebCustomPaths::DiskCacheStorage);    break;
+        case IconDatabaseStorage : path = webcustompaths.getPath(QtWebCustomPaths::IconDatabaseStorage) % QStringLiteral("WebpageIcons.db"); break;
+        case LocalStorage        : path = webcustompaths.getPath(QtWebCustomPaths::LocalStorage);        break;
+        default                  : Q_ASSERT(false);
+    }
+
+    if (true != path.isEmpty())
+        return path;
+
     switch (type) {
     case DatabaseStorage:
-        if(true == path.isEmpty())
-            path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("Databases");
+        path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("Databases");
         QDir::root().mkpath(path);
         break;
     case LocalStorage:
-        if(true == path.isEmpty())
-            path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("LocalStorage");
+        path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("LocalStorage");
         QDir::root().mkpath(path);
         break;
     case CookieStorage:
-        path=webcustompaths.getPath(QtWebCustomPaths::CookiePath);
-        if(true == path.isEmpty())
-            path = defaultLocation(QStandardPaths::DataLocation);
+        path = defaultLocation(QStandardPaths::DataLocation);
         QDir::root().mkpath(path);
         break;
     case DiskCacheStorage:
-        if(true == path.isEmpty())
-            path = defaultLocation(QStandardPaths::CacheLocation) % QStringLiteral("DiskCache");
+        path = defaultLocation(QStandardPaths::CacheLocation) % QStringLiteral("DiskCache");
         QDir::root().mkpath(path);
         break;
     case IconDatabaseStorage:
-        if(true == path.isEmpty())
-            path = defaultLocation(QStandardPaths::DataLocation);
+        path = defaultLocation(QStandardPaths::DataLocation);
         QDir::root().mkpath(path);
         path += QStringLiteral("WebpageIcons.db");
         break;

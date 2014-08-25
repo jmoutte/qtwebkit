@@ -1,10 +1,9 @@
 #include "QtWebCustomPaths.h"
 
-//TODO: avoid race conditions
-
 QtWebCustomPaths::QtWebCustomPaths(){};
 QtWebCustomPaths::~QtWebCustomPaths(){};
 QtWebCustomPaths::QtWebCustomPaths(const QtWebCustomPaths&){};
+QtWebCustomPaths& QtWebCustomPaths::operator=(const QtWebCustomPaths&){};
 
 /*static*/ QtWebCustomPaths& QtWebCustomPaths::instance(void)
 {
@@ -12,34 +11,27 @@ QtWebCustomPaths::QtWebCustomPaths(const QtWebCustomPaths&){};
 
     return webcustompaths;
 }
-        
-QString& _CustomPaths_(const QtWebCustomPaths::QtWebPathType& type)
-{
-    static QString paths[QtWebCustomPaths::MaxPath]; // QString() creates NULL, empty, strings
-
-    return paths[type];
-}
-        
+     
 void QtWebCustomPaths::setPath(const QtWebPathType& type, const QString& path)
 {
-    switch(type)
+    Q_ASSERT(true != path.isEmpty());
+    Q_ASSERT(true == paths[type].isEmpty());
+    Q_ASSERT(MaxPath != type);
+
+    if(PersistentStorage != type)
+        paths[type] = path;
+    else
     {
-        case    PersistentPath :
-        case    CookiePath     :
-                _CustomPaths_(type) = path;
-                break;
-        default                :;
+        paths[DatabaseStorage] = path;
+        paths[DiskCacheStorage] = path;
+        paths[IconDatabaseStorage] = path;
+        paths[LocalStorage] = path;
     }
 }
 
-QString QtWebCustomPaths::getPath(const QtWebPathType& type)
+const QString& QtWebCustomPaths::getPath(const QtWebPathType& type) const
 {
-    switch(type)
-    {
-        case    PersistentPath :
-        case    CookiePath     :
-                return QString(_CustomPaths_(type));
-        default                :
-                return QString();
-    }
+    Q_ASSERT(MaxPath != type);
+
+    return paths[type];
 }

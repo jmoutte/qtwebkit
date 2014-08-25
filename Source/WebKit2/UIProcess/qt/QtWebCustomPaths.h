@@ -7,20 +7,24 @@ class __attribute__((visibility("default"))) QtWebCustomPaths
 {
     public:
 
-    enum QtWebPathType {CookiePath, PersistentPath, MaxPath};
+    enum QtWebPathType {CookieStorage = 0, DatabaseStorage = 1, DiskCacheStorage = 2, IconDatabaseStorage = 3, LocalStorage = 4, PersistentStorage = 5 /* wrapper */, MaxPath = 6 /* should be last */};
+
+    ~QtWebCustomPaths();
 
     /* only a single setter should exist */
     static QtWebCustomPaths& instance(void);
         
     void setPath(const QtWebPathType& type, const QString& path);
-    QString getPath(const QtWebPathType& type);
+    const QString& getPath(const QtWebPathType& type) const;
 
     private:
 
     QtWebCustomPaths();
-    ~QtWebCustomPaths();
 
     QtWebCustomPaths(const QtWebCustomPaths&);
+    QtWebCustomPaths& operator=(const QtWebCustomPaths&);
+
+    QString paths[QtWebCustomPaths::MaxPath]; // QString() creates NULL, empty, strings
 };
 
 #endif // _QTWEBCUSTOMPATHS_H_
