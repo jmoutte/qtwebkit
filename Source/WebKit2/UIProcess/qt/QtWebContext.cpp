@@ -36,6 +36,8 @@
 #include <WKStringQt.h>
 #include <WKType.h>
 
+#include "QtWebCustomPaths.h"
+
 namespace WebKit {
 
 // Prevent the destruction of the WKContext for two reasons:
@@ -165,6 +167,22 @@ static QString defaultLocation(QStandardPaths::StandardLocation type)
 QString QtWebContext::preparedStoragePath(StorageType type)
 {
     QString path;
+
+    QtWebCustomPaths& webcustompaths(QtWebCustomPaths::instance());
+
+    switch(type)
+    {
+        case CookieStorage       : path = webcustompaths.getPath(QtWebCustomPaths::CookieStorage); break;
+        case DatabaseStorage     : path = webcustompaths.getPath(QtWebCustomPaths::DatabaseStorage); break;
+        case DiskCacheStorage    : path = webcustompaths.getPath(QtWebCustomPaths::DiskCacheStorage); break;
+        case IconDatabaseStorage : path = webcustompaths.getPath(QtWebCustomPaths::IconDatabaseStorage) % QStringLiteral("WebpageIcons.db"); break;
+        case LocalStorage        : path = webcustompaths.getPath(QtWebCustomPaths::LocalStorage); break;
+        default                  : QString(); // Avoid assert on change in StorageType
+    }
+
+    if (true != path.isEmpty())
+        return path;
+
     switch (type) {
     case DatabaseStorage:
         path = defaultLocation(QStandardPaths::DataLocation) % QStringLiteral("Databases");

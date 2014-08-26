@@ -40,15 +40,10 @@ static SharedCookieJar*            facadeImplementation = NULL;
    if (facadeImplementation == NULL)
       facadeImplementation = new SharedCookieJar (storageLocation);
    else
-      if (facadeImplementation->getLocation() != storageLocation)
+      if (facadeImplementation->location != storageLocation)
          qFatal ("Multiple cookiejars (with different locations) are not supported");
 
    return (facadeImplementation);
-}
-
-QString& SharedCookieJar::getLocation()
-{
-    return oldLocation;
 }
 
 void SharedCookieJar::destroy ()
@@ -63,7 +58,7 @@ void SharedCookieJar::destroy ()
 */
 }
 
-SharedCookieJar::SharedCookieJar (const QString& location) : oldLocation(location)
+SharedCookieJar::SharedCookieJar (const QString& _location_) : location(_location_)
 {
 #if !USE(SOUP)
    actualImplementation = WebCore::SharedCookieJarQt::create (location);
