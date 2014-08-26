@@ -98,6 +98,13 @@ HRTFKernel::HRTFKernel(AudioChannel* channel, size_t fftSize, float sampleRate)
     m_fftFrame->doPaddedFFT(impulseResponse, truncatedResponseLength);
 }
 
+HRTFKernel::HRTFKernel(HRTFKernel* sourceKernel, unsigned startFrame, unsigned fftSize)
+    : m_frameDelay(sourceKernel->frameDelay())
+    , m_sampleRate(sourceKernel->sampleRate())
+{
+    m_fftFrame = adoptPtr(new FFTFrame(sourceKernel->fftFrame(), startFrame, fftSize));
+}
+
 size_t HRTFKernel::fftSize() const
 {
     return m_fftFrame->fftSize();

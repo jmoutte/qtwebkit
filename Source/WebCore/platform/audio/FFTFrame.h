@@ -83,6 +83,7 @@ public:
     FFTFrame(unsigned fftSize);
     FFTFrame(); // creates a blank/empty frame for later use with createInterpolatedFrame()
     FFTFrame(const FFTFrame& frame);
+    FFTFrame(const FFTFrame* frame, unsigned startFrame, unsigned fftSize);
     ~FFTFrame();
 
     static void initialize();
@@ -161,6 +162,8 @@ private:
 #endif // USE(WEBAUDIO_FFMPEG)
 
 #if USE(WEBAUDIO_GSTREAMER)
+    void initializeFFT(bool isForward);
+
     GstFFTF32* m_fft;
     GstFFTF32* m_inverseFft;
     GstFFTF32Complex* m_complexData;

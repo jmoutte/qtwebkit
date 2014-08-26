@@ -61,6 +61,11 @@ public:
         return adoptRef(new HRTFKernel(fftFrame, frameDelay, sampleRate));
     }
 
+    static PassRefPtr<HRTFKernel> create(HRTFKernel* sourceKernel, unsigned startFrame, unsigned stopFrame)
+    {
+        return adoptRef(new HRTFKernel(sourceKernel, startFrame, stopFrame));
+    }
+
     // Given two HRTFKernels, and an interpolation factor x: 0 -> 1, returns an interpolated HRTFKernel.
     static PassRefPtr<HRTFKernel> createInterpolatedKernel(HRTFKernel* kernel1, HRTFKernel* kernel2, float x);
   
@@ -78,7 +83,9 @@ public:
 private:
     // Note: this is destructive on the passed in AudioChannel.
     HRTFKernel(AudioChannel*, size_t fftSize, float sampleRate);
-    
+
+    HRTFKernel(HRTFKernel* sourceKernel, unsigned startFrame, unsigned stopFrame);
+
     HRTFKernel(PassOwnPtr<FFTFrame> fftFrame, float frameDelay, float sampleRate)
         : m_fftFrame(fftFrame)
         , m_frameDelay(frameDelay)
