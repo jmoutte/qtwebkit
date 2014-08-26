@@ -892,7 +892,7 @@ void webKitWebSrcSetMediaPlayer(WebKitWebSrc* src, WebCore::MediaPlayer* player)
 }
 
 StreamingClient::StreamingClient(WebKitWebSrc* src)
-    : m_src(static_cast<GstElement*>(gst_object_ref(src)))
+    : m_src(adoptGRef(static_cast<GstElement*>(gst_object_ref(src))))
 {
 }
 
