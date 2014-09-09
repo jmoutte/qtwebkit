@@ -54,9 +54,9 @@ FFTFrame::FFTFrame(unsigned fftSize)
 FFTFrame::FFTFrame()
     : m_FFTSize(0)
     , m_log2FFTSize(0)
-    , m_complexData(0)
     , m_fft(0)
     , m_inverseFft(0)
+    , m_complexData(0)
 {
 }
 

@@ -177,8 +177,6 @@ bool HRTFElevation::calculateKernelsForAzimuthElevation(int azimuth, int elevati
     unsigned startFrame = index * ResponseFrameSize;
     unsigned stopFrame = startFrame + ResponseFrameSize;
     RefPtr<AudioBus> response = AudioBus::createBufferFromRange(bus, startFrame, stopFrame);
-    AudioChannel* leftEarImpulseResponse = response->channel(AudioBus::ChannelLeft);
-    AudioChannel* rightEarImpulseResponse = response->channel(AudioBus::ChannelRight);
 
     static bool probed = false;
     static RefPtr<HRTFKernel> leftKernel;
