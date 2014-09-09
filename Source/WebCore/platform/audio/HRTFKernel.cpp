@@ -57,8 +57,10 @@ static float extractAverageGroupDelay(AudioChannel* channel, size_t analysisFFTS
     if (!isSizeGood)
         return 0;
     
+#if !USE(WEBAUDIO_GSTREAMER)
     // Check for power-of-2.
     ASSERT(1UL << static_cast<unsigned>(log2(analysisFFTSize)) == analysisFFTSize);
+#endif
 
     FFTFrame estimationFrame(analysisFFTSize);
     estimationFrame.doFFT(impulseP);
