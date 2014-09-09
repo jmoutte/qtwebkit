@@ -26,7 +26,6 @@ class __attribute__((visibility("default"))) SharedCookieJar
 {
 public:
     static SharedCookieJar* create(const QString&);
-    void destroy();
 
 private:
     QString location;

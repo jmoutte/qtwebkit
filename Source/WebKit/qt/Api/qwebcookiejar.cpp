@@ -27,54 +27,41 @@
 #include <libsoup/soup.h>
 #endif
 
+static SharedCookieJar* facadeImplementation = NULL;
 #if USE(SOUP)
-static SoupCookieJar*              actualImplementation = NULL;
-static SharedCookieJar*            facadeImplementation = NULL;
+static SoupCookieJar* actualImplementation = NULL;
 #else
 static WebCore::SharedCookieJarQt* actualImplementation = NULL;
-static SharedCookieJar*            facadeImplementation = NULL;
 #endif
 
-/* static */ SharedCookieJar* SharedCookieJar::create(const QString& storageLocation)
+SharedCookieJar* SharedCookieJar::create(const QString& storageLocation)
 {
    if (facadeImplementation == NULL)
-      facadeImplementation = new SharedCookieJar (storageLocation);
+      facadeImplementation = new SharedCookieJar(storageLocation);
    else
       if (facadeImplementation->location != storageLocation)
-         qFatal ("Multiple cookiejars (with different locations) are not supported");
+         qFatal("Multiple cookiejars (with different locations) are not supported");
 
-   return (facadeImplementation);
+   return facadeImplementation;
 }
 
-void SharedCookieJar::destroy ()
-{
-   /* not implemented */
-/*
-#if !USE(SOUP)
-   if (NULL == actualImplementation)
-      delete actualImplementation;
-#else
-#endif
-*/
-}
-
-SharedCookieJar::SharedCookieJar (const QString& _location_) : location(_location_)
+SharedCookieJar::SharedCookieJar(const QString& _location_)
+    : location(_location_)
 {
 #if !USE(SOUP)
-   actualImplementation = WebCore::SharedCookieJarQt::create (location);
+   actualImplementation = WebCore::SharedCookieJarQt::create(location);
 #else
-   QByteArray full_path_name = location.toLocal8Bit ();
-   full_path_name.append ("/cookies.sqlite");
+   QByteArray full_path_name = location.toLocal8Bit();
+   full_path_name.append("/cookies.sqlite");
 
-   SoupSession* session = WebCore::ResourceHandle::defaultSession ();
-   SoupCookieJar* actualImplementation = soup_cookie_jar_db_new (full_path_name.constData (), FALSE);
-   soup_session_add_feature (session, SOUP_SESSION_FEATURE (actualImplementation) );
+   SoupSession* session = WebCore::ResourceHandle::defaultSession();
+   actualImplementation = soup_cookie_jar_db_new(full_path_name.constData(), FALSE);
+   soup_session_add_feature(session, SOUP_SESSION_FEATURE(actualImplementation));
 
-   g_object_unref (actualImplementation);
+   g_object_unref(actualImplementation);
 #endif
 }
 
-SharedCookieJar::~SharedCookieJar ()
+SharedCookieJar::~SharedCookieJar()
 {
-   destroy();
 }
