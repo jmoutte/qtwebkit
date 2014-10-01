@@ -275,7 +275,7 @@ contains(TEMPLATE, lib) {
         # Replace the hardcoded archiver command line
         # options to use GNU ar's thin archive format.
         AR_COMMAND = $$split(QMAKE_AR, " ")
-        QMAKE_AR = $$member(AR_COMMAND, 0) cruT
+        QMAKE_AR = ar cruT
     }
 
     isEmpty(DESTDIR): DESTDIR = $$targetSubDir()
