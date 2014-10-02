@@ -800,6 +800,7 @@ generateBindings.commands = $$setEnvironmentVariable(SOURCE_ROOT, $$toSystemPath
                             --defines \"$$javascriptFeatureDefines()\" \
                             --generator JS \
                             --include Modules/discovery \
+                            --include Modules/encryptedmedia \
                             --include Modules/filesystem \
                             --include Modules/geolocation \
                             --include Modules/indexeddb \
