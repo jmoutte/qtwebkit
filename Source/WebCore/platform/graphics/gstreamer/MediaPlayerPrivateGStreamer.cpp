@@ -787,18 +787,24 @@ void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
         case GST_MESSAGE_ELEMENT:
         {
             const GstStructure* s = gst_message_get_structure (message);
+            /* Here we receive the DRM init data from the pipeline: we will emit
+             * the needkey event with that data and the browser might create a 
+             * CDMSession from this event handler. If such a session was created
+             * We will emit the message event from the session to provide the 
+             * DRM challenge to the browser and wait for an update. If on the
+             * contrary no session was created we won't wait and let the pipeline
+             * error out by itself. */
             if (gst_structure_has_name (s, "drm-key-needed")) {
-                const gchar *challenge = gst_structure_get_string (s, "challenge");
-                guint32 challenge_length = 0;
-                gst_structure_get_uint (s, "challenge-length", &challenge_length);
-                GST_DEBUG("queueing keyNeeded event with %u bytes of challenge",
-                    challenge_length);
-                RefPtr<Uint8Array> initData = Uint8Array::create(reinterpret_cast<const unsigned char *>(challenge), challenge_length);
-                GST_DEBUG("created initdata array");
-                MainThreadNeedKeyCallbackInfo info(this, initData);
-                GST_DEBUG("created callback info");
-                callOnMainThreadAndWait(needKeyEventFromMain, &info);
-                GST_DEBUG("done, resuming process");
+                const guint8 *data = NULL;
+                guint32 data_length = 0;
+                gboolean ret = gst_structure_get (s, "data", G_TYPE_POINTER, &data, "data-length", G_TYPE_UINT, &data_length, NULL);
+
+                if (ret && data_length) {
+                  GST_DEBUG("queueing keyNeeded event with %u bytes of data", data_length);
+                  RefPtr<Uint8Array> initData = Uint8Array::create(reinterpret_cast<const unsigned char *>(data), data_length);
+                  MainThreadNeedKeyCallbackInfo info(this, initData);
+                  callOnMainThreadAndWait(needKeyEventFromMain, &info);
+                }
             }
             break;
         }
@@ -1634,11 +1640,9 @@ void MediaPlayerPrivateGStreamer::needKey(RefPtr<Uint8Array> initData)
 /* Called from main while the GStreamer thread is blocked */
 void MediaPlayerPrivateGStreamer::needKeyEventFromMain(void* invocation)
 {
-    GST_DEBUG("callback called");
     MainThreadNeedKeyCallbackInfo* info = static_cast<MainThreadNeedKeyCallbackInfo*>(invocation);
     /* Dispatch to the instance handler which will emit the need key event */
     if (info && info->handle) {
-      GST_DEBUG("calling needkey on instance %p", info->handle);
       info->handle->needKey(info->initData);
     }
 }
