@@ -33,6 +33,10 @@
 #include <gst/pbutils/install-plugins.h>
 #include <wtf/Forward.h>
 
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+#include <wtf/threads/BinarySemaphore.h>
+#endif
+
 typedef struct _GstBuffer GstBuffer;
 typedef struct _GstMessage GstMessage;
 typedef struct _GstElement GstElement;
@@ -100,6 +104,10 @@ public:
 
 #if ENABLE(ENCRYPTED_MEDIA_V2)
     void needKey(RefPtr<Uint8Array>);
+#endif
+
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    void keyAdded();
 #endif
 
 private:
@@ -187,6 +195,9 @@ private:
     GstState m_requestedState;
     GRefPtr<GstElement> m_autoAudioSink;
     bool m_missingPlugins;
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    BinarySemaphore m_drmKeySemaphore;
+#endif
 };
 }
 
