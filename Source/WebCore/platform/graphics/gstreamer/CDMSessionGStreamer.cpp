@@ -47,7 +47,16 @@ CDMSessionGStreamer::CDMSessionGStreamer(MediaPlayerPrivateGStreamer* parent)
     : m_parent(parent)
     , m_client(NULL)
     , m_sessionId(createCanonicalUUIDString())
+    , m_DxDrmStream(NULL)
 {
+}
+
+CDMSessionGStreamer::~CDMSessionGStreamer ()
+{
+  if (m_DxDrmStream) {
+    DxDrmStream_Close (&m_DxDrmStream);
+    m_DxDrmStream = NULL;
+  }
 }
 
 PassRefPtr<Uint8Array> CDMSessionGStreamer::generateKeyRequest(const String& mimeType, Uint8Array* initData, String& destinationURL, unsigned short& errorCode, unsigned long& systemCode)
@@ -57,14 +66,14 @@ PassRefPtr<Uint8Array> CDMSessionGStreamer::generateKeyRequest(const String& mim
     UNUSED_PARAM(systemCode);
     
     // Instantiate Discretix DRM client from init data. This could be the WRMHEADER or a complete ASF header..
-    EDxDrmStatus status = DxDrmClient_OpenDrmStreamFromData (&dx_drm_stream, initData->data (), initData->byteLength());
+    EDxDrmStatus status = DxDrmClient_OpenDrmStreamFromData (&m_DxDrmStream, initData->data (), initData->byteLength());
     if (status != DX_SUCCESS) {
       GST_WARNING ("failed creating DxDrmClient from initData (%d)", status);
       return NULL;
     }
     
     // Set Secure Clock
-    status = DxDrmStream_AdjustClock (dx_drm_stream, DX_AUTO_NO_UI);
+    status = DxDrmStream_AdjustClock (m_DxDrmStream, DX_AUTO_NO_UI);
     if (status != DX_SUCCESS) {
       GST_WARNING ("failed setting secure clock (%d)", status);
       return NULL;
@@ -74,7 +83,7 @@ PassRefPtr<Uint8Array> CDMSessionGStreamer::generateKeyRequest(const String& mim
     gpointer challenge = g_malloc0 (challenge_length);
     
     // Get challenge
-    status = DxDrmStream_GetLicenseChallenge (dx_drm_stream, challenge, (DxUint32 *) &challenge_length);
+    status = DxDrmStream_GetLicenseChallenge (m_DxDrmStream, challenge, (DxUint32 *) &challenge_length);
     if (status != DX_SUCCESS) {
       GST_WARNING ("failed to generate challenge request (%d)", status);
       g_free (challenge);
@@ -82,7 +91,7 @@ PassRefPtr<Uint8Array> CDMSessionGStreamer::generateKeyRequest(const String& mim
     }
     
     // Get License URL
-    destinationURL = (const char *) DxDrmStream_GetTextAttribute (dx_drm_stream, DX_ATTR_SILENT_URL, DX_ACTIVE_CONTENT);
+    destinationURL = (const char *) DxDrmStream_GetTextAttribute (m_DxDrmStream, DX_ATTR_SILENT_URL, DX_ACTIVE_CONTENT);
     
     StringBuilder builder;
     builder.appendLiteral ("challenge=");
@@ -108,7 +117,7 @@ bool CDMSessionGStreamer::update(Uint8Array* key, RefPtr<Uint8Array>& nextMessag
     
     DxBool isAckRequired = false;
     HDxResponseResult responseResult = NULL;
-    EDxDrmStatus status = DxDrmStream_ProcessLicenseResponse (dx_drm_stream, key->data (), key->byteLength (), &responseResult, &isAckRequired);
+    EDxDrmStatus status = DxDrmStream_ProcessLicenseResponse (m_DxDrmStream, key->data (), key->byteLength (), &responseResult, &isAckRequired);
     if (status != DX_SUCCESS) {
       GST_WARNING ("failed processing license response (%d)", status);
       return false;
@@ -135,9 +144,14 @@ bool CDMSessionGStreamer::update(Uint8Array* key, RefPtr<Uint8Array>& nextMessag
       GST_MEMDUMP ("generated license ack request :", (const guint8 *) builder.characters8 (), builder.length ());
       
       nextMessage = Uint8Array::create(reinterpret_cast<const unsigned char *>(builder.characters8 ()), builder.length ());
+      
+      return false;
     }
-    
-    return true;
+    else {
+      // Notify the player instance that a key was added
+      m_parent->keyAdded ();
+      return true;
+    }
 }
 
 }

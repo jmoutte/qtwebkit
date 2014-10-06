@@ -43,7 +43,7 @@ class MediaPlayerPrivateGStreamer;
 class CDMSessionGStreamer : public CDMSession {
 public:
     CDMSessionGStreamer(MediaPlayerPrivateGStreamer* parent);
-    virtual ~CDMSessionGStreamer() { }
+    virtual ~CDMSessionGStreamer() OVERRIDE;
 
     virtual void setClient(CDMSessionClient* client) OVERRIDE { m_client = client; }
     virtual const String& sessionId() const OVERRIDE { return m_sessionId; }
@@ -57,7 +57,7 @@ protected:
     String m_sessionId;
 
 #if USE(DXDRM)
-    HDxDrmStream dx_drm_stream;
+    HDxDrmStream m_DxDrmStream;
 #endif
 
 };
