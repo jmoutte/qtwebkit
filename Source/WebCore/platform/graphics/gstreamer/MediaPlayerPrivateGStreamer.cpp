@@ -813,12 +813,12 @@ void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
                   GST_DEBUG ("queueing keyNeeded event with %u bytes of data", data_length);
                   RefPtr<Uint8Array> initData = Uint8Array::create(reinterpret_cast<const unsigned char *>(data), data_length);
                   MainThreadNeedKeyCallbackInfo info(this, initData);
+                  // We need to reset the semaphore first. signal, wait
+                  m_drmKeySemaphore.signal ();
+                  m_drmKeySemaphore.wait ();
                   // Fire the need key event from main thread
                   callOnMainThreadAndWait(needKeyEventFromMain, &info);
                   // Wait for a potential license
-                  // We need to reset the semaphore first. signal, wait and wait again
-                  m_drmKeySemaphore.signal ();
-                  m_drmKeySemaphore.wait ();
                   GST_DEBUG ("waiting for a license");
                   m_drmKeySemaphore.wait ();
                   GST_DEBUG ("finished waiting");
