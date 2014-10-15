@@ -785,17 +785,20 @@ PassRefPtr<TimeRanges> MediaPlayerPrivateGStreamer::buffered() const
     return timeRanges.release();
 }
 
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
 struct MainThreadNeedKeyCallbackInfo {
     MainThreadNeedKeyCallbackInfo(MediaPlayerPrivateGStreamer* handle, PassRefPtr<Uint8Array> initData) : handle(handle), initData(initData) { }
     MediaPlayerPrivateGStreamer* handle;
     RefPtr<Uint8Array> initData;
 };
+#endif
 
 void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
 {
     switch (GST_MESSAGE_TYPE(message)) {
         case GST_MESSAGE_ELEMENT:
         {
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
             const GstStructure* s = gst_message_get_structure (message);
             /* Here we receive the DRM init data from the pipeline: we will emit
              * the needkey event with that data and the browser might create a 
@@ -824,6 +827,7 @@ void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
                   GST_DEBUG ("finished waiting");
                 }
             }
+#endif
             break;
         }
         default:
