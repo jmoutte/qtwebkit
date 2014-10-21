@@ -660,6 +660,16 @@ enable?(GAMEPAD) {
     $$PWD/Modules/gamepad/NavigatorGamepad.idl
 }
 
+enable?(ENCRYPTED_MEDIA_V2) {
+  IDL_BINDINGS += \
+    $$PWD/html/MediaKeyError.idl \
+    $$PWD/html/MediaKeyEvent.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeyMessageEvent.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeyNeededEvent.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeySession.idl \
+    $$PWD/Modules/encryptedmedia/MediaKeys.idl
+}
+
 enable?(VIDEO_TRACK) {
   IDL_BINDINGS += \
     $$PWD/html/track/AudioTrack.idl \
@@ -790,6 +800,7 @@ generateBindings.commands = $$setEnvironmentVariable(SOURCE_ROOT, $$toSystemPath
                             --defines \"$$javascriptFeatureDefines()\" \
                             --generator JS \
                             --include Modules/discovery \
+                            --include Modules/encryptedmedia \
                             --include Modules/filesystem \
                             --include Modules/geolocation \
                             --include Modules/indexeddb \

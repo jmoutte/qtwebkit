@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2014 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,56 +23,49 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MediaKeys_h
-#define MediaKeys_h
+#ifndef CDMSession_h
+#define CDMSession_h
 
 #if ENABLE(ENCRYPTED_MEDIA_V2)
 
-#include "CDM.h"
-#include "EventTarget.h"
-#include "ExceptionCode.h"
-#include <wtf/OwnPtr.h>
-#include <wtf/PassRefPtr.h>
-#include <wtf/RefCounted.h>
 #include <wtf/Uint8Array.h>
-#include <wtf/Vector.h>
+#include <wtf/Forward.h>
+#include <wtf/PassRefPtr.h>
 #include <wtf/text/WTFString.h>
 
 namespace WebCore {
 
-class MediaKeySession;
-class HTMLMediaElement;
-
-class MediaKeys : public RefCounted<MediaKeys>, public CDMClient {
+class CDMSessionClient {
 public:
-    static PassRefPtr<MediaKeys> create(const String& keySystem, ExceptionCode&);
-    virtual ~MediaKeys();
+    virtual ~CDMSessionClient() { };
+    virtual void sendMessage(Uint8Array*, String destinationURL) = 0;
 
-    PassRefPtr<MediaKeySession> createSession(ScriptExecutionContext*, const String& mimeType, Uint8Array* initData, ExceptionCode&);
+    enum {
+        MediaKeyErrorUnknown = 1,
+        MediaKeyErrorClient,
+        MediaKeyErrorService,
+        MediaKeyErrorOutput,
+        MediaKeyErrorHardwareChange,
+        MediaKeyErrorDomain,
+    };
+    typedef unsigned short MediaKeyErrorCode;
+    virtual void sendError(MediaKeyErrorCode, unsigned long systemCode) = 0;
+};
 
-    static bool isTypeSupported(const String& keySystem, const String& mimeType);
+class CDMSession {
+public:
+    CDMSession() { }
+    virtual ~CDMSession() { }
 
-    const String& keySystem() const { return m_keySystem; }
-    CDM* cdm() { return m_cdm.get(); }
-
-    HTMLMediaElement* mediaElement() const { return m_mediaElement; }
-    void setMediaElement(HTMLMediaElement*);
-
-protected:
-    // CDMClient:
-    virtual MediaPlayer* cdmMediaPlayer(const CDM*) const OVERRIDE;
-
-    MediaKeys(const String& keySystem, PassOwnPtr<CDM>);
-
-    Vector<RefPtr<MediaKeySession> > m_sessions;
-
-    HTMLMediaElement* m_mediaElement;
-    String m_keySystem;
-    OwnPtr<CDM> m_cdm;
+    virtual void setClient(CDMSessionClient*) = 0;
+    virtual const String& sessionId() const = 0;
+    virtual PassRefPtr<Uint8Array> generateKeyRequest(const String& mimeType, Uint8Array* initData, String& destinationURL, unsigned short& errorCode, unsigned long& systemCode) = 0;
+    virtual void releaseKeys() = 0;
+    virtual bool update(Uint8Array*, RefPtr<Uint8Array>& nextMessage, unsigned short& errorCode, unsigned long& systemCode) = 0;
 };
 
 }
 
 #endif // ENABLE(ENCRYPTED_MEDIA_V2)
 
-#endif // MediaKeys_h
+#endif // CDMSession_h

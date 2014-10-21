@@ -41,6 +41,7 @@
 #include <limits>
 #include <wtf/gobject/GOwnPtr.h>
 #include <wtf/text/CString.h>
+#include "CDMSessionGStreamer.h"
 
 #ifdef GST_API_VERSION_1
 #include <gst/audio/streamvolume.h>
@@ -68,9 +69,14 @@ using namespace std;
 
 namespace WebCore {
 
-static gboolean mediaPlayerPrivateMessageCallback(GstBus*, GstMessage* message, MediaPlayerPrivateGStreamer* player)
+static void mediaPlayerPrivateSyncMessageCallback(GstBus*, GstMessage* message, MediaPlayerPrivateGStreamer* player)
 {
-    return player->handleMessage(message);
+    player->handleSyncMessage(message);
+}
+
+static void mediaPlayerPrivateMessageCallback(GstBus*, GstMessage* message, MediaPlayerPrivateGStreamer* player)
+{
+    player->handleMessage(message);
 }
 
 static void mediaPlayerPrivateSourceChangedCallback(GObject*, GParamSpec*, MediaPlayerPrivateGStreamer* player)
@@ -158,7 +164,11 @@ PassOwnPtr<MediaPlayerPrivateInterface> MediaPlayerPrivateGStreamer::create(Medi
 void MediaPlayerPrivateGStreamer::registerMediaEngine(MediaEngineRegistrar registrar)
 {
     if (isAvailable())
-        registrar(create, getSupportedTypes, supportsType, 0, 0, 0);
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+        registrar(create, getSupportedTypes, extendedSupportsType, 0, 0, 0, supportsKeySystem);
+#else
+        registrar(create, getSupportedTypes, supportsType, 0, 0, 0, supportsKeySystem);
+#endif
 }
 
 bool initializeGStreamerAndRegisterWebKitElements()
@@ -228,6 +238,11 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
 
 MediaPlayerPrivateGStreamer::~MediaPlayerPrivateGStreamer()
 {
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    // Potentially unblock GStreamer thread for DRM license acquisition.
+    m_drmKeySemaphore.signal ();
+#endif
+
     if (m_fillTimer.isActive())
         m_fillTimer.stop();
 
@@ -286,6 +301,11 @@ void MediaPlayerPrivateGStreamer::load(const String& urlString)
         createGSTPlayBin();
 
     ASSERT(m_playBin);
+    
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    // Potentially unblock GStreamer thread for DRM license acquisition.
+    m_drmKeySemaphore.signal ();
+#endif
 
     m_url = KURL(KURL(), cleanURL);
     g_object_set(m_playBin.get(), "uri", cleanURL.utf8().data(), NULL);
@@ -765,7 +785,57 @@ PassRefPtr<TimeRanges> MediaPlayerPrivateGStreamer::buffered() const
     return timeRanges.release();
 }
 
-gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+struct MainThreadNeedKeyCallbackInfo {
+    MainThreadNeedKeyCallbackInfo(MediaPlayerPrivateGStreamer* handle, PassRefPtr<Uint8Array> initData) : handle(handle), initData(initData) { }
+    MediaPlayerPrivateGStreamer* handle;
+    RefPtr<Uint8Array> initData;
+};
+#endif
+
+void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
+{
+    switch (GST_MESSAGE_TYPE(message)) {
+        case GST_MESSAGE_ELEMENT:
+        {
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+            const GstStructure* s = gst_message_get_structure (message);
+            /* Here we receive the DRM init data from the pipeline: we will emit
+             * the needkey event with that data and the browser might create a 
+             * CDMSession from this event handler. If such a session was created
+             * We will emit the message event from the session to provide the 
+             * DRM challenge to the browser and wait for an update. If on the
+             * contrary no session was created we won't wait and let the pipeline
+             * error out by itself. */
+            if (gst_structure_has_name (s, "drm-key-needed")) {
+                const guint8 *data = NULL;
+                guint32 data_length = 0;
+                gboolean ret = gst_structure_get (s, "data", G_TYPE_POINTER, &data, "data-length", G_TYPE_UINT, &data_length, NULL);
+
+                if (ret && data_length) {
+                  GST_DEBUG ("queueing keyNeeded event with %u bytes of data", data_length);
+                  RefPtr<Uint8Array> initData = Uint8Array::create(reinterpret_cast<const unsigned char *>(data), data_length);
+                  MainThreadNeedKeyCallbackInfo info(this, initData);
+                  // We need to reset the semaphore first. signal, wait
+                  m_drmKeySemaphore.signal ();
+                  m_drmKeySemaphore.wait ();
+                  // Fire the need key event from main thread
+                  callOnMainThreadAndWait(needKeyEventFromMain, &info);
+                  // Wait for a potential license
+                  GST_DEBUG ("waiting for a license");
+                  m_drmKeySemaphore.wait ();
+                  GST_DEBUG ("finished waiting");
+                }
+            }
+#endif
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
 {
     GOwnPtr<GError> err;
     GOwnPtr<gchar> debug;
@@ -784,7 +854,7 @@ gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
         // notify of the new location(s) of the media.
         if (!g_strcmp0(messageTypeName, "redirect")) {
             mediaLocationChanged(message);
-            return TRUE;
+            return;
         }
     }
 
@@ -885,7 +955,6 @@ gboolean MediaPlayerPrivateGStreamer::handleMessage(GstMessage* message)
                     GST_MESSAGE_TYPE_NAME(message));
         break;
     }
-    return TRUE;
 }
 
 void MediaPlayerPrivateGStreamer::handlePluginInstallerResult(GstInstallPluginsReturn result)
@@ -1094,6 +1163,11 @@ void MediaPlayerPrivateGStreamer::sourceChanged()
 
 void MediaPlayerPrivateGStreamer::cancelLoad()
 {
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    // Potentially unblock GStreamer thread for DRM license acquisition.
+    m_drmKeySemaphore.signal ();
+#endif
+
     if (m_networkState < MediaPlayer::Loading || m_networkState == MediaPlayer::Loaded)
         return;
 
@@ -1349,6 +1423,10 @@ bool MediaPlayerPrivateGStreamer::loadNextLocation()
         if (securityOrigin->canRequest(newUrl)) {
             INFO_MEDIA_MESSAGE("New media url: %s", newUrl.string().utf8().data());
 
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+            // Potentially unblock GStreamer thread for DRM license acquisition.
+            m_drmKeySemaphore.signal ();
+#endif
             // Reset player states.
             m_networkState = MediaPlayer::Loading;
             m_player->networkStateChanged();
@@ -1561,6 +1639,80 @@ void MediaPlayerPrivateGStreamer::getSupportedTypes(HashSet<String>& types)
     types = mimeTypeCache();
 }
 
+bool MediaPlayerPrivateGStreamer::supportsKeySystem(const String& keySystem, const String& mimeType)
+{
+    GST_DEBUG ("Checking for KeySystem support with %s and type %s", keySystem.utf8().data(), mimeType.utf8().data());
+
+#if USE(DXDRM)
+    if (equalIgnoringCase(keySystem, "com.microsoft.playready"))
+        return true;
+#endif
+
+    return false;
+}
+
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+PassOwnPtr<CDMSession> MediaPlayerPrivateGStreamer::createSession(const String& keySystem)
+{
+    if (!supportsKeySystem(keySystem, emptyString()))
+        return nullptr;
+
+    return adoptPtr(new CDMSessionGStreamer(this));
+}
+
+void MediaPlayerPrivateGStreamer::needKey(RefPtr<Uint8Array> initData)
+{
+    bool handled = m_player->keyNeeded (initData.get());
+    
+    if (!handled) {
+      GST_DEBUG ("no event handler for key needed, waking up GStreamer thread");
+      m_drmKeySemaphore.signal ();
+    }
+}
+#endif
+
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+
+void MediaPlayerPrivateGStreamer::keyAdded ()
+{
+    GST_DEBUG ("key/license was added, signal semaphore");
+    // Wake up a potential waiter blocked in the GStreamer thread
+    m_drmKeySemaphore.signal ();
+}
+
+/* Called from main while the GStreamer thread is blocked */
+void MediaPlayerPrivateGStreamer::needKeyEventFromMain(void* invocation)
+{
+    MainThreadNeedKeyCallbackInfo* info = static_cast<MainThreadNeedKeyCallbackInfo*>(invocation);
+    /* Dispatch to the instance handler which will emit the need key event */
+    if (info && info->handle) {
+      info->handle->needKey(info->initData);
+    }
+}
+
+MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL& url)
+{
+
+    // From: <http://dvcs.w3.org/hg/html-media/raw-file/eme-v0.1b/encrypted-media/encrypted-media.html#dom-canplaytype>
+    // In addition to the steps in the current specification, this method must run the following steps:
+
+    // 1. Check whether the Key System is supported with the specified container and codec type(s) by following the steps for the first matching condition from the following list:
+    //    If keySystem is null, continue to the next step.
+    if (keySystem.isNull() || keySystem.isEmpty())
+        return supportsType(type, codecs, url);
+
+    // If keySystem contains an unrecognized or unsupported Key System, return the empty string
+    if (!supportsKeySystem(keySystem, emptyString()))
+        return MediaPlayer::IsNotSupported;
+
+    // If the Key System specified by keySystem does not support decrypting the container and/or codec specified in the rest of the type string.
+    // (AVFoundation does not provide an API which would allow us to determine this, so this is a no-op)
+
+    // 2. Return "maybe" or "probably" as appropriate per the existing specification of canPlayType().
+    return supportsType(type, codecs, url);
+}
+#endif
+
 MediaPlayer::SupportsType MediaPlayerPrivateGStreamer::supportsType(const String& type, const String& codecs, const KURL&)
 {
     if (type.isNull() || type.isEmpty())
@@ -1662,6 +1814,8 @@ void MediaPlayerPrivateGStreamer::createGSTPlayBin()
     GRefPtr<GstBus> bus = webkitGstPipelineGetBus(GST_PIPELINE(m_playBin.get()));
     gst_bus_add_signal_watch(bus.get());
     g_signal_connect(bus.get(), "message", G_CALLBACK(mediaPlayerPrivateMessageCallback), this);
+    gst_bus_enable_sync_message_emission (bus.get());
+    g_signal_connect(bus.get(), "sync-message", G_CALLBACK(mediaPlayerPrivateSyncMessageCallback), this);
 
     unsigned flagNativeVideo = getGstPlaysFlag("native-video");
     unsigned flagSoftVolume = getGstPlaysFlag("soft-volume");

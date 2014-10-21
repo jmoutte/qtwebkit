@@ -3317,6 +3317,38 @@ enable?(GAMEPAD) {
         platform/qt/GamepadsQt.cpp
 }
 
+
+enable?(ENCRYPTED_MEDIA_V2) {
+    HEADERS += \
+        platform/graphics/CDMSession.h \
+        Modules/encryptedmedia/CDM.h \
+        Modules/encryptedmedia/CDMPrivate.h \
+        Modules/encryptedmedia/CDMPrivateMediaPlayer.h \
+        Modules/encryptedmedia/MediaKeyMessageEvent.h \
+        Modules/encryptedmedia/MediaKeyNeededEvent.h \
+        Modules/encryptedmedia/MediaKeySession.h \
+        Modules/encryptedmedia/MediaKeys.h \
+        testing/MockCDM.h
+
+    SOURCES += \
+        Modules/encryptedmedia/CDM.cpp \
+        Modules/encryptedmedia/CDMPrivateMediaPlayer.cpp \
+        Modules/encryptedmedia/MediaKeyMessageEvent.cpp \
+        Modules/encryptedmedia/MediaKeyNeededEvent.cpp \
+        Modules/encryptedmedia/MediaKeySession.cpp \
+        Modules/encryptedmedia/MediaKeys.cpp \
+        testing/MockCDM.cpp
+
+    use?(GSTREAMER) {
+        HEADERS += \
+            platform/graphics/gstreamer/CDMSessionGStreamer.h
+
+        SOURCES += \
+            platform/graphics/gstreamer/CDMSessionGStreamer.cpp
+    }
+}
+
+
 use?(GSTREAMER) {
     HEADERS += \
             platform/graphics/gstreamer/GRefPtrGStreamer.h \

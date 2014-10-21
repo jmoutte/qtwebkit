@@ -33,6 +33,10 @@
 #include <gst/pbutils/install-plugins.h>
 #include <wtf/Forward.h>
 
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+#include <wtf/threads/BinarySemaphore.h>
+#endif
+
 typedef struct _GstBuffer GstBuffer;
 typedef struct _GstMessage GstMessage;
 typedef struct _GstElement GstElement;
@@ -43,7 +47,8 @@ class MediaPlayerPrivateGStreamer : public MediaPlayerPrivateGStreamerBase {
 public:
     ~MediaPlayerPrivateGStreamer();
     static void registerMediaEngine(MediaEngineRegistrar);
-    gboolean handleMessage(GstMessage*);
+    void handleMessage(GstMessage*);
+    void handleSyncMessage(GstMessage*);
     void handlePluginInstallerResult(GstInstallPluginsReturn);
 
     bool hasVideo() const { return m_hasVideo; }
@@ -97,6 +102,14 @@ public:
 
     void simulateAudioInterruption();
 
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+    void needKey(RefPtr<Uint8Array>);
+#endif
+
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    void keyAdded();
+#endif
+
 private:
     MediaPlayerPrivateGStreamer(MediaPlayer*);
 
@@ -104,6 +117,11 @@ private:
 
     static void getSupportedTypes(HashSet<String>&);
     static MediaPlayer::SupportsType supportsType(const String& type, const String& codecs, const KURL&);
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    static MediaPlayer::SupportsType extendedSupportsType(const String& type, const String& codecs, const String& keySystem, const KURL&);
+    static void needKeyEventFromMain(void *invocation);
+#endif
+    static bool supportsKeySystem(const String& keySystem, const String& mimeType);
 
     static bool isAvailable();
 
@@ -131,6 +149,10 @@ private:
     virtual String engineDescription() const { return "GStreamer"; }
     virtual bool isLiveStream() const { return m_isStreaming; }
     virtual bool didPassCORSAccessCheck() const;
+
+#if ENABLE(ENCRYPTED_MEDIA_V2)
+    PassOwnPtr<CDMSession> createSession(const String&);
+#endif
 
 private:
     GRefPtr<GstElement> m_playBin;
@@ -173,6 +195,9 @@ private:
     GstState m_requestedState;
     GRefPtr<GstElement> m_autoAudioSink;
     bool m_missingPlugins;
+#if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
+    BinarySemaphore m_drmKeySemaphore;
+#endif
 };
 }
 

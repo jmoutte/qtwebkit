@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Apple Inc. All rights reserved.
+ * Copyright (C) 2014 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,39 +23,43 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CDMPrivateAVFoundation_h
-#define CDMPrivateAVFoundation_h
+#include "config.h"
+#include "CDMPrivateMediaPlayer.h"
 
-#include "CDMPrivate.h"
-#include <wtf/PassOwnPtr.h>
-#include <wtf/RetainPtr.h>
+#if ENABLE(ENCRYPTED_MEDIA_V2)
 
-#if ENABLE(ENCRYPTED_MEDIA_V2) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
+#include "CDM.h"
+#include "CDMSession.h"
+#include "ContentType.h"
+#include "ExceptionCode.h"
+#include "MediaPlayer.h"
 
 namespace WebCore {
 
-class CDM;
+bool CDMPrivateMediaPlayer::supportsKeySystem(const String& keySystem)
+{
+    return MediaPlayer::supportsKeySystem(keySystem, emptyString());
+}
 
-class CDMPrivateAVFoundation : public CDMPrivateInterface {
-public:
-    // CDMFactory support:
-    static PassOwnPtr<CDMPrivateInterface> create(CDM* cdm) { return adoptPtr(new CDMPrivateAVFoundation(cdm)); }
-    static bool supportsKeySytem(const String&);
+bool CDMPrivateMediaPlayer::supportsKeySystemAndMimeType(const String& keySystem, const String& mimeType)
+{
+    return MediaPlayer::supportsKeySystem(keySystem, mimeType);
+}
 
-    virtual ~CDMPrivateAVFoundation() { }
+bool CDMPrivateMediaPlayer::supportsMIMEType(const String& mimeType)
+{
+    return MediaPlayer::supportsKeySystem(m_cdm->keySystem(), mimeType);
+}
 
-    virtual bool supportsMIMEType(const String& mimeType) OVERRIDE;
-    virtual PassOwnPtr<CDMSession> createSession() OVERRIDE;
+PassOwnPtr<CDMSession> CDMPrivateMediaPlayer::createSession()
+{
+    MediaPlayer* mediaPlayer = m_cdm->mediaPlayer();
+    if (!mediaPlayer)
+        return nullptr;
 
-    CDM* cdm() const { return m_cdm; }
-
-protected:
-    CDMPrivateAVFoundation(CDM* cdm) : m_cdm(cdm) { }
-    CDM* m_cdm;
-};
+    return mediaPlayer->createSession(m_cdm->keySystem());
+}
 
 }
 
 #endif
-
-#endif // CDMPrivateAVFoundation_h

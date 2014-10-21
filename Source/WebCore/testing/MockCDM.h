@@ -37,9 +37,14 @@ class CDM;
 
 class MockCDM : public CDMPrivateInterface {
 public:
+    explicit MockCDM(CDM* cdm)
+        : m_cdm(cdm)
+    { }
+
     // CDMFactory support:
     static PassOwnPtr<CDMPrivateInterface> create(CDM* cdm) { return adoptPtr(new MockCDM(cdm)); }
-    static bool supportsKeySytem(const String&);
+    static bool supportsKeySystem(const String&);
+    static bool supportsKeySystemAndMimeType(const String& keySystem, const String& mimeType);
 
     virtual ~MockCDM() { }
 
@@ -47,7 +52,6 @@ public:
     virtual PassOwnPtr<CDMSession> createSession() OVERRIDE;
 
 protected:
-    MockCDM(CDM* cdm) : m_cdm(cdm) { }
     CDM* m_cdm;
 };
 

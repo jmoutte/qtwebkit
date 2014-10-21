@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Apple Inc. All rights reserved.
+ * Copyright (C) 2014 Apple Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,56 +23,43 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MediaKeys_h
-#define MediaKeys_h
+#ifndef CDMPrivateMediaPlayer_h
+#define CDMPrivateMediaPlayer_h
+
+#include "CDMPrivate.h"
+#include <wtf/OwnPtr.h>
+#include <wtf/PassOwnPtr.h>
+#include <wtf/RetainPtr.h>
 
 #if ENABLE(ENCRYPTED_MEDIA_V2)
 
-#include "CDM.h"
-#include "EventTarget.h"
-#include "ExceptionCode.h"
-#include <wtf/OwnPtr.h>
-#include <wtf/PassRefPtr.h>
-#include <wtf/RefCounted.h>
-#include <wtf/Uint8Array.h>
-#include <wtf/Vector.h>
-#include <wtf/text/WTFString.h>
-
 namespace WebCore {
 
-class MediaKeySession;
-class HTMLMediaElement;
+class CDM;
 
-class MediaKeys : public RefCounted<MediaKeys>, public CDMClient {
+class CDMPrivateMediaPlayer : public CDMPrivateInterface {
 public:
-    static PassRefPtr<MediaKeys> create(const String& keySystem, ExceptionCode&);
-    virtual ~MediaKeys();
+    explicit CDMPrivateMediaPlayer(CDM* cdm)
+        : m_cdm(cdm)
+    { }
 
-    PassRefPtr<MediaKeySession> createSession(ScriptExecutionContext*, const String& mimeType, Uint8Array* initData, ExceptionCode&);
+    static PassOwnPtr<CDMPrivateInterface> create(CDM* cdm) { return adoptPtr(new CDMPrivateMediaPlayer(cdm)); }
+    static bool supportsKeySystem(const String&);
+    static bool supportsKeySystemAndMimeType(const String& keySystem, const String& mimeType);
 
-    static bool isTypeSupported(const String& keySystem, const String& mimeType);
+    virtual ~CDMPrivateMediaPlayer() { }
 
-    const String& keySystem() const { return m_keySystem; }
-    CDM* cdm() { return m_cdm.get(); }
+    virtual bool supportsMIMEType(const String& mimeType) OVERRIDE;
+    virtual PassOwnPtr<CDMSession> createSession() OVERRIDE;
 
-    HTMLMediaElement* mediaElement() const { return m_mediaElement; }
-    void setMediaElement(HTMLMediaElement*);
+    CDM* cdm() const { return m_cdm; }
 
 protected:
-    // CDMClient:
-    virtual MediaPlayer* cdmMediaPlayer(const CDM*) const OVERRIDE;
-
-    MediaKeys(const String& keySystem, PassOwnPtr<CDM>);
-
-    Vector<RefPtr<MediaKeySession> > m_sessions;
-
-    HTMLMediaElement* m_mediaElement;
-    String m_keySystem;
-    OwnPtr<CDM> m_cdm;
+    CDM* m_cdm;
 };
 
 }
 
-#endif // ENABLE(ENCRYPTED_MEDIA_V2)
+#endif
 
-#endif // MediaKeys_h
+#endif // CDMPriavateMediaPlayer_h

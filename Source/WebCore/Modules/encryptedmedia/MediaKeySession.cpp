@@ -29,6 +29,7 @@
 #if ENABLE(ENCRYPTED_MEDIA_V2)
 
 #include "CDM.h"
+#include "CDMSession.h"
 #include "Event.h"
 #include "GenericEventQueue.h"
 #include "MediaKeyError.h"
@@ -39,11 +40,13 @@ namespace WebCore {
 
 PassRefPtr<MediaKeySession> MediaKeySession::create(ScriptExecutionContext* context, MediaKeys* keys, const String& keySystem)
 {
-    return adoptRef(new MediaKeySession(context, keys, keySystem));
+    PassRefPtr<MediaKeySession> session = adoptRef(new MediaKeySession(context, keys, keySystem));
+    session->suspendIfNeeded();
+    return session;
 }
 
 MediaKeySession::MediaKeySession(ScriptExecutionContext* context, MediaKeys* keys, const String& keySystem)
-    : ContextDestructionObserver(context)
+    : ActiveDOMObject(context)
     , m_keys(keys)
     , m_keySystem(keySystem)
     , m_asyncEventQueue(GenericEventQueue::create(this))
@@ -67,7 +70,7 @@ void MediaKeySession::close()
 {
     if (m_session)
         m_session->releaseKeys();
-    m_session = 0;
+    m_session = nullptr;
     m_asyncEventQueue->cancelAllEvents();
 }
 
@@ -109,16 +112,9 @@ void MediaKeySession::keyRequestTimerFired(Timer<MediaKeySession>*)
             // 3.1. Create a new MediaKeyError object with the following attributes:
             //      code = the appropriate MediaKeyError code
             //      systemCode = a Key System-specific value, if provided, and 0 otherwise
-            RefPtr<MediaKeyError> error = MediaKeyError::create(errorCode, systemCode).get();
-
             // 3.2. Set the MediaKeySession object's error attribute to the error object created in the previous step.
-            setError(error.get());
-
             // 3.3. queue a task to fire a simple event named keyerror at the MediaKeySession object.
-            RefPtr<Event> event = Event::create(eventNames().webkitkeyerrorEvent, false, false);
-            event->setTarget(this);
-            m_asyncEventQueue->enqueueEvent(event.release());
-
+            sendError(errorCode, systemCode);
             // 3.4. Abort the task.
             continue;
         }
@@ -127,14 +123,7 @@ void MediaKeySession::keyRequestTimerFired(Timer<MediaKeySession>*)
         //    The event is of type MediaKeyMessageEvent and has:
         //    message = key request
         //    destinationURL = destinationURL
-        MediaKeyMessageEventInit init;
-        init.bubbles = false;
-        init.cancelable = false;
-        init.message = keyRequest;
-        init.destinationURL = destinationURL;
-        RefPtr<MediaKeyMessageEvent> event = MediaKeyMessageEvent::create(eventNames().webkitkeymessageEvent, init);
-        event->setTarget(this);
-        m_asyncEventQueue->enqueueEvent(event);
+        sendMessage(keyRequest.get(), destinationURL);
     }
 }
 
@@ -181,42 +170,33 @@ void MediaKeySession::addKeyTimerFired(Timer<MediaKeySession>*)
         //      The event is of type MediaKeyMessageEvent and has:
         //      message = next message
         //      destinationURL = null
-        if (nextMessage) {
-            MediaKeyMessageEventInit init;
-            init.bubbles = false;
-            init.cancelable = false;
-            init.message = nextMessage;
-            RefPtr<MediaKeyMessageEvent> event = MediaKeyMessageEvent::create(eventNames().webkitkeymessageEvent, init);
-            event->setTarget(this);
-            m_asyncEventQueue->enqueueEvent(event);
-        }
+        if (nextMessage)
+            sendMessage(nextMessage.get(), emptyString());
 
         // 2.7. If did store key is true, queue a task to fire a simple event named keyadded at the MediaKeySession object.
         if (didStoreKey) {
             RefPtr<Event> keyaddedEvent = Event::create(eventNames().webkitkeyaddedEvent, false, false);
             keyaddedEvent->setTarget(this);
-            m_asyncEventQueue->enqueueEvent(keyaddedEvent);
+            m_asyncEventQueue->enqueueEvent(keyaddedEvent.release());
         }
 
         // 2.8. If any of the preceding steps in the task failed
-        if (!didStoreKey) {
+        if (errorCode) {
             // 2.8.1. Create a new MediaKeyError object with the following attributes:
             //        code = the appropriate MediaKeyError code
             //        systemCode = a Key System-specific value, if provided, and 0 otherwise
-            RefPtr<MediaKeyError> error = MediaKeyError::create(errorCode, systemCode).get();
-
             // 2.8.2. Set the MediaKeySession object's error attribute to the error object created in the previous step.
-            setError(error.get());
-
             // 2.8.3. queue a task to fire a simple event named keyerror at the MediaKeySession object.
-            RefPtr<Event> keyerrorEvent = Event::create(eventNames().webkitkeyerrorEvent, false, false);
-            keyerrorEvent->setTarget(this);
-            m_asyncEventQueue->enqueueEvent(keyerrorEvent.release());
-            
+            sendError(errorCode, systemCode);
             // 2.8.4. Abort the task.
             // NOTE: no-op
         }
     }
+}
+
+bool MediaKeySession::hasPendingActivity() const
+{
+    return (m_keys && !isClosed()) || m_asyncEventQueue->hasPendingEvents();
 }
 
 const AtomicString& MediaKeySession::interfaceName() const
@@ -224,9 +204,26 @@ const AtomicString& MediaKeySession::interfaceName() const
     return eventNames().interfaceForMediaKeySession;
 }
 
-ScriptExecutionContext* MediaKeySession::scriptExecutionContext() const
+void MediaKeySession::sendMessage(Uint8Array* message, String destinationURL)
 {
-    return ContextDestructionObserver::scriptExecutionContext();
+    MediaKeyMessageEventInit init;
+    init.bubbles = false;
+    init.cancelable = false;
+    init.message = message;
+    init.destinationURL = destinationURL;
+    RefPtr<MediaKeyMessageEvent> event = MediaKeyMessageEvent::create(eventNames().webkitkeymessageEvent, init);
+    event->setTarget(this);
+    m_asyncEventQueue->enqueueEvent(event.release());
+}
+
+void MediaKeySession::sendError(CDMSessionClient::MediaKeyErrorCode errorCode, unsigned long systemCode)
+{
+    RefPtr<MediaKeyError> error = MediaKeyError::create(errorCode, systemCode).get();
+    setError(error.get());
+
+    RefPtr<Event> keyerrorEvent = Event::create(eventNames().webkitkeyerrorEvent, false, false);
+    keyerrorEvent->setTarget(this);
+    m_asyncEventQueue->enqueueEvent(keyerrorEvent.release());
 }
 
 }
