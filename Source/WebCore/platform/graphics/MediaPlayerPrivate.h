@@ -111,6 +111,7 @@ public:
     virtual double minTimeSeekable() const { return 0; }
     virtual PassRefPtr<TimeRanges> buffered() const = 0;
 
+    virtual unsigned long long totalBytes() const { return 0; }
     virtual bool didLoadingProgress() const = 0;
 
     virtual void setSize(const IntSize&) = 0;
@@ -210,7 +211,14 @@ public:
     
     virtual String languageOfPrimaryAudioTrack() const { return emptyString(); }
 
-    virtual size_t extraMemoryCost() const { return 0; }
+    virtual size_t extraMemoryCost() const
+    {
+        double duration = this->duration();
+        if (!duration)
+            return 0;
+
+        return totalBytes() * buffered()->totalDuration() / duration;
+    }
 };
 
 }

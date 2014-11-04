@@ -229,7 +229,7 @@ MediaPlayerPrivateGStreamer::MediaPlayerPrivateGStreamer(MediaPlayer* player)
     , m_audioTimerHandler(0)
     , m_videoTimerHandler(0)
     , m_webkitAudioSink(0)
-    , m_totalBytes(-1)
+    , m_totalBytes(0)
     , m_preservesPitch(false)
     , m_requestedState(GST_STATE_VOID_PENDING)
     , m_missingPlugins(false)
@@ -1059,12 +1059,12 @@ bool MediaPlayerPrivateGStreamer::didLoadingProgress() const
     return didLoadingProgress;
 }
 
-unsigned MediaPlayerPrivateGStreamer::totalBytes() const
+unsigned long long MediaPlayerPrivateGStreamer::totalBytes() const
 {
     if (m_errorOccured)
         return 0;
 
-    if (m_totalBytes != -1)
+    if (m_totalBytes)
         return m_totalBytes;
 
     if (!m_source)
@@ -1078,7 +1078,7 @@ unsigned MediaPlayerPrivateGStreamer::totalBytes() const
     if (gst_element_query_duration(m_source.get(), &fmt, &length)) {
 #endif
         INFO_MEDIA_MESSAGE("totalBytes %" G_GINT64_FORMAT, length);
-        m_totalBytes = static_cast<unsigned>(length);
+        m_totalBytes = static_cast<unsigned long long>(length);
         m_isStreaming = !length;
         return m_totalBytes;
     }
@@ -1128,7 +1128,7 @@ unsigned MediaPlayerPrivateGStreamer::totalBytes() const
     gst_iterator_free(iter);
 
     INFO_MEDIA_MESSAGE("totalBytes %" G_GINT64_FORMAT, length);
-    m_totalBytes = static_cast<unsigned>(length);
+    m_totalBytes = static_cast<unsigned long long>(length);
     m_isStreaming = !length;
     return m_totalBytes;
 }

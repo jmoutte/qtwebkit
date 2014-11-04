@@ -127,7 +127,7 @@ private:
     PassRefPtr<TimeRanges> buffered() const;
     float maxTimeSeekable() const;
     bool didLoadingProgress() const;
-    unsigned totalBytes() const;
+    unsigned long long totalBytes() const;
     
     void setVisible(bool);
     void setSize(const IntSize&);

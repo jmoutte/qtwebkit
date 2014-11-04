@@ -261,8 +261,6 @@ protected:
 
     virtual String engineDescription() const { return "AVFoundation"; }
 
-    virtual size_t extraMemoryCost() const OVERRIDE;
-
     virtual void trackModeChanged() OVERRIDE;
     void processNewAndRemovedTextTracks(const Vector<RefPtr<InbandTextTrackPrivateAVF> >&);
     void clearTextTracks();

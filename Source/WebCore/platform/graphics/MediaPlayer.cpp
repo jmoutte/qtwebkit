@@ -138,7 +138,7 @@ public:
     virtual double minTimeSeekable() const { return 0; }
     virtual PassRefPtr<TimeRanges> buffered() const { return TimeRanges::create(); }
 
-    virtual unsigned totalBytes() const { return 0; }
+    virtual unsigned long long totalBytes() const { return 0; }
     virtual bool didLoadingProgress() const { return false; }
 
     virtual void setSize(const IntSize&) { }

@@ -81,7 +81,7 @@ public:
     PassRefPtr<TimeRanges> buffered() const;
     float maxTimeSeekable() const;
     bool didLoadingProgress() const;
-    unsigned totalBytes() const;
+    unsigned long long totalBytes() const;
     float maxTimeLoaded() const;
 
     void loadStateChanged();
@@ -189,7 +189,7 @@ private:
     guint m_audioTimerHandler;
     guint m_videoTimerHandler;
     GRefPtr<GstElement> m_webkitAudioSink;
-    mutable long m_totalBytes;
+    mutable unsigned long long m_totalBytes;
     KURL m_url;
     bool m_preservesPitch;
     GstState m_requestedState;
