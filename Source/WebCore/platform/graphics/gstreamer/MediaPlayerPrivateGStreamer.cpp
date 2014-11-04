@@ -1644,9 +1644,13 @@ bool MediaPlayerPrivateGStreamer::supportsKeySystem(const String& keySystem, con
     GST_DEBUG ("Checking for KeySystem support with %s and type %s", keySystem.utf8().data(), mimeType.utf8().data());
 
 #if USE(DXDRM)
-    if (equalIgnoringCase(keySystem, "com.microsoft.playready"))
+    if (equalIgnoringCase(keySystem, "com.microsoft.playready") ||
+        equalIgnoringCase(keySystem, "com.youtube.playready"))
         return true;
 #endif
+
+    if (equalIgnoringCase(keySystem, "org.w3.clearkey"))
+        return true;
 
     return false;
 }
