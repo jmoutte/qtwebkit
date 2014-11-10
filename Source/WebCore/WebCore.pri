@@ -197,6 +197,11 @@ enable?(ENCRYPTED_MEDIA_V2) {
     }
 }
 
+enable?(MEDIA_SOURCE) {
+    INCLUDEPATH += \
+        $$SOURCE_DIR/Modules/mediasource
+}
+
 use?(GLIB) {
     PKGCONFIG *= glib-2.0 gio-2.0
 }
