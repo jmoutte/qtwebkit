@@ -30,6 +30,7 @@
 #include "MIMETypeRegistry.h"
 
 #include <QMimeDatabase>
+#include "NotImplemented.h"
 #include <wtf/Assertions.h>
 #include <wtf/MainThread.h>
 
@@ -142,5 +143,13 @@ bool MIMETypeRegistry::isApplicationPluginMIMEType(const String& mimeType)
     return mimeType.startsWith("application/x-qt-plugin", false)
         || mimeType.startsWith("application/x-qt-styled-widget", false);
 }
+
+#if ENABLE(MEDIA_SOURCE)
+bool MIMETypeRegistry::isSupportedMediaSourceMIMEType(const String&, const String&)
+{
+    notImplemented();
+    return false;
+}
+#endif
 
 }
