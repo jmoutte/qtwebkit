@@ -27,35 +27,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-[
-    Conditional=MEDIA_SOURCE,
-    NoInterfaceObject,
-    ActiveDOMObject,
-    EventTarget,
-    JSGenerateToJSObject,
-    JSGenerateToNativeObject,
-] interface SourceBuffer : EventTarget {
 
-    readonly attribute boolean updating;
-  
-    // Returns the time ranges buffered.
-    [GetterRaisesException] readonly attribute TimeRanges buffered;
+#include "config.h"
+#include "DOMURLMediaSource.h"
 
-    // Applies an offset to media segment timestamps.
-    [SetterRaisesException] attribute double timestampOffset;
+#if ENABLE(MEDIA_SOURCE)
 
-    // Append segment data.
-    [RaisesException] void appendBuffer(ArrayBuffer data);
-    [RaisesException] void appendBuffer(ArrayBufferView data);
+#include "DOMURL.h"
+#include "MediaSource.h"
+#include <wtf/MainThread.h>
 
-    // Abort the current segment append sequence.
-    [RaisesException] void abort();
-    [RaisesException] void remove(double start, double end);
-    
-    // Track support
-    [Conditional=VIDEO_TRACK] readonly attribute AudioTrackList audioTracks;
-    [Conditional=VIDEO_TRACK] readonly attribute VideoTrackList videoTracks;
-    [Conditional=VIDEO_TRACK] readonly attribute TextTrackList textTracks;
-};
+namespace WebCore {
 
+String DOMURLMediaSource::createObjectURL(ScriptExecutionContext* scriptExecutionContext, MediaSource* source)
+{
+    // Since WebWorkers cannot obtain MediaSource objects, we should be on the main thread.
+    ASSERT(isMainThread());
+
+    if (!scriptExecutionContext || !source)
+        return String();
+    return DOMURL::createPublicURL(scriptExecutionContext, source);
+}
+
+} // namespace WebCore
+
+#endif

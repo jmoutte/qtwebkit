@@ -25,6 +25,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef WTF_MediaTime_h
+#define WTF_MediaTime_h
 
 #include "FastAllocBase.h"
 
@@ -107,3 +109,5 @@ WTF_EXPORT_PRIVATE extern MediaTime abs(const MediaTime& rhs);
 
 using WTF::MediaTime;
 using WTF::abs;
+
+#endif

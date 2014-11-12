@@ -27,35 +27,26 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-[
-    Conditional=MEDIA_SOURCE,
-    NoInterfaceObject,
-    ActiveDOMObject,
-    EventTarget,
-    JSGenerateToJSObject,
-    JSGenerateToNativeObject,
-] interface SourceBuffer : EventTarget {
 
-    readonly attribute boolean updating;
-  
-    // Returns the time ranges buffered.
-    [GetterRaisesException] readonly attribute TimeRanges buffered;
+#ifndef DOMURLMediaSource_h
+#define DOMURLMediaSource_h
 
-    // Applies an offset to media segment timestamps.
-    [SetterRaisesException] attribute double timestampOffset;
+#if ENABLE(MEDIA_SOURCE)
 
-    // Append segment data.
-    [RaisesException] void appendBuffer(ArrayBuffer data);
-    [RaisesException] void appendBuffer(ArrayBufferView data);
+#include <wtf/Forward.h>
 
-    // Abort the current segment append sequence.
-    [RaisesException] void abort();
-    [RaisesException] void remove(double start, double end);
-    
-    // Track support
-    [Conditional=VIDEO_TRACK] readonly attribute AudioTrackList audioTracks;
-    [Conditional=VIDEO_TRACK] readonly attribute VideoTrackList videoTracks;
-    [Conditional=VIDEO_TRACK] readonly attribute TextTrackList textTracks;
+namespace WebCore {
+
+class MediaSource;
+class ScriptExecutionContext;
+
+class DOMURLMediaSource {
+public:
+    static String createObjectURL(ScriptExecutionContext*, MediaSource*);
 };
 
+} // namespace WebCore
+
+#endif
+
+#endif

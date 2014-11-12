@@ -27,35 +27,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-[
-    Conditional=MEDIA_SOURCE,
-    NoInterfaceObject,
-    ActiveDOMObject,
-    EventTarget,
-    JSGenerateToJSObject,
-    JSGenerateToNativeObject,
-] interface SourceBuffer : EventTarget {
 
-    readonly attribute boolean updating;
-  
-    // Returns the time ranges buffered.
-    [GetterRaisesException] readonly attribute TimeRanges buffered;
+#ifndef URLRegistry_h
+#define URLRegistry_h
 
-    // Applies an offset to media segment timestamps.
-    [SetterRaisesException] attribute double timestampOffset;
+#include <wtf/text/WTFString.h>
 
-    // Append segment data.
-    [RaisesException] void appendBuffer(ArrayBuffer data);
-    [RaisesException] void appendBuffer(ArrayBufferView data);
+namespace WebCore {
 
-    // Abort the current segment append sequence.
-    [RaisesException] void abort();
-    [RaisesException] void remove(double start, double end);
-    
-    // Track support
-    [Conditional=VIDEO_TRACK] readonly attribute AudioTrackList audioTracks;
-    [Conditional=VIDEO_TRACK] readonly attribute VideoTrackList videoTracks;
-    [Conditional=VIDEO_TRACK] readonly attribute TextTrackList textTracks;
+class URL;
+class SecurityOrigin;
+class URLRegistry;
+
+class URLRegistrable {
+public:
+    virtual ~URLRegistrable() { }
+    virtual URLRegistry& registry() const = 0;
 };
 
+class URLRegistry {
+    WTF_MAKE_FAST_ALLOCATED;
+public:
+    virtual ~URLRegistry() { }
+    virtual void registerURL(SecurityOrigin*, const URL&, URLRegistrable*) = 0;
+    virtual void unregisterURL(const URL&) = 0;
+
+    // This is an optional API
+    virtual URLRegistrable* lookup(const String&) const { ASSERT_NOT_REACHED(); return 0; }
+};
+
+} // namespace WebCore
+
+#endif // URLRegistry_h
