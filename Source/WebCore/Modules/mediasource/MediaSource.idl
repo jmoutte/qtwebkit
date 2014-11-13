@@ -37,12 +37,10 @@ enum EndOfStreamError {
     Conditional=MEDIA_SOURCE,
     ActiveDOMObject,
     EventTarget,
-    EnabledBySetting=MediaSource,
-    JSGenerateToJSObject,
-    JSGenerateToNativeObject,
     Constructor,
     ConstructorCallWith=ScriptExecutionContext,
-] interface MediaSource : EventTarget {
+    InterfaceName=WebKitMediaSource
+] interface MediaSource {
     // All the source buffers created by this object.
     readonly attribute SourceBufferList sourceBuffers;
 
@@ -59,4 +57,14 @@ enum EndOfStreamError {
     [RaisesException] void endOfStream(optional EndOfStreamError error);
 
     static boolean isTypeSupported (DOMString type);
+
+    // EventTarget interface
+    void addEventListener(DOMString type,
+                          EventListener listener,
+                          optional boolean useCapture);
+    void removeEventListener(DOMString type,
+                             EventListener listener,
+                             optional boolean useCapture);
+    [RaisesException] boolean dispatchEvent(Event event);
 };
+

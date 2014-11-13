@@ -34,7 +34,6 @@
 #if ENABLE(MEDIA_SOURCE)
 
 #include "ActiveDOMObject.h"
-#include "EventTarget.h"
 #include "GenericEventQueue.h"
 #include "MediaSourcePrivate.h"
 #include "MediaSourcePrivateClient.h"
@@ -67,7 +66,7 @@ public:
     bool isOpen() const;
     bool isClosed() const;
     bool isEnded() const;
-    void sourceBufferDidChangeAcitveState(SourceBuffer*, bool);
+    void sourceBufferDidChangeActiveState(SourceBuffer*, bool);
     void streamEndedWithError(const AtomicString& error, ExceptionCode&);
 
     // MediaSourcePrivateClient
@@ -110,7 +109,7 @@ public:
     virtual void derefEventTarget() { deref(); }
 
     // URLRegistrable interface
-    virtual URLRegistry& registry() const;
+    virtual URLRegistry& registry() const OVERRIDE;
 
     using RefCounted<MediaSourcePrivateClient>::ref;
     using RefCounted<MediaSourcePrivateClient>::deref;
