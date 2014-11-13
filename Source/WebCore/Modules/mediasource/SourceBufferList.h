@@ -60,8 +60,10 @@ public:
     void clear();
     void swap(Vector<RefPtr <SourceBuffer> >&);
 
-    Vector<RefPtr <SourceBuffer> >::iterator begin() { return m_list.begin(); }
-    Vector<RefPtr <SourceBuffer> >::iterator end() { return m_list.end(); }
+    typedef RefPtr <SourceBuffer> * iterator;
+    typedef const RefPtr <SourceBuffer> * const_iterator;
+    iterator begin() { return m_list.begin(); }
+    iterator end() { return m_list.end(); }
 
     // EventTarget interface
     virtual const AtomicString& interfaceName() const; 
