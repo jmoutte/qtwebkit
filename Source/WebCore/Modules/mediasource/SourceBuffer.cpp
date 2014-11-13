@@ -756,7 +756,7 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
     // If there still isn't enough free space and there buffers in time ranges after the current range (ie. there is a gap after
     // the current buffered range), delete 30 seconds at a time from duration back to the current time range or 30 seconds after
     // currenTime whichever we hit first.
-    auto buffered = m_buffered->ranges();
+    PlatformTimeRanges& buffered = m_buffered->ranges();
     size_t currentTimeRange = buffered.find(currentTime);
     if (currentTimeRange == notFound || currentTimeRange == buffered.length() - 1) {
         LOG(MediaSource, "SourceBuffer::evictCodedFrames(%p) - evicted %zu bytes but FAILED to free enough", this, initialBufferedSize - extraMemoryCost());
@@ -903,43 +903,53 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
         // 3.2 Add the appropriate track descriptions from this initialization segment to each of the track buffers.
         ASSERT(segment.audioTracks.size() == audioTracks()->length());
-        for (auto& audioTrackInfo : segment.audioTracks) {
+        Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
+        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+            InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
+
             if (audioTracks()->length() == 1) {
                 audioTracks()->item(0)->setPrivate(audioTrackInfo.track);
                 break;
             }
 
-            auto audioTrack = audioTracks()->getTrackById(audioTrackInfo.track->id());
+            AudioTrack audioTrack = audioTracks()->getTrackById(audioTrackInfo.track->id());
             ASSERT(audioTrack);
             audioTrack->setPrivate(audioTrackInfo.track);
         }
 
+
         ASSERT(segment.videoTracks.size() == videoTracks()->length());
-        for (auto& videoTrackInfo : segment.videoTracks) {
+        Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+            InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             if (videoTracks()->length() == 1) {
                 videoTracks()->item(0)->setPrivate(videoTrackInfo.track);
                 break;
             }
 
-            auto videoTrack = videoTracks()->getTrackById(videoTrackInfo.track->id());
+            VideoTrack videoTrack = videoTracks()->getTrackById(videoTrackInfo.track->id());
             ASSERT(videoTrack);
             videoTrack->setPrivate(videoTrackInfo.track);
         }
 
         ASSERT(segment.textTracks.size() == textTracks()->length());
-        for (auto& textTrackInfo : segment.textTracks) {
+        Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
+        for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
             if (textTracks()->length() == 1) {
                 static_cast<InbandTextTrack>(*textTracks()->item(0)).setPrivate(textTrackInfo.track);
                 break;
             }
 
-            auto textTrack = textTracks()->getTrackById(textTrackInfo.track->id());
+            TextTrack textTrack = textTracks()->getTrackById(textTrackInfo.track->id());
             ASSERT(textTrack);
             static_cast<InbandTextTrack>(*textTrack).setPrivate(textTrackInfo.track);
         }
 
-        for (auto& trackBuffer : m_trackBufferMap.values())
+        HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
+        for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+            TrackBuffer& trackBuffer = it->value;
             trackBuffer.needRandomAccessFlag = true;
+        }
     }
 
     // 4. Let active track flag equal false.
@@ -952,7 +962,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         // NOTE: This check is the responsibility of the SourceBufferPrivate.
 
         // 5.2 For each audio track in the initialization segment, run following steps:
-        for (auto& audioTrackInfo : segment.audioTracks) {
+        Vector<InitializationSegment::AudioTrackInformation>::iterator aend = segment.audioTracks.end();
+        for (Vector<InitializationSegment::AudioTrackInformation>::iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+            InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
             AudioTrackPrivate* audioTrackPrivate = audioTrackInfo.track.get();
 
             // 5.2.1 Let new audio track be a new AudioTrack object.
@@ -992,7 +1004,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         // 5.3 For each video track in the initialization segment, run following steps:
-        for (auto& videoTrackInfo : segment.videoTracks) {
+        Vector<InitializationSegment::VideoTrackInformation>::iterator vend = segment.videoTracks.end();
+        for (Vector<InitializationSegment::VideoTrackInformation>::iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+            InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             VideoTrackPrivate* videoTrackPrivate = videoTrackInfo.track.get();
 
             // 5.3.1 Let new video track be a new VideoTrack object.
@@ -1032,7 +1046,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         // 5.4 For each text track in the initialization segment, run following steps:
-        for (auto& textTrackInfo : segment.textTracks) {
+        Vector<InitializationSegment::TextTrackInformation>::iterator tend = segment.textTracks.end();
+        for (Vector<InitializationSegment::TextTrackInformation>::iterator it = segment.textTracks.begin(); it != tend; ++it) {
+            InitializationSegment::TextTrackInformation & textTrackInfo = *it;
             InbandTextTrackPrivate* textTrackPrivate = textTrackInfo.track.get();
 
             // 5.4.1 Let new text track be a new TextTrack object with its properties populated with the
@@ -1079,7 +1095,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
     // 6. If the HTMLMediaElement.readyState attribute is HAVE_NOTHING, then run the following steps:
     if (m_private->readyState() == MediaPlayer::HaveNothing) {
         // 6.1 If one or more objects in sourceBuffers have first initialization segment flag set to false, then abort these steps.
-        for (auto& sourceBuffer : *m_source->sourceBuffers()) {
+        Vector<RefPtr <SourceBuffer> >::iterator end = m_source->sourceBuffers()->end();
+        for (Vector<RefPtr <SourceBuffer> >::iterator it = m_source->sourceBuffers()->begin(); it != end; ++it) {
+            SourceBuffer *sourceBuffer = it->value;
             if (!sourceBuffer->m_receivedFirstInitializationSegment)
                 return;
         }
