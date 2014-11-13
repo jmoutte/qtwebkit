@@ -60,13 +60,19 @@ public:
     double toDouble() const;
 
     MediaTime& operator=(const MediaTime& rhs);
+    MediaTime& operator+=(const MediaTime& rhs) { return *this = *this + rhs; }
+    MediaTime& operator-=(const MediaTime& rhs) { return *this = *this - rhs; }
     MediaTime operator+(const MediaTime& rhs) const;
     MediaTime operator-(const MediaTime& rhs) const;
+    MediaTime operator-() const;
+    MediaTime operator*(int32_t) const;
     bool operator<(const MediaTime& rhs) const;
     bool operator>(const MediaTime& rhs) const;
     bool operator==(const MediaTime& rhs) const;
     bool operator>=(const MediaTime& rhs) const;
     bool operator<=(const MediaTime& rhs) const;
+    bool operator!() const;
+    explicit operator bool() const;
 
     typedef enum {
         LessThan = -1,
