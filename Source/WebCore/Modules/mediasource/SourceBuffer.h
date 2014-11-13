@@ -62,7 +62,7 @@ class VideoTrackList;
 
 class SourceBuffer : public RefCounted<SourceBuffer>, public ActiveDOMObject, public EventTarget, public ScriptWrappable, public SourceBufferPrivateClient, public AudioTrackClient, public VideoTrackClient, public TextTrackClient {
 public:
-    static PassRefPtr<SourceBuffer> create(PassOwnPtr<SourceBufferPrivate>, PassRefPtr<MediaSource>);
+    static PassRefPtr<SourceBuffer> create(PassRefPtr<SourceBufferPrivate>, PassRefPtr<MediaSource>);
 
     virtual ~SourceBuffer();
 
