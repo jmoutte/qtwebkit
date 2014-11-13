@@ -622,8 +622,8 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
 
     // 2. Let end be the end presentation timestamp for the removal range.
     // 3. For each track buffer in this source buffer, run the following steps:
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+    HashMap<AtomicString, TrackBuffer>::iterator bmend = m_trackBufferMap.end();
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != bmend; ++it) {
         TrackBuffer& trackBuffer = it->value;
 
         // 3.1. Let remove end timestamp be the current value of duration
