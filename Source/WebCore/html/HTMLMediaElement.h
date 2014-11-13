@@ -377,6 +377,9 @@ public:
     virtual bool dispatchEvent(PassRefPtr<Event>) OVERRIDE;
 
     virtual bool willRespondToMouseClickEvents() OVERRIDE;
+    
+    void mediaLoadingFailed(MediaPlayer::NetworkState);
+    void mediaEngineError(PassRefPtr<MediaError> err);
 
 protected:
     HTMLMediaElement(const QualifiedName&, Document*, bool);
@@ -538,14 +541,11 @@ private:
     void clearMediaPlayer(int flags);
     bool havePotentialSourceChild();
     void noneSupported();
-    void mediaEngineError(PassRefPtr<MediaError> err);
     void cancelPendingEventsAndCallbacks();
     void waitForSourceChange();
     void prepareToPlay();
 
     KURL selectNextSourceChild(ContentType*, String* keySystem, InvalidURLAction);
-
-    void mediaLoadingFailed(MediaPlayer::NetworkState);
 
 #if ENABLE(VIDEO_TRACK)
     void updateActiveTextTrackCues(double);
