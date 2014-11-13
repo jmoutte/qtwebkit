@@ -59,12 +59,12 @@ public:
 #if ENABLE(MEDIA_STREAM)
         HashSet<String>::iterator streamURLsEnd = m_streamURLs.end();
         for (HashSet<String>::iterator iter = m_streamURLs.begin(); iter != streamURLsEnd; ++iter)
-            MediaStreamRegistry::registry().unregisterMediaStreamURL(KURL(ParsedURLString, *iter));
+            MediaStreamRegistry::registry().unregisterURL(KURL(ParsedURLString, *iter));
 #endif
 #if ENABLE(MEDIA_SOURCE)
         HashSet<String>::iterator sourceURLsEnd = m_sourceURLs.end();
         for (HashSet<String>::iterator iter = m_sourceURLs.begin(); iter != sourceURLsEnd; ++iter)
-            MediaSourceRegistry::registry().unregisterMediaSourceURL(KURL(ParsedURLString, *iter));
+            MediaSourceRegistry::registry().unregisterURL(KURL(ParsedURLString, *iter));
 #endif
     }
 

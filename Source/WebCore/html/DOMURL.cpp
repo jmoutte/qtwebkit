@@ -67,7 +67,7 @@ String DOMURL::createObjectURL(ScriptExecutionContext* scriptExecutionContext, M
     if (publicURL.isEmpty())
         return String();
 
-    MediaSourceRegistry::registry().registerMediaSourceURL(publicURL, source);
+    MediaSourceRegistry::registry().registerURL(scriptExecutionContext->securityOrigin(), publicURL, source);
     scriptExecutionContext->publicURLManager().sourceURLs().add(publicURL.string());
 
     return publicURL.string();
@@ -130,7 +130,7 @@ void DOMURL::revokeObjectURL(ScriptExecutionContext* scriptExecutionContext, con
 #if ENABLE(MEDIA_SOURCE)
     HashSet<String>& sourceURLs = scriptExecutionContext->publicURLManager().sourceURLs();
     if (sourceURLs.contains(url.string())) {
-        MediaSourceRegistry::registry().unregisterMediaSourceURL(url);
+        MediaSourceRegistry::registry().unregisterURL(url);
         sourceURLs.remove(url.string());
     }
 #endif
