@@ -42,37 +42,41 @@ namespace WebCore {
 MediaSourceRegistry& MediaSourceRegistry::registry()
 {
     ASSERT(isMainThread());
-    DEFINE_STATIC_LOCAL(MediaSourceRegistry, instance, ());
+    static NeverDestroyed<MediaSourceRegistry> instance;
     return instance;
 }
 
-void MediaSourceRegistry::registerMediaSourceURL(const KURL& url, PassRefPtr<MediaSource> source)
+void MediaSourceRegistry::registerURL(SecurityOrigin*, const KURL& url, URLRegistrable* registrable)
 {
+    ASSERT(&registrable->registry() == this);
     ASSERT(isMainThread());
 
-    source->setPendingActivity(source.get());
-
+    MediaSource* source = static_cast<MediaSource*>(registrable);
+    source->addedToRegistry();
     m_mediaSources.set(url.string(), source);
 }
 
-void MediaSourceRegistry::unregisterMediaSourceURL(const KURL& url)
+void MediaSourceRegistry::unregisterURL(const KURL& url)
 {
     ASSERT(isMainThread());
-    HashMap<String, RefPtr<MediaSource> >::iterator iter = m_mediaSources.find(url.string());
+    HashMap<String, RefPtr <MediaSource> >::iterator iter = m_mediaSources.find(url.string());
     if (iter == m_mediaSources.end())
         return;
 
     RefPtr<MediaSource> source = iter->value;
     m_mediaSources.remove(iter);
-
-    // Remove the pending activity added in registerMediaSourceURL().
-    source->unsetPendingActivity(source.get());
+    source->removedFromRegistry();
 }
 
-MediaSource* MediaSourceRegistry::lookupMediaSource(const String& url)
+URLRegistrable* MediaSourceRegistry::lookup(const String& url) const
 {
     ASSERT(isMainThread());
     return m_mediaSources.get(url);
+}
+
+MediaSourceRegistry::MediaSourceRegistry()
+{
+    MediaSource::setRegistry(this);
 }
 
 } // namespace WebCore
