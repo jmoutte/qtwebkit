@@ -574,14 +574,13 @@ static PassRefPtr<TimeRanges> removeSamplesFromTrackBuffer(const DecodeOrderSamp
     MediaTime microsecond(1, 1000000);
     DecodeOrderSampleMap::const_iterator end = samples.end();
     for (DecodeOrderSampleMap::const_iterator it = samples.begin(); it != end; ++it) {
-	std::pair<const DecodeOrderSampleMap::KeyType, RefPtr<MediaSample> > sampleIt = *it;
-        const DecodeOrderSampleMap::KeyType& decodeKey = sampleIt.first;
+        const DecodeOrderSampleMap::KeyType& decodeKey = it->first;
 #if !LOG_DISABLED
         size_t startBufferSize = trackBuffer.samples.sizeInBytes();
 #endif
 
-        RefPtr<MediaSample>& sample = sampleIt.second;
-        LOG(MediaSource, "SourceBuffer::%s(%p) - removing sample(%s)", logPrefix, buffer, toString(*sampleIt.second).utf8().data());
+        RefPtr<MediaSample>& sample = it->second;
+        LOG(MediaSource, "SourceBuffer::%s(%p) - removing sample(%s)", logPrefix, buffer, toString(*it->second).utf8().data());
 
         // Remove the erased samples from the TrackBuffer sample map.
         trackBuffer.samples.removeSample(sample.get());
@@ -795,7 +794,7 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
     LOG(MediaSource, "SourceBuffer::evictCodedFrames(%p) - evicted %zu bytes%s", this, initialBufferedSize - extraMemoryCost(), m_bufferFull ? "" : " but FAILED to free enough");
 }
 
-size_t SourceBuffer::maximumBufferSize() const
+size_t SourceBuffer::maximumBufferSize()
 {
     if (isRemoved())
         return 0;
@@ -930,13 +929,13 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         ASSERT(segment.textTracks.size() == textTracks()->length());
         for (auto& textTrackInfo : segment.textTracks) {
             if (textTracks()->length() == 1) {
-                downcast<InbandTextTrack>(*textTracks()->item(0)).setPrivate(textTrackInfo.track);
+                static_cast<InbandTextTrack>(*textTracks()->item(0)).setPrivate(textTrackInfo.track);
                 break;
             }
 
             auto textTrack = textTracks()->getTrackById(textTrackInfo.track->id());
             ASSERT(textTrack);
-            downcast<InbandTextTrack>(*textTrack).setPrivate(textTrackInfo.track);
+            static_cast<InbandTextTrack>(*textTrack).setPrivate(textTrackInfo.track);
         }
 
         for (auto& trackBuffer : m_trackBufferMap.values())
@@ -1111,17 +1110,23 @@ bool SourceBuffer::validateInitializationSegment(const InitializationSegment& se
         return false;
 
     //   * The codecs for each track, match what was specified in the first initialization segment.
-    for (auto& audioTrackInfo : segment.audioTracks) {
+    Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
+    for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+        const InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
         if (!m_audioCodecs.contains(audioTrackInfo.description->codec()))
             return false;
     }
 
-    for (auto& videoTrackInfo : segment.videoTracks) {
+    Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
+    for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+        const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
         if (!m_videoCodecs.contains(videoTrackInfo.description->codec()))
             return false;
     }
 
-    for (auto& textTrackInfo : segment.textTracks) {
+    Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
+    for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
+        const InitializationSegment::TextTrackInformation & textTrackInfo = *it;
         if (!m_textCodecs.contains(textTrackInfo.description->codec()))
             return false;
     }
@@ -1129,22 +1134,26 @@ bool SourceBuffer::validateInitializationSegment(const InitializationSegment& se
     //   * If more than one track for a single type are present (ie 2 audio tracks), then the Track
     //   IDs match the ones in the first initialization segment.
     if (segment.audioTracks.size() >= 2) {
-        for (auto& audioTrackInfo : segment.audioTracks) {
+        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+            const InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
             if (!m_trackBufferMap.contains(audioTrackInfo.track->id()))
                 return false;
         }
     }
 
     if (segment.videoTracks.size() >= 2) {
-        for (auto& videoTrackInfo : segment.videoTracks) {
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+            const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             if (!m_trackBufferMap.contains(videoTrackInfo.track->id()))
                 return false;
         }
     }
 
     if (segment.textTracks.size() >= 2) {
-        for (auto& textTrackInfo : segment.videoTracks) {
-            if (!m_trackBufferMap.contains(textTrackInfo.track->id()))
+        // Don't know why they use the video tracks here
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+            const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
+            if (!m_trackBufferMap.contains(videoTrackInfo.track->id()))
                 return false;
         }
     }
@@ -1221,7 +1230,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
 
         // 1.6 Let track buffer equal the track buffer that the coded frame will be added to.
         AtomicString trackID = sample->trackID();
-        auto it = m_trackBufferMap.find(trackID);
+        HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.find(trackID);
         if (it == m_trackBufferMap.end())
             it = m_trackBufferMap.add(trackID, TrackBuffer()).iterator;
         TrackBuffer& trackBuffer = it->value;
@@ -1293,7 +1302,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
         // falls within the presentation interval of a coded frame in track buffer, then run the
         // following steps:
         if (trackBuffer.lastDecodeTimestamp.isInvalid()) {
-            auto iter = trackBuffer.samples.presentationOrder().findSampleContainingPresentationTime(presentationTimestamp);
+            PresentationOrderSampleMap::iterator iter = trackBuffer.samples.presentationOrder().findSampleContainingPresentationTime(presentationTimestamp);
             if (iter != trackBuffer.samples.presentationOrder().end()) {
                 // 1.14.1 Let overlapped frame be the coded frame in track buffer that matches the condition above.
                 RefPtr<MediaSample> overlappedFrame = iter->second;
@@ -1330,7 +1339,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
         if (trackBuffer.highestPresentationTimestamp.isInvalid()) {
             // Remove all coded frames from track buffer that have a presentation timestamp greater than or
             // equal to presentation timestamp and less than frame end timestamp.
-            auto iter_pair = trackBuffer.samples.presentationOrder().findSamplesBetweenPresentationTimes(presentationTimestamp, frameEndTimestamp);
+            PresentationOrderSampleMap::iterator_range iter_pair = trackBuffer.samples.presentationOrder().findSamplesBetweenPresentationTimes(presentationTimestamp, frameEndTimestamp);
             if (iter_pair.first != trackBuffer.samples.presentationOrder().end())
                 erasedSamples.addRange(iter_pair.first, iter_pair.second);
         }
@@ -1372,9 +1381,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
 
             // Otherwise: Remove all coded frames between the coded frames removed in the previous step
             // and the next random access point after those removed frames.
-            auto firstDecodeIter = trackBuffer.samples.decodeOrder().findSampleWithDecodeKey(erasedSamples.decodeOrder().begin()->first);
-            auto lastDecodeIter = trackBuffer.samples.decodeOrder().findSampleWithDecodeKey(erasedSamples.decodeOrder().rbegin()->first);
-            auto nextSyncIter = trackBuffer.samples.decodeOrder().findSyncSampleAfterDecodeIterator(lastDecodeIter);
+            DecodeOrderSampleMap::iterator firstDecodeIter = trackBuffer.samples.decodeOrder().findSampleWithDecodeKey(erasedSamples.decodeOrder().begin()->first);
+            DecodeOrderSampleMap::iterator lastDecodeIter = trackBuffer.samples.decodeOrder().findSampleWithDecodeKey(erasedSamples.decodeOrder().rbegin()->first);
+            DecodeOrderSampleMap::iterator nextSyncIter = trackBuffer.samples.decodeOrder().findSyncSampleAfterDecodeIterator(lastDecodeIter);
             dependentSamples.insert(firstDecodeIter, nextSyncIter);
 
             RefPtr<TimeRanges> erasedRanges = removeSamplesFromTrackBuffer(dependentSamples, trackBuffer, this, "sourceBufferPrivateDidReceiveSample");
@@ -1565,7 +1574,7 @@ void SourceBuffer::textTrackKindChanged(TextTrack* track)
 void SourceBuffer::sourceBufferPrivateDidBecomeReadyForMoreSamples(SourceBufferPrivate*, AtomicString trackID)
 {
     LOG(MediaSource, "SourceBuffer::sourceBufferPrivateDidBecomeReadyForMoreSamples(%p)", this);
-    auto it = m_trackBufferMap.find(trackID);
+    HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.find(trackID);
     if (it == m_trackBufferMap.end())
         return;
 
@@ -1581,7 +1590,7 @@ void SourceBuffer::provideMediaData(TrackBuffer& trackBuffer, AtomicString track
 #endif
 
     DecodeOrderSampleMap::iterator sampleIt = trackBuffer.decodeQueue.begin();
-    for (auto sampleEnd = trackBuffer.decodeQueue.end(); sampleIt != sampleEnd; ++sampleIt) {
+    for (DecodeOrderSampleMap::iterator sampleEnd = trackBuffer.decodeQueue.end(); sampleIt != sampleEnd; ++sampleIt) {
         if (!m_private->isReadyForMoreSamples(trackID)) {
             m_private->notifyClientWhenReadyForMoreSamples(trackID);
             break;
@@ -1615,7 +1624,7 @@ void SourceBuffer::provideMediaData(TrackBuffer& trackBuffer, AtomicString track
 void SourceBuffer::reenqueueMediaForTime(TrackBuffer& trackBuffer, AtomicString trackID, const MediaTime& time)
 {
     // Find the sample which contains the current presentation time.
-    auto currentSamplePTSIterator = trackBuffer.samples.presentationOrder().findSampleContainingPresentationTime(time);
+    PresentationOrderSampleMap::iterator currentSamplePTSIterator = trackBuffer.samples.presentationOrder().findSampleContainingPresentationTime(time);
 
     if (currentSamplePTSIterator == trackBuffer.samples.presentationOrder().end()) {
         trackBuffer.decodeQueue.clear();
@@ -1625,11 +1634,11 @@ void SourceBuffer::reenqueueMediaForTime(TrackBuffer& trackBuffer, AtomicString 
 
     // Seach backward for the previous sync sample.
     DecodeOrderSampleMap::KeyType decodeKey(currentSamplePTSIterator->second->decodeTime(), currentSamplePTSIterator->second->presentationTime());
-    auto currentSampleDTSIterator = trackBuffer.samples.decodeOrder().findSampleWithDecodeKey(decodeKey);
+    DecodeOrderSampleMap::iterator currentSampleDTSIterator = trackBuffer.samples.decodeOrder().findSampleWithDecodeKey(decodeKey);
     ASSERT(currentSampleDTSIterator != trackBuffer.samples.decodeOrder().end());
 
-    auto reverseCurrentSampleIter = --DecodeOrderSampleMap::reverse_iterator(currentSampleDTSIterator);
-    auto reverseLastSyncSampleIter = trackBuffer.samples.decodeOrder().findSyncSamplePriorToDecodeIterator(reverseCurrentSampleIter);
+    DecodeOrderSampleMap::reverse_iterator reverseCurrentSampleIter = --DecodeOrderSampleMap::reverse_iterator(currentSampleDTSIterator);
+    DecodeOrderSampleMap::reverse_iterator reverseLastSyncSampleIter = trackBuffer.samples.decodeOrder().findSyncSamplePriorToDecodeIterator(reverseCurrentSampleIter);
     if (reverseLastSyncSampleIter == trackBuffer.samples.decodeOrder().rend()) {
         trackBuffer.decodeQueue.clear();
         m_private->flushAndEnqueueNonDisplayingSamples(Vector<RefPtr<MediaSample> >(), trackID);
@@ -1637,7 +1646,7 @@ void SourceBuffer::reenqueueMediaForTime(TrackBuffer& trackBuffer, AtomicString 
     }
 
     Vector<RefPtr<MediaSample> > nonDisplayingSamples;
-    for (auto iter = reverseLastSyncSampleIter; iter != reverseCurrentSampleIter; --iter)
+    for (DecodeOrderSampleMap::reverse_iterator iter = reverseLastSyncSampleIter; iter != reverseCurrentSampleIter; --iter)
         nonDisplayingSamples.append(iter->second);
 
     m_private->flushAndEnqueueNonDisplayingSamples(nonDisplayingSamples, trackID);
@@ -1652,7 +1661,7 @@ void SourceBuffer::reenqueueMediaForTime(TrackBuffer& trackBuffer, AtomicString 
 
     // Fill the decode queue with the remaining samples.
     trackBuffer.decodeQueue.clear();
-    for (auto iter = currentSampleDTSIterator; iter != trackBuffer.samples.decodeOrder().end(); ++iter)
+    for (DecodeOrderSampleMap::iterator iter = currentSampleDTSIterator; iter != trackBuffer.samples.decodeOrder().end(); ++iter)
         trackBuffer.decodeQueue.insert(*iter);
     provideMediaData(trackBuffer, trackID);
 
@@ -1683,10 +1692,10 @@ void SourceBuffer::monitorBufferingRate()
     LOG(MediaSource, "SourceBuffer::monitorBufferingRate(%p) - m_avegareBufferRate: %lf", this, m_averageBufferRate);
 }
 
-std::unique_ptr<PlatformTimeRanges> SourceBuffer::bufferedAccountingForEndOfStream() const
+PassOwnPtr<PlatformTimeRanges> SourceBuffer::bufferedAccountingForEndOfStream() const
 {
     // FIXME: Revisit this method once the spec bug <https://www.w3.org/Bugs/Public/show_bug.cgi?id=26436> is resolved.
-    std::unique_ptr<PlatformTimeRanges> virtualRanges = PlatformTimeRanges::create(m_buffered->ranges());
+    PassOwnPtr<PlatformTimeRanges> virtualRanges = PlatformTimeRanges::create(m_buffered->ranges());
     if (m_source->isEnded()) {
         MediaTime start = virtualRanges->maximumBufferedTime();
         MediaTime end = m_source->duration();
@@ -1706,7 +1715,7 @@ bool SourceBuffer::hasCurrentTime() const
     if (currentTime >= duration)
         return true;
 
-    std::unique_ptr<PlatformTimeRanges> ranges = bufferedAccountingForEndOfStream();
+    PassOwnPtr<PlatformTimeRanges> ranges = bufferedAccountingForEndOfStream();
     return abs(ranges->nearest(currentTime) - currentTime) <= currentTimeFudgeFactor();
 }
 
@@ -1715,7 +1724,7 @@ bool SourceBuffer::hasFutureTime() const
     if (isRemoved())
         return false;
 
-    std::unique_ptr<PlatformTimeRanges> ranges = bufferedAccountingForEndOfStream();
+    PassOwnPtr<PlatformTimeRanges> ranges = bufferedAccountingForEndOfStream();
     if (!ranges->length())
         return false;
 
@@ -1755,7 +1764,7 @@ bool SourceBuffer::canPlayThrough()
     MediaTime currentTime = m_source->currentTime();
     MediaTime duration = m_source->duration();
 
-    std::unique_ptr<PlatformTimeRanges> unbufferedRanges = bufferedAccountingForEndOfStream();
+    PassOwnPtr<PlatformTimeRanges> unbufferedRanges = bufferedAccountingForEndOfStream();
     unbufferedRanges->invert();
     unbufferedRanges->intersectWith(PlatformTimeRanges(currentTime, std::max(currentTime, duration)));
     MediaTime unbufferedTime = unbufferedRanges->totalDuration();
@@ -1769,8 +1778,11 @@ bool SourceBuffer::canPlayThrough()
 size_t SourceBuffer::extraMemoryCost() const
 {
     size_t extraMemoryCost = m_pendingAppendData.capacity();
-    for (auto& trackBuffer : m_trackBufferMap.values())
+    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+        TrackBuffer& trackBuffer = it->value;
         extraMemoryCost += trackBuffer.samples.sizeInBytes();
+    }
 
     return extraMemoryCost;
 }
@@ -1799,7 +1811,7 @@ Vector<String> SourceBuffer::bufferedSamplesForTrackID(const AtomicString& track
     Vector<String> sampleDescriptions;
     DecodeOrderSampleMap::iterator end = trackBuffer.samples.decodeOrder().end();
     for (DecodeOrderSampleMap::iterator it = trackBuffer.samples.decodeOrder().begin(); it != end; ++it) {
-        sampleDescriptions.append(toString(*it.second));
+        sampleDescriptions.append(toString(*it->second));
     }
 
     return sampleDescriptions;
@@ -1808,7 +1820,7 @@ Vector<String> SourceBuffer::bufferedSamplesForTrackID(const AtomicString& track
 Document& SourceBuffer::document() const
 {
     ASSERT(scriptExecutionContext());
-    return downcast<Document>(*scriptExecutionContext());
+    return static_cast<Document>(*scriptExecutionContext());
 }
 
 } // namespace WebCore
