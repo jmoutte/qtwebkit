@@ -144,7 +144,7 @@ PassRefPtr<TimeRanges> SourceBuffer::buffered(ExceptionCode& ec) const
     //    INVALID_STATE_ERR exception and abort these steps.
     if (isRemoved()) {
         ec = INVALID_STATE_ERR;
-        return nullptr;
+        return 0;
     }
 
     // 2. Return a new static normalized TimeRanges object for the media segments buffered.
@@ -578,8 +578,7 @@ static PassRefPtr<TimeRanges> removeSamplesFromTrackBuffer(const DecodeOrderSamp
 #if !LOG_DISABLED
         size_t startBufferSize = trackBuffer.samples.sizeInBytes();
 #endif
-
-        RefPtr<MediaSample>& sample = it->second;
+        const RefPtr<MediaSample>& sample = it->second;
         LOG(MediaSource, "SourceBuffer::%s(%p) - removing sample(%s)", logPrefix, buffer, toString(*it->second).utf8().data());
 
         // Remove the erased samples from the TrackBuffer sample map.
@@ -679,7 +678,7 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
     LOG(Media, "SourceBuffer::removeCodedFrames(%p) - buffered = %s", this, toString(m_buffered->ranges()).utf8().data());
 }
 
-void SourceBuffer::removeTimerFired(Timer*)
+void SourceBuffer::removeTimerFired(Timer<SourceBuffer>*)
 {
     ASSERT(m_updating);
     ASSERT(m_pendingRemoveStart.isValid());
@@ -794,7 +793,7 @@ void SourceBuffer::evictCodedFrames(size_t newDataSize)
     LOG(MediaSource, "SourceBuffer::evictCodedFrames(%p) - evicted %zu bytes%s", this, initialBufferedSize - extraMemoryCost(), m_bufferFull ? "" : " but FAILED to free enough");
 }
 
-size_t SourceBuffer::maximumBufferSize()
+size_t SourceBuffer::maximumBufferSize() const
 {
     if (isRemoved())
         return 0;
@@ -821,7 +820,7 @@ const AtomicString& SourceBuffer::networkError()
 VideoTrackList* SourceBuffer::videoTracks()
 {
     if (!m_source || !m_source->mediaElement())
-        return nullptr;
+        return 0;
 
     if (!m_videoTracks)
         m_videoTracks = VideoTrackList::create(m_source->mediaElement(), ActiveDOMObject::scriptExecutionContext());
@@ -832,7 +831,7 @@ VideoTrackList* SourceBuffer::videoTracks()
 AudioTrackList* SourceBuffer::audioTracks()
 {
     if (!m_source || !m_source->mediaElement())
-        return nullptr;
+        return 0;
 
     if (!m_audioTracks)
         m_audioTracks = AudioTrackList::create(m_source->mediaElement(), ActiveDOMObject::scriptExecutionContext());
@@ -843,7 +842,7 @@ AudioTrackList* SourceBuffer::audioTracks()
 TextTrackList* SourceBuffer::textTracks()
 {
     if (!m_source || !m_source->mediaElement())
-        return nullptr;
+        return 0;
 
     if (!m_textTracks)
         m_textTracks = TextTrackList::create(m_source->mediaElement(), ActiveDOMObject::scriptExecutionContext());
@@ -912,7 +911,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
                 break;
             }
 
-            AudioTrack audioTrack = audioTracks()->getTrackById(audioTrackInfo.track->id());
+            AudioTrack *audioTrack = audioTracks()->getTrackById(audioTrackInfo.track->id());
             ASSERT(audioTrack);
             audioTrack->setPrivate(audioTrackInfo.track);
         }
@@ -927,7 +926,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
                 break;
             }
 
-            VideoTrack videoTrack = videoTracks()->getTrackById(videoTrackInfo.track->id());
+            VideoTrack *videoTrack = videoTracks()->getTrackById(videoTrackInfo.track->id());
             ASSERT(videoTrack);
             videoTrack->setPrivate(videoTrackInfo.track);
         }
@@ -940,7 +939,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
                 break;
             }
 
-            TextTrack textTrack = textTracks()->getTrackById(textTrackInfo.track->id());
+            TextTrack *textTrack = textTracks()->getTrackById(textTrackInfo.track->id());
             ASSERT(textTrack);
             static_cast<InbandTextTrack>(*textTrack).setPrivate(textTrackInfo.track);
         }
