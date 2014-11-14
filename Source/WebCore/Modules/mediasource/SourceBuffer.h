@@ -99,11 +99,14 @@ public:
     bool active() const { return m_active; }
 
     // ActiveDOMObject interface
-    virtual bool hasPendingActivity();
-    virtual void stop();
+    virtual bool hasPendingActivity() const OVERRIDE;
+    virtual void stop() OVERRIDE;
 
     // EventTarget interface
-    virtual ScriptExecutionContext* scriptExecutionContext() { return ActiveDOMObject::scriptExecutionContext(); }
+    virtual const AtomicString& interfaceName() const; 
+    virtual ScriptExecutionContext* scriptExecutionContext() const OVERRIDE { return ActiveDOMObject::scriptExecutionContext(); }
+    virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
+    virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }
 
     using RefCounted<SourceBuffer>::ref;
     using RefCounted<SourceBuffer>::deref;
@@ -114,8 +117,8 @@ public:
 
 protected:
     // EventTarget interface
-    virtual void refEventTarget() { ref(); }
-    virtual void derefEventTarget() { deref(); }
+    virtual void refEventTarget() OVERRIDE { ref(); }
+    virtual void derefEventTarget() OVERRIDE { deref(); }
 
 private:
     SourceBuffer(PassOwnPtr<SourceBufferPrivate>, PassRefPtr<MediaSource>);
@@ -216,6 +219,8 @@ private:
     bool m_receivedFirstInitializationSegment;
     bool m_active;
     bool m_bufferFull;
+
+    EventTargetData m_eventTargetData;
 };
 
 } // namespace WebCore

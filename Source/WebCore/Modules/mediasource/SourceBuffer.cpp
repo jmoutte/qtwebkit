@@ -934,6 +934,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         ASSERT(segment.textTracks.size() == textTracks()->length());
         Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
         for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
+            const InitializationSegment::TextTrackInformation & textTrackInfo = *it;
             if (textTracks()->length() == 1) {
                 static_cast<InbandTextTrack>(*textTracks()->item(0)).setPrivate(textTrackInfo.track);
                 break;
@@ -1815,7 +1816,7 @@ void SourceBuffer::reportExtraMemoryCost()
 
     JSC::JSLockHolder lock(scriptExecutionContext()->vm());
     if (extraMemoryCostDelta > 0)
-        scriptExecutionContext()->vm().heap.reportExtraMemoryCost(extraMemoryCostDelta);
+        scriptExecutionContext()->vm()->heap.reportExtraMemoryCost(extraMemoryCostDelta);
 }
 
 Vector<String> SourceBuffer::bufferedSamplesForTrackID(const AtomicString& trackID)
