@@ -81,7 +81,6 @@ const AtomicString& AudioTrack::commentaryKeyword()
 
 AudioTrack::AudioTrack(AudioTrackClient* client, PassRefPtr<AudioTrackPrivate> trackPrivate)
     : TrackBase(TrackBase::AudioTrack, trackPrivate->id(), trackPrivate->label(), trackPrivate->language())
-    , m_id(trackPrivate->id())
     , m_enabled(trackPrivate->enabled())
     , m_client(client)
     , m_private(trackPrivate)
