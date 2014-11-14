@@ -113,8 +113,8 @@ TextTrack* TextTrack::captionMenuAutomaticItem()
     return automatic.get();
 }
 
-TextTrack::TextTrack(ScriptExecutionContext* context, TextTrackClient* client, const AtomicString& kind, const AtomicString& label, const AtomicString& language, TextTrackType type)
-    : TrackBase(TrackBase::TextTrack, label, language)
+TextTrack::TextTrack(ScriptExecutionContext* context, TextTrackClient* client, const AtomicString& kind, const AtomicString& id, const AtomicString& label, const AtomicString& language, TextTrackType type)
+    : TrackBase(TrackBase::TextTrack, id, label, language)
     , m_cues(0)
     , m_scriptExecutionContext(context)
 #if ENABLE(WEBVTT_REGIONS)
@@ -170,6 +170,11 @@ EventTargetData* TextTrack::ensureEventTargetData()
 bool TextTrack::isValidKind(const AtomicString& value) const
 {
     return TextTrack::isValidKindKeyword(value);
+}
+
+bool TextTrack::enabled() const
+{
+    return m_mode != disabledKeyword();
 }
 
 bool TextTrack::isValidKindKeyword(const AtomicString& value)

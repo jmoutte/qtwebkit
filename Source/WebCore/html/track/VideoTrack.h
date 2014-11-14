@@ -54,9 +54,6 @@ public:
     }
     virtual ~VideoTrack();
 
-    AtomicString id() const { return m_id; }
-    void setId(const AtomicString& id) { m_id = id; }
-
     static const AtomicString& alternativeKeyword();
     static const AtomicString& captionsKeyword();
     static const AtomicString& mainKeyword();
@@ -73,6 +70,8 @@ public:
 
     size_t inbandTrackIndex();
 
+    void setPrivate(PassRefPtr<VideoTrackPrivate>);
+
 protected:
     VideoTrack(VideoTrackClient*, PassRefPtr<VideoTrackPrivate> privateTrack);
 
@@ -80,7 +79,10 @@ private:
     virtual bool isValidKind(const AtomicString&) const OVERRIDE;
     virtual void willRemoveVideoTrackPrivate(VideoTrackPrivate*) OVERRIDE;
 
-    AtomicString m_id;
+    virtual bool enabled() const OVERRIDE { return selected(); }
+
+    void updateKindFromPrivate();
+
     bool m_selected;
     VideoTrackClient* m_client;
 

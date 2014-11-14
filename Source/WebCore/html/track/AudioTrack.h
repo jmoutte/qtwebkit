@@ -54,9 +54,6 @@ public:
     }
     virtual ~AudioTrack();
 
-    AtomicString id() const { return m_id; }
-    void setId(const AtomicString& id) { m_id = id; }
-
     static const AtomicString& alternativeKeyword();
     static const AtomicString& descriptionKeyword();
     static const AtomicString& mainKeyword();
@@ -65,13 +62,15 @@ public:
     static const AtomicString& commentaryKeyword();
     virtual const AtomicString& defaultKindKeyword() const OVERRIDE { return emptyAtom; }
 
-    bool enabled() const { return m_enabled; }
+    virtual bool enabled() const OVERRIDE { return m_enabled; }
     virtual void setEnabled(const bool);
 
     virtual void clearClient() OVERRIDE { m_client = 0; }
     AudioTrackClient* client() const { return m_client; }
 
     size_t inbandTrackIndex();
+
+    void setPrivate(PassRefPtr<AudioTrackPrivate>);
 
 protected:
     AudioTrack(AudioTrackClient*, PassRefPtr<AudioTrackPrivate>);
@@ -80,7 +79,8 @@ private:
     virtual bool isValidKind(const AtomicString&) const OVERRIDE;
     virtual void willRemoveAudioTrackPrivate(AudioTrackPrivate*) OVERRIDE;
 
-    AtomicString m_id;
+    void updateKindFromPrivate();
+
     bool m_enabled;
     AudioTrackClient* m_client;
 

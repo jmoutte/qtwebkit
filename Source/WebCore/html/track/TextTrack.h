@@ -67,7 +67,7 @@ class TextTrack : public TrackBase, public EventTarget
 #endif
     {
 public:
-    static PassRefPtr<TextTrack> create(ScriptExecutionContext* context, TextTrackClient* client, const AtomicString& kind, const AtomicString& label, const AtomicString& language)
+    static PassRefPtr<TextTrack> create(ScriptExecutionContext* context, TextTrackClient* client, const AtomicString& kind, const AtomicString& id, const AtomicString& label, const AtomicString& language)
     {
         return adoptRef(new TextTrack(context, client, kind, label, language, AddTrack));
     }
@@ -87,6 +87,8 @@ public:
     static const AtomicString& forcedKeyword();
     virtual const AtomicString& defaultKindKeyword() const OVERRIDE { return subtitlesKeyword(); }
     static bool isValidKindKeyword(const AtomicString&);
+
+    virtual bool enabled() const OVERRIDE;
 
     static const AtomicString& disabledKeyword();
     static const AtomicString& hiddenKeyword();
