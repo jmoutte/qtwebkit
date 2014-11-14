@@ -70,7 +70,7 @@ public:
     void streamEndedWithError(const AtomicString& error, ExceptionCode&);
 
     // MediaSourcePrivateClient
-    virtual void setPrivateAndOpen(PassOwnPtr<MediaSourcePrivate>) OVERRIDE;
+    virtual void setPrivateAndOpen(PassRefPtr<MediaSourcePrivate>) OVERRIDE;
     virtual MediaTime duration() const;
     virtual PassOwnPtr<PlatformTimeRanges> buffered() const;
     virtual void seekToTime(const MediaTime&);

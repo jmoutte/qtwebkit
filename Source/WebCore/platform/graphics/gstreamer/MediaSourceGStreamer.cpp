@@ -43,8 +43,8 @@ namespace WebCore {
 void MediaSourceGStreamer::open(MediaSourcePrivateClient* mediaSource, WebKitMediaSrc* src)
 {
     ASSERT(mediaSource);
-    RefPtr<MediaSourcePrivate> mediaSourcePrivate = adoptRef (new MediaSourceGStreamer(mediaSource, src));
-    mediaSource->setPrivateAndOpen(*mediaSourcePrivate);
+    RefPtr<MediaSourceGStreamer> mediaSourcePrivate = new MediaSourceGStreamer(mediaSource, src);
+    mediaSource->setPrivateAndOpen(mediaSourcePrivate.release());
 }
 
 MediaSourceGStreamer::MediaSourceGStreamer(MediaSourcePrivateClient* mediaSource, WebKitMediaSrc* src)
