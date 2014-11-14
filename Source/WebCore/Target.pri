@@ -3217,6 +3217,16 @@ enable?(MEDIA_SOURCE) {
         Modules/mediasource/MediaSourceRegistry.cpp \
         Modules/mediasource/SourceBuffer.cpp \
         Modules/mediasource/SourceBufferList.cpp
+        
+    use?(GSTREAMER) {
+        HEADERS += \
+            platform/graphics/gstreamer/WebKitMediaSourceGStreamer.h \
+            platform/graphics/gstreamer/SourceBufferPrivateGStreamer.h \ 
+            platform/graphics/gstreamer/MediaSourceGStreamer.h
+        SOURCES += \
+            platform/graphics/gstreamer/WebKitMediaSourceGStreamer.cpp \
+            platform/graphics/gstreamer/MediaSourceGStreamer.cpp
+    }
 }
 
 enable?(ICONDATABASE) {
