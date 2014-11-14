@@ -193,7 +193,7 @@ PassRefPtr<InbandTextTrack> InbandTextTrack::create(ScriptExecutionContext* cont
 }
 
 InbandTextTrack::InbandTextTrack(ScriptExecutionContext* context, TextTrackClient* client, PassRefPtr<InbandTextTrackPrivate> tracksPrivate)
-    : TextTrack(context, client, emptyString(), tracksPrivate->label(), tracksPrivate->language(), InBand)
+    : TextTrack(context, client, emptyString(), tracksPrivate->id(), tracksPrivate->label(), tracksPrivate->language(), InBand)
     , m_private(tracksPrivate)
 {
     m_private->setClient(this);
