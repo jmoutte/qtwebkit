@@ -24,7 +24,7 @@
 #if ENABLE(VIDEO) && ENABLE(MEDIA_SOURCE) && USE(GSTREAMER)
 
 #include "GRefPtrGStreamer.h"
-#include "GStreamerUtilities.h"
+#include "GStreamerVersioning.h"
 #include "NotImplemented.h"
 #include "TimeRanges.h"
 #include <gst/app/gstappsrc.h>
@@ -149,7 +149,7 @@ static void webKitMediaSrcAddSrc(WebKitMediaSrc* src, GstElement* element)
     gst_element_sync_state_with_parent(element);
     GOwnPtr<gchar> name;
     name.set(g_strdup_printf("src_%u", priv->nbSource));
-    ghostPad = WebCore::webkitGstGhostPadFromStaticTemplate(&srcTemplate, name.get(), targetsrc.get());
+    ghostPad = webkitGstGhostPadFromStaticTemplate(&srcTemplate, name.get(), targetsrc.get());
     gst_pad_set_active(ghostPad, TRUE);
 
     priv->nbSource++;
@@ -725,7 +725,7 @@ void MediaSourceClientGstreamer::didReceiveData(const char* data, int length, St
             priv->sourceVideo.padAdded = TRUE;
         }
         GST_OBJECT_LOCK(m_src);
-        buffer = WebCore::createGstBufferForData(data, length);
+        buffer = createGstBufferForData(data, length);
         GST_OBJECT_UNLOCK(m_src);
 
         ret = gst_app_src_push_buffer(GST_APP_SRC(priv->sourceVideo.appsrc), buffer);
@@ -739,7 +739,7 @@ void MediaSourceClientGstreamer::didReceiveData(const char* data, int length, St
             priv->sourceAudio.padAdded = TRUE;
         }
         GST_OBJECT_LOCK(m_src);
-        buffer = WebCore::createGstBufferForData(data, length);
+        buffer = createGstBufferForData(data, length);
         GST_OBJECT_UNLOCK(m_src);
 
         ret = gst_app_src_push_buffer(GST_APP_SRC(priv->sourceAudio.appsrc), buffer);
