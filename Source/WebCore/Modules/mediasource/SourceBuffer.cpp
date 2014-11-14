@@ -102,7 +102,7 @@ PassRefPtr<SourceBuffer> SourceBuffer::create(PassRefPtr<SourceBufferPrivate> so
 {
     RefPtr<SourceBuffer> sourceBuffer(adoptRef(new SourceBuffer(WTF::move(sourceBufferPrivate), source)));
     sourceBuffer->suspendIfNeeded();
-    return sourceBuffer.releaseNonNull();
+    return sourceBuffer.release();
 }
 
 SourceBuffer::SourceBuffer(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, PassRefPtr<MediaSource> source)
