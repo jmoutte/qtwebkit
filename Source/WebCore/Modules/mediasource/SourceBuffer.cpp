@@ -66,7 +66,9 @@ static double ExponentialMovingAverageCoefficient = 0.1;
 // Allow hasCurrentTime() to be off by as much as the length of a 24fps video frame
 static const MediaTime& currentTimeFudgeFactor()
 {
-    static NeverDestroyed<MediaTime> fudgeFactor(1, 24);
+    // Given that we can nt use the variadic on templates, use the default constructor
+    // which uses a 6000 scale, so 1/24 = 250/6000
+    static NeverDestroyed<MediaTime> fudgeFactor(250);
     return fudgeFactor;
 }
 
@@ -807,13 +809,13 @@ size_t SourceBuffer::maximumBufferSize() const
 
 const AtomicString& SourceBuffer::decodeError()
 {
-    static NeverDestroyed<AtomicString> decode("decode", AtomicString::ConstructFromLiteral);
+    static NeverDestroyed<AtomicString> decode("decode");
     return decode;
 }
 
 const AtomicString& SourceBuffer::networkError()
 {
-    static NeverDestroyed<AtomicString> network("network", AtomicString::ConstructFromLiteral);
+    static NeverDestroyed<AtomicString> network("network");
     return network;
 }
 
