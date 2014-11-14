@@ -313,8 +313,8 @@ void SourceBuffer::removedFromMediaSource()
 
     abortIfUpdating();
 
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
         TrackBuffer& trackBuffer = it->value;
         trackBuffer.samples.clear();
         trackBuffer.decodeQueue.clear();
@@ -344,8 +344,8 @@ MediaTime SourceBuffer::sourceBufferPrivateFastSeekTimeForMediaTime(SourceBuffer
     MediaTime lowerBoundTime = targetTime - negativeThreshold;
     MediaTime upperBoundTime = targetTime + positiveThreshold;
 
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
         TrackBuffer& trackBuffer = it->value;
         // Find the sample which contains the target time time.
         DecodeOrderSampleMap::iterator futureSyncSampleIterator = trackBuffer.samples.decodeOrder().findSyncSampleAfterPresentationTime(targetTime, positiveThreshold);
@@ -945,8 +945,8 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
             static_cast<InbandTextTrack>(*textTrack).setPrivate(textTrackInfo.track);
         }
 
-        HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
-        for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+        HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
+        for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
             TrackBuffer& trackBuffer = it->value;
             trackBuffer.needRandomAccessFlag = true;
         }
@@ -1268,8 +1268,8 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
             // Set group start timestamp equal to the highest presentation end timestamp.
             // FIXME: Add support for "sequence" mode.
 
-            HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
-            for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+            HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
+            for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
                 TrackBuffer& trackBuffer = it->value;
                 // 1.7.2 Unset the last decode timestamp on all track buffers.
                 trackBuffer.lastDecodeTimestamp = MediaTime::invalidTime();
@@ -1796,8 +1796,8 @@ bool SourceBuffer::canPlayThrough()
 size_t SourceBuffer::extraMemoryCost() const
 {
     size_t extraMemoryCost = m_pendingAppendData.capacity();
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.values().end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.values().begin(); it != end; ++it) {
+    HashMap<AtomicString, TrackBuffer>::const_iterator end = m_trackBufferMap.end();
+    for (HashMap<AtomicString, TrackBuffer>::const_iterator it = m_trackBufferMap.begin(); it != end; ++it) {
         TrackBuffer& trackBuffer = it->value;
         extraMemoryCost += trackBuffer.samples.sizeInBytes();
     }
