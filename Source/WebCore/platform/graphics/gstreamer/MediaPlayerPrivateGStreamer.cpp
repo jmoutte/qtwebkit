@@ -62,6 +62,11 @@ static const char* gPlaybinName = "playbin2";
 static const gint64 gPercentMax = 100;
 #endif
 
+#if ENABLE(MEDIA_SOURCE)
+#include "MediaSource.h"
+#include "WebKitMediaSourceGStreamer.h"
+#endif
+
 GST_DEBUG_CATEGORY_EXTERN(webkit_media_player_debug);
 #define GST_CAT_DEFAULT webkit_media_player_debug
 
@@ -179,9 +184,14 @@ bool initializeGStreamerAndRegisterWebKitElements()
     GRefPtr<GstElementFactory> srcFactory = gst_element_factory_find("webkitwebsrc");
     if (!srcFactory) {
         GST_DEBUG_CATEGORY_INIT(webkit_media_player_debug, "webkitmediaplayer", 0, "WebKit media player");
-        return gst_element_register(0, "webkitwebsrc", GST_RANK_PRIMARY + 100, WEBKIT_TYPE_WEB_SRC);
+        gst_element_register(0, "webkitwebsrc", GST_RANK_PRIMARY + 100, WEBKIT_TYPE_WEB_SRC);
     }
 
+#if ENABLE(MEDIA_SOURCE)
+    GRefPtr<GstElementFactory> WebKitMediaSrcFactory = gst_element_factory_find("webkitmediasrc");
+    if (!WebKitMediaSrcFactory)
+        gst_element_register(0, "webkitmediasrc", GST_RANK_PRIMARY + 100, WEBKIT_TYPE_MEDIA_SRC);
+#endif
     return true;
 }
 
@@ -330,9 +340,11 @@ void MediaPlayerPrivateGStreamer::load(const String& urlString)
 }
 
 #if ENABLE(MEDIA_SOURCE)
-void MediaPlayerPrivateGStreamer::load(const String& url, PassRefPtr<MediaSource>)
+void MediaPlayerPrivateGStreamer::load(const String& url, MediaSourcePrivateClient* mediaSource)
 {
-    notImplemented();
+    String mediasourceUri = String::format("mediasource%s", url.utf8().data());
+    m_mediaSource = mediaSource;
+    load(mediasourceUri);
 }
 #endif
 
@@ -744,9 +756,9 @@ void MediaPlayerPrivateGStreamer::setPreservesPitch(bool preservesPitch)
     m_preservesPitch = preservesPitch;
 }
 
-PassRefPtr<TimeRanges> MediaPlayerPrivateGStreamer::buffered() const
+PassRefPtr<PlatformTimeRanges> MediaPlayerPrivateGStreamer::buffered() const
 {
-    RefPtr<TimeRanges> timeRanges = TimeRanges::create();
+    RefPtr<PlatformTimeRanges> timeRanges = PlatformTimeRanges::create();
     if (m_errorOccured || isLiveStream())
         return timeRanges.release();
 
@@ -766,21 +778,21 @@ PassRefPtr<TimeRanges> MediaPlayerPrivateGStreamer::buffered() const
     for (guint index = 0; index < numBufferingRanges; index++) {
         gint64 rangeStart = 0, rangeStop = 0;
         if (gst_query_parse_nth_buffering_range(query, index, &rangeStart, &rangeStop))
-            timeRanges->add(static_cast<float>((rangeStart * mediaDuration) / gPercentMax),
-                static_cast<float>((rangeStop * mediaDuration) / gPercentMax));
+            timeRanges->add(MediaTime::createWithDouble((rangeStart * mediaDuration) / gPercentMax),
+                MediaTime::createWithDouble((rangeStop * mediaDuration) / gPercentMax));
     }
 
     // Fallback to the more general maxTimeLoaded() if no range has
     // been found.
     if (!timeRanges->length())
         if (float loaded = maxTimeLoaded())
-            timeRanges->add(0, loaded);
+            timeRanges->add(MediaTime::zeroTime(), MediaTime::createWithDouble(loaded));
 
     gst_query_unref(query);
 #else
     float loaded = maxTimeLoaded();
     if (!m_errorOccured && !isLiveStream() && loaded > 0)
-        timeRanges->add(0, loaded);
+        timeRanges->add(MediaTime::zeroTime(), MediaTime::createWithDouble(loaded));
 #endif
     return timeRanges.release();
 }
@@ -1159,6 +1171,12 @@ void MediaPlayerPrivateGStreamer::sourceChanged()
 
     if (WEBKIT_IS_WEB_SRC(m_source.get()))
         webKitWebSrcSetMediaPlayer(WEBKIT_WEB_SRC(m_source.get()), m_player);
+#if ENABLE(MEDIA_SOURCE)
+    if (m_mediaSource && WEBKIT_IS_MEDIA_SRC(m_source.get())) {
+        MediaSourceGStreamer::open(m_mediaSource.get(), WEBKIT_MEDIA_SRC(m_source.get()));
+        webKitMediaSrcSetPlayBin(WEBKIT_MEDIA_SRC(m_source.get()), m_playBin.get());
+    }
+#endif
 }
 
 void MediaPlayerPrivateGStreamer::cancelLoad()

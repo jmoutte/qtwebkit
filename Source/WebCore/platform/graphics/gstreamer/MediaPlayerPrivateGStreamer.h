@@ -37,6 +37,10 @@
 #include <wtf/threads/BinarySemaphore.h>
 #endif
 
+#if ENABLE(MEDIA_SOURCE)
+#include "MediaSourceGStreamer.h"
+#endif
+
 typedef struct _GstBuffer GstBuffer;
 typedef struct _GstMessage GstMessage;
 typedef struct _GstElement GstElement;
@@ -56,7 +60,7 @@ public:
 
     void load(const String &url);
 #if ENABLE(MEDIA_SOURCE)
-    void load(const String& url, PassRefPtr<MediaSource>);
+    void load(const String& url, MediaSourcePrivateClient*);
 #endif
     void commitLoad();
     void cancelLoad();
@@ -197,6 +201,9 @@ private:
     bool m_missingPlugins;
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
     BinarySemaphore m_drmKeySemaphore;
+#endif
+#if ENABLE(MEDIA_SOURCE)
+    RefPtr<MediaSourcePrivateClient> m_mediaSource;
 #endif
 };
 }
