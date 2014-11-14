@@ -103,13 +103,13 @@ const AtomicString& TextTrack::showingKeyword()
 
 TextTrack* TextTrack::captionMenuOffItem()
 {
-    DEFINE_STATIC_LOCAL(RefPtr<TextTrack>, off, (TextTrack::create(0, 0, "off menu item", "", "")));
+    DEFINE_STATIC_LOCAL(RefPtr<TextTrack>, off, (TextTrack::create(0, 0, "off menu item", "", "", "")));
     return off.get();
 }
 
 TextTrack* TextTrack::captionMenuAutomaticItem()
 {
-    DEFINE_STATIC_LOCAL(RefPtr<TextTrack>, automatic, (TextTrack::create(0, 0, "automatic menu item", "", "")));
+    DEFINE_STATIC_LOCAL(RefPtr<TextTrack>, automatic, (TextTrack::create(0, 0, "automatic menu item" ,"",  "", "")));
     return automatic.get();
 }
 

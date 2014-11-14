@@ -69,7 +69,7 @@ class TextTrack : public TrackBase, public EventTarget
 public:
     static PassRefPtr<TextTrack> create(ScriptExecutionContext* context, TextTrackClient* client, const AtomicString& kind, const AtomicString& id, const AtomicString& label, const AtomicString& language)
     {
-        return adoptRef(new TextTrack(context, client, kind, label, language, AddTrack));
+        return adoptRef(new TextTrack(context, client, kind, id, label, language, AddTrack));
     }
     virtual ~TextTrack();
 
@@ -156,7 +156,7 @@ public:
     using RefCounted<TrackBase>::deref;
 
 protected:
-    TextTrack(ScriptExecutionContext*, TextTrackClient*, const AtomicString& kind, const AtomicString& label, const AtomicString& language, TextTrackType);
+    TextTrack(ScriptExecutionContext*, TextTrackClient*, const AtomicString& kind, const AtomicString& id, const AtomicString& label, const AtomicString& language, TextTrackType);
 #if ENABLE(VIDEO_TRACK) && ENABLE(WEBVTT_REGIONS)
     TextTrackRegionList* regionList();
 #endif
