@@ -124,8 +124,8 @@ private:
     virtual void sourceBufferPrivateDidEndStream(SourceBufferPrivate*, const WTF::AtomicString&);
     virtual void sourceBufferPrivateDidReceiveInitializationSegment(SourceBufferPrivate*, const InitializationSegment&);
     virtual void sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, PassRefPtr<MediaSample>);
-    virtual bool sourceBufferPrivateHasAudio(const SourceBufferPrivate*);
-    virtual bool sourceBufferPrivateHasVideo(const SourceBufferPrivate*);
+    virtual bool sourceBufferPrivateHasAudio(const SourceBufferPrivate*) const;
+    virtual bool sourceBufferPrivateHasVideo(const SourceBufferPrivate*) const;
     virtual void sourceBufferPrivateDidBecomeReadyForMoreSamples(SourceBufferPrivate*, AtomicString trackID);
     virtual MediaTime sourceBufferPrivateFastSeekTimeForMediaTime(SourceBufferPrivate*, const MediaTime&, const MediaTime& negativeThreshold, const MediaTime& positiveThreshold);
     virtual void sourceBufferPrivateAppendComplete(SourceBufferPrivate*, AppendResult);

@@ -96,14 +96,14 @@ struct SourceBuffer::TrackBuffer {
     }
 };
 
-PassRefPtr<SourceBuffer> SourceBuffer::create(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, MediaSource* source)
+PassRefPtr<SourceBuffer> SourceBuffer::create(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, PassRefPtr<MediaSource> source)
 {
     RefPtr<SourceBuffer> sourceBuffer(adoptRef(new SourceBuffer(WTF::move(sourceBufferPrivate), source)));
     sourceBuffer->suspendIfNeeded();
     return sourceBuffer.releaseNonNull();
 }
 
-SourceBuffer::SourceBuffer(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, MediaSource* source)
+SourceBuffer::SourceBuffer(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, PassRefPtr<MediaSource> source)
     : ActiveDOMObject(source->scriptExecutionContext())
     , m_private(WTF::move(sourceBufferPrivate))
     , m_source(source)
@@ -961,9 +961,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         // NOTE: This check is the responsibility of the SourceBufferPrivate.
 
         // 5.2 For each audio track in the initialization segment, run following steps:
-        Vector<InitializationSegment::AudioTrackInformation>::iterator aend = segment.audioTracks.end();
-        for (Vector<InitializationSegment::AudioTrackInformation>::iterator it = segment.audioTracks.begin(); it != aend; ++it) {
-            InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
+        Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
+        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+            const InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
             AudioTrackPrivate* audioTrackPrivate = audioTrackInfo.track.get();
 
             // 5.2.1 Let new audio track be a new AudioTrack object.
@@ -1003,9 +1003,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         // 5.3 For each video track in the initialization segment, run following steps:
-        Vector<InitializationSegment::VideoTrackInformation>::iterator vend = segment.videoTracks.end();
-        for (Vector<InitializationSegment::VideoTrackInformation>::iterator it = segment.videoTracks.begin(); it != vend; ++it) {
-            InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
+        Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+            const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             VideoTrackPrivate* videoTrackPrivate = videoTrackInfo.track.get();
 
             // 5.3.1 Let new video track be a new VideoTrack object.
@@ -1045,9 +1045,9 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         // 5.4 For each text track in the initialization segment, run following steps:
-        Vector<InitializationSegment::TextTrackInformation>::iterator tend = segment.textTracks.end();
-        for (Vector<InitializationSegment::TextTrackInformation>::iterator it = segment.textTracks.begin(); it != tend; ++it) {
-            InitializationSegment::TextTrackInformation & textTrackInfo = *it;
+        Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
+        for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
+            const InitializationSegment::TextTrackInformation & textTrackInfo = *it;
             InbandTextTrackPrivate* textTrackPrivate = textTrackInfo.track.get();
 
             // 5.4.1 Let new text track be a new TextTrack object with its properties populated with the
