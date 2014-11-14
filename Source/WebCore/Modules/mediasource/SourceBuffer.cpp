@@ -663,7 +663,7 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
         }
 
         erasedRanges->invert();
-        m_buffered->intersectWith(*erasedRanges);
+        m_buffered->intersectWith(erasedRanges);
 
         // 3.4 If this object is in activeSourceBuffers, the current playback position is greater than or equal to start
         // and less than the remove end timestamp, and HTMLMediaElement.readyState is greater than HAVE_METADATA, then set
@@ -904,7 +904,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         ASSERT(segment.audioTracks.size() == audioTracks()->length());
         Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
         for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
-            InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
+            const InitializationSegment::AudioTrackInformation& audioTrackInfo = *it;
 
             if (audioTracks()->length() == 1) {
                 audioTracks()->item(0)->setPrivate(audioTrackInfo.track);
@@ -920,7 +920,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         ASSERT(segment.videoTracks.size() == videoTracks()->length());
         Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
         for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
-            InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
+            const InitializationSegment::VideoTrackInformation& videoTrackInfo = *it;
             if (videoTracks()->length() == 1) {
                 videoTracks()->item(0)->setPrivate(videoTrackInfo.track);
                 break;
@@ -934,7 +934,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         ASSERT(segment.textTracks.size() == textTracks()->length());
         Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
         for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
-            const InitializationSegment::TextTrackInformation & textTrackInfo = *it;
+            const InitializationSegment::TextTrackInformation &textTrackInfo = *it;
             if (textTracks()->length() == 1) {
                 static_cast<InbandTextTrack>(*textTracks()->item(0)).setPrivate(textTrackInfo.track);
                 break;
@@ -1417,7 +1417,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
             }
 
             erasedRanges->invert();
-            m_buffered->intersectWith(*erasedRanges);
+            m_buffered->intersectWith(erasedRanges);
         }
 
         // 1.17 If spliced audio frame is set:
@@ -1798,7 +1798,7 @@ size_t SourceBuffer::extraMemoryCost() const
     size_t extraMemoryCost = m_pendingAppendData.capacity();
     HashMap<AtomicString, TrackBuffer>::const_iterator end = m_trackBufferMap.end();
     for (HashMap<AtomicString, TrackBuffer>::const_iterator it = m_trackBufferMap.begin(); it != end; ++it) {
-        TrackBuffer& trackBuffer = it->value;
+        const TrackBuffer& trackBuffer = it->value;
         extraMemoryCost += trackBuffer.samples.sizeInBytes();
     }
 
