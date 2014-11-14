@@ -32,6 +32,8 @@
 
 namespace WebCore {
 
+static int s_uniqueId = 0;
+
 TrackBase::TrackBase(Type type, const AtomicString& id, const AtomicString& label, const AtomicString& language)
     : m_mediaElement(0)
 #if ENABLE(MEDIA_SOURCE)
