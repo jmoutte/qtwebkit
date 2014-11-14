@@ -665,7 +665,7 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
         }
 
         erasedRanges->invert();
-        m_buffered->intersectWith(erasedRanges);
+        m_buffered->intersectWith(erasedRanges.get());
 
         // 3.4 If this object is in activeSourceBuffers, the current playback position is greater than or equal to start
         // and less than the remove end timestamp, and HTMLMediaElement.readyState is greater than HAVE_METADATA, then set
@@ -860,7 +860,7 @@ void SourceBuffer::setActive(bool active)
     m_active = active;
     m_private->setActive(active);
     if (!isRemoved())
-        m_source->sourceBufferDidChangeAcitveState(this, active);
+        m_source->sourceBufferDidChangeActiveState(this, active);
 }
 
 void SourceBuffer::sourceBufferPrivateDidEndStream(SourceBufferPrivate*, const WTF::AtomicString& error)
@@ -1419,7 +1419,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
             }
 
             erasedRanges->invert();
-            m_buffered->intersectWith(erasedRanges);
+            m_buffered->intersectWith(erasedRanges.get());
         }
 
         // 1.17 If spliced audio frame is set:
