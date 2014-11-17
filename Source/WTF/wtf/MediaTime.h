@@ -72,7 +72,7 @@ public:
     bool operator>=(const MediaTime& rhs) const;
     bool operator<=(const MediaTime& rhs) const;
     bool operator!() const;
-    explicit operator bool() const;
+    operator bool() const;
 
     typedef enum {
         LessThan = -1,
