@@ -281,7 +281,7 @@ public:
 
     bool load(const KURL&, const ContentType&, const String& keySystem);
 #if ENABLE(MEDIA_SOURCE)
-    bool load(const KURL&, PassRefPtr<MediaSource>);
+    bool load(const KURL&, const ContentType&, MediaSourcePrivateClient*);
 #endif
     void cancelLoad();
 
