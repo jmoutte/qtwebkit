@@ -70,6 +70,11 @@ public:
 
     size_t inbandTrackIndex();
 
+#if ENABLE(MEDIA_SOURCE)
+    virtual void setKind(const AtomicString&) OVERRIDE;
+    virtual void setLanguage(const AtomicString&) OVERRIDE;
+#endif
+
     void setPrivate(PassRefPtr<VideoTrackPrivate>);
 
 protected:

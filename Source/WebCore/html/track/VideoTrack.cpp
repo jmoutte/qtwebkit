@@ -38,8 +38,11 @@
 #include "Event.h"
 #include "ExceptionCode.h"
 #include "HTMLMediaElement.h"
-#include "TrackBase.h"
 #include "VideoTrackList.h"
+
+#if ENABLE(MEDIA_SOURCE)
+#include "SourceBuffer.h"
+#endif
 
 namespace WebCore {
 
@@ -102,7 +105,7 @@ void VideoTrack::setPrivate(PassRefPtr<VideoTrackPrivate> trackPrivate)
     if (m_private == trackPrivate)
         return;
 
-    m_private->setClient(nullptr);
+    m_private->setClient(0);
     m_private = trackPrivate;
     m_private->setClient(this);
 
@@ -151,6 +154,49 @@ void VideoTrack::willRemoveVideoTrackPrivate(VideoTrackPrivate* trackPrivate)
     ASSERT(trackPrivate == m_private);
     mediaElement()->removeVideoTrack(this);
 }
+
+#if ENABLE(MEDIA_SOURCE)
+void VideoTrack::setKind(const AtomicString& kind)
+{
+    // 10.1 kind, on setting:
+    // 1. If the value being assigned to this attribute does not match one of the video track kinds,
+    // then abort these steps.
+    if (!isValidKind(kind))
+        return;
+
+    // 2. Update this attribute to the new value.
+    setKindInternal(kind);
+
+    // 3. If the sourceBuffer attribute on this track is not null, then queue a task to fire a simple
+    // event named change at sourceBuffer.videoTracks.
+    if (m_sourceBuffer)
+        m_sourceBuffer->videoTracks()->scheduleChangeEvent();
+
+    // 4. Queue a task to fire a simple event named change at the VideoTrackList object referenced by
+    // the videoTracks attribute on the HTMLMediaElement.
+    mediaElement()->videoTracks()->scheduleChangeEvent();
+}
+
+void VideoTrack::setLanguage(const AtomicString& language)
+{
+    // 10.1 language, on setting:
+    // 1. If the value being assigned to this attribute is not an empty string or a BCP 47 language
+    // tag[BCP47], then abort these steps.
+    // FIXME(123926): Validate the BCP47-ness of langague.
+
+    // 2. Update this attribute to the new value.
+    TrackBase::setLanguage(language);
+
+    // 3. If the sourceBuffer attribute on this track is not null, then queue a task to fire a simple
+    // event named change at sourceBuffer.videoTracks.
+    if (m_sourceBuffer)
+        m_sourceBuffer->videoTracks()->scheduleChangeEvent();
+
+    // 4. Queue a task to fire a simple event named change at the VideoTrackList object referenced by
+    // the videoTracks attribute on the HTMLMediaElement.
+    mediaElement()->videoTracks()->scheduleChangeEvent();
+}
+#endif
 
 void VideoTrack::updateKindFromPrivate()
 {
