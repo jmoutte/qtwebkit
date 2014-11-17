@@ -82,7 +82,7 @@ public:
     void setPreload(MediaPlayer::Preload);
     void fillTimerFired(Timer<MediaPlayerPrivateGStreamer>*);
 
-    PassRefPtr<TimeRanges> buffered() const;
+    PassOwnPtr<PlatformTimeRanges> buffered() const;
     float maxTimeSeekable() const;
     bool didLoadingProgress() const;
     unsigned long long totalBytes() const;

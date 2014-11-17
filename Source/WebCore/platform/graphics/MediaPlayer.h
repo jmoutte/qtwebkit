@@ -69,7 +69,7 @@ class Document;
 class GStreamerGWorld;
 class MediaPlayerPrivateInterface;
 #if ENABLE(MEDIA_SOURCE)
-class MediaSource;
+class MediaSourcePrivateClient;
 #endif
 class TextTrackRepresentation;
 
@@ -113,6 +113,7 @@ class IntRect;
 class IntSize;
 class MediaPlayer;
 struct MediaPlayerFactory;
+class PlatformTimeRanges;
 class TimeRanges;
 class HostWindow;
 
@@ -324,8 +325,8 @@ public:
     bool preservesPitch() const;    
     void setPreservesPitch(bool);
 
-    PassRefPtr<TimeRanges> buffered();
-    PassRefPtr<TimeRanges> seekable();
+    PassOwnPtr<PlatformTimeRanges> buffered();
+    PassOwnPtr<PlatformTimeRanges> seekable();
     double minTimeSeekable();
     double maxTimeSeekable();
 
@@ -518,7 +519,7 @@ private:
 #endif
 
 #if ENABLE(MEDIA_SOURCE)
-    RefPtr<MediaSource> m_mediaSource;
+    RefPtr<MediaSourcePrivateClient> m_mediaSource;
 #endif
 };
 

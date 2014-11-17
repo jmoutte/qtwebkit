@@ -814,7 +814,7 @@ bool RenderThemeQt::paintMediaSliderTrack(RenderObject* o, const PaintInfo& pain
 
     if (MediaPlayer* player = mediaElement->player()) {
         // Get the buffered parts of the media
-        RefPtr<TimeRanges> buffered = player->buffered();
+        OwnPtr<PlatformTimeRanges> buffered = player->buffered();
         if (buffered->length() > 0 && player->duration() < std::numeric_limits<float>::infinity()) {
             // Set the transform and brush
             WorldMatrixTransformer transformer(p->painter, o, r);
@@ -822,8 +822,8 @@ bool RenderThemeQt::paintMediaSliderTrack(RenderObject* o, const PaintInfo& pain
 
             // Paint each buffered section
             for (int i = 0; i < buffered->length(); i++) {
-                float startX = (buffered->start(i, IGNORE_EXCEPTION) / player->duration()) * 100;
-                float width = ((buffered->end(i, IGNORE_EXCEPTION) / player->duration()) * 100) - startX;
+                float startX = (buffered->start(i) / player->duration()) * 100;
+                float width = ((buffered->end(i) / player->duration()) * 100) - startX;
                 p->painter->drawRect(startX, 37, width, 26);
             }
         }

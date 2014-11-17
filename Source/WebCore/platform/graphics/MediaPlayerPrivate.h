@@ -29,7 +29,7 @@
 #if ENABLE(VIDEO)
 
 #include "MediaPlayer.h"
-#include "TimeRanges.h"
+#include "PlatformTimeRanges.h"
 #include <wtf/Forward.h>
 
 namespace WebCore {
@@ -46,7 +46,7 @@ public:
 
     virtual void load(const String& url) = 0;
 #if ENABLE(MEDIA_SOURCE)
-    virtual void load(const String& url, PassRefPtr<MediaSource>) = 0;
+    virtual void load(const String& url, MediaSourcePrivateClient*) = 0;
 #endif
     virtual void cancelLoad() = 0;
     
@@ -105,11 +105,12 @@ public:
     virtual MediaPlayer::NetworkState networkState() const = 0;
     virtual MediaPlayer::ReadyState readyState() const = 0;
 
-    virtual PassRefPtr<TimeRanges> seekable() const { return maxTimeSeekableDouble() ? TimeRanges::create(minTimeSeekable(), maxTimeSeekableDouble()) : TimeRanges::create(); }
+    virtual PassOwnPtr<PlatformTimeRanges> seekable() const { return maxMediaTimeSeekable() == MediaTime::zeroTime() ? PlatformTimeRanges::create() : PlatformTimeRanges::create(minMediaTimeSeekable(), maxMediaTimeSeekable()); }
     virtual float maxTimeSeekable() const { return 0; }
-    virtual double maxTimeSeekableDouble() const { return maxTimeSeekable(); }
+    virtual MediaTime maxMediaTimeSeekable() const { return MediaTime::createWithDouble(maxTimeSeekable()); }
     virtual double minTimeSeekable() const { return 0; }
-    virtual PassRefPtr<TimeRanges> buffered() const = 0;
+    virtual MediaTime minMediaTimeSeekable() const { return MediaTime::createWithDouble(minTimeSeekable()); }
+    virtual PassOwnPtr<PlatformTimeRanges> buffered() const = 0;
 
     virtual unsigned long long totalBytes() const { return 0; }
     virtual bool didLoadingProgress() const = 0;

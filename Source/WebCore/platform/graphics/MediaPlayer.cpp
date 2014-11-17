@@ -36,8 +36,8 @@
 #include "Logging.h"
 #include "MIMETypeRegistry.h"
 #include "MediaPlayerPrivate.h"
+#include "PlatformTimeRanges.h"
 #include "Settings.h"
-#include "TimeRanges.h"
 #include <wtf/text/CString.h>
 
 #if ENABLE(VIDEO_TRACK)
@@ -45,7 +45,7 @@
 #endif
 
 #if ENABLE(MEDIA_SOURCE)
-#include "MediaSource.h"
+#include "MediaSourcePrivateClient.h"
 #endif
 
 #if PLATFORM(QT)
@@ -136,7 +136,7 @@ public:
 
     virtual double maxTimeSeekableDouble() const { return 0; }
     virtual double minTimeSeekable() const { return 0; }
-    virtual PassRefPtr<TimeRanges> buffered() const { return TimeRanges::create(); }
+    virtual PassOwnPtr<PlatformTimeRanges> buffered() const { return PlatformTimeRanges::create(); }
 
     virtual unsigned long long totalBytes() const { return 0; }
     virtual bool didLoadingProgress() const { return false; }
@@ -444,7 +444,7 @@ void MediaPlayer::loadWithNextMediaEngine(MediaPlayerFactory* current)
     if (m_private) {
 #if ENABLE(MEDIA_SOURCE)
         if (m_mediaSource)
-            m_private->load(m_url.string(), m_mediaSource);
+            m_private->load(m_url.string(), m_mediaSource.get ());
         else
 #endif
         m_private->load(m_url.string());
@@ -677,24 +677,24 @@ void MediaPlayer::setPreservesPitch(bool preservesPitch)
     m_private->setPreservesPitch(preservesPitch);
 }
 
-PassRefPtr<TimeRanges> MediaPlayer::buffered()
+PassOwnPtr<PlatformTimeRanges> MediaPlayer::buffered()
 {
     return m_private->buffered();
 }
 
-PassRefPtr<TimeRanges> MediaPlayer::seekable()
+PassOwnPtr<PlatformTimeRanges> MediaPlayer::seekable()
 {
     return m_private->seekable();
 }
 
 double MediaPlayer::maxTimeSeekable()
 {
-    return m_private->maxTimeSeekableDouble();
+    return m_private->maxMediaTimeSeekable();
 }
 
 double MediaPlayer::minTimeSeekable()
 {
-    return m_private->minTimeSeekable();
+    return m_private->minMediaTimeSeekable();
 }
 
 bool MediaPlayer::didLoadingProgress()
