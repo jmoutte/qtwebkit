@@ -59,6 +59,11 @@ Element* TrackBase::element()
 
 void TrackBase::setKind(const AtomicString& kind)
 {
+    setKindInternal(kind);
+}
+
+void TrackBase::setKindInternal(const AtomicString& kind)
+{
     String oldKind = m_kind;
 
     if (isValidKind(kind))

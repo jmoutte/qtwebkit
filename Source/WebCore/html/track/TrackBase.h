@@ -77,6 +77,8 @@ protected:
     virtual bool isValidKind(const AtomicString&) const = 0;
     virtual const AtomicString& defaultKindKeyword() const = 0;
 
+    void setKindInternal(const AtomicString&);
+
     HTMLMediaElement* m_mediaElement;
 
 #if ENABLE(MEDIA_SOURCE)
