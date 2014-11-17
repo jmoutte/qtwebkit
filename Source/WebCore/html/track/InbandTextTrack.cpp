@@ -229,10 +229,30 @@ InbandTextTrack::~InbandTextTrack()
     m_private->setClient(0);
 }
 
+void InbandTextTrack::setPrivate(PassRefPtr<InbandTextTrackPrivate> trackPrivate)
+{
+    ASSERT(m_private);
+    ASSERT(trackPrivate);
+
+    if (m_private == trackPrivate)
+        return;
+
+    m_private->setClient(0);
+    m_private = trackPrivate;
+    m_private->setClient(this);
+
+    setModeInternal(mode());
+    updateKindFromPrivate();
+}
+
 void InbandTextTrack::setMode(const AtomicString& mode)
 {
     TextTrack::setMode(mode);
+    setModeInternal(mode);
+}
 
+void InbandTextTrack::setModeInternal(const AtomicString& mode)
+{
     if (mode == TextTrack::disabledKeyword())
         m_private->setMode(InbandTextTrackPrivate::Disabled);
     else if (mode == TextTrack::hiddenKeyword())

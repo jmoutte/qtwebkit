@@ -82,6 +82,12 @@ public:
     virtual void setMode(const AtomicString&) OVERRIDE;
     size_t inbandTrackIndex();
 
+    void setPrivate(PassRefPtr<InbandTextTrackPrivate>);
+
+protected:
+    void setModeInternal(const AtomicString&);
+    void updateKindFromPrivate();
+
 private:
     InbandTextTrack(ScriptExecutionContext*, TextTrackClient*, PassRefPtr<InbandTextTrackPrivate>);
 
