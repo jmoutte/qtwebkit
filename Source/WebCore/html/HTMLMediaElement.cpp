@@ -1098,11 +1098,17 @@ void HTMLMediaElement::loadResource(const KURL& initialURL, ContentType& content
     ASSERT(!m_mediaSource);
 
     if (url.protocolIs(mediaSourceBlobProtocol))
-        m_mediaSource = MediaSourceRegistry::registry().lookupMediaSource(url.string());
+        m_mediaSource = MediaSource::lookup(url.string());
 
     if (m_mediaSource) {
-        if (!m_player->load(url, m_mediaSource))
+        if (m_mediaSource->attachToElement(this))
+            m_player->load(url, contentType, static_cast<MediaSourcePrivateClient*> (m_mediaSource.get()));
+        else {
+            // Forget our reference to the MediaSource, so we leave it alone
+            // while processing remainder of load failure.
+            m_mediaSource = 0;
             mediaLoadingFailed(MediaPlayer::FormatError);
+        }
     } else
 #endif
     if (!m_player->load(url, contentType, keySystem))
@@ -2868,10 +2874,11 @@ double HTMLMediaElement::percentLoaded() const
         return 0;
 
     double buffered = 0;
-    RefPtr<TimeRanges> timeRanges = m_player->buffered();
+    OwnPtr<PlatformTimeRanges> timeRanges = m_player->buffered();
+    bool ignored;
     for (unsigned i = 0; i < timeRanges->length(); ++i) {
-        double start = timeRanges->start(i, IGNORE_EXCEPTION);
-        double end = timeRanges->end(i, IGNORE_EXCEPTION);
+        double start = timeRanges->start(i, ignored);
+        double end = timeRanges->end(i, ignored);
         buffered += end - start;
     }
     return buffered / duration;
@@ -3123,7 +3130,7 @@ PassRefPtr<TextTrack> HTMLMediaElement::addTextTrack(const String& kind, const S
 
     // 5. Create a new text track corresponding to the new object, and set its text track kind to kind, its text 
     // track label to label, its text track language to language...
-    RefPtr<TextTrack> textTrack = TextTrack::create(ActiveDOMObject::scriptExecutionContext(), this, kind, label, language);
+    RefPtr<TextTrack> textTrack = TextTrack::create(ActiveDOMObject::scriptExecutionContext(), this, kind, emptyString(), label, language);
 
     // Note, due to side effects when changing track parameters, we have to
     // first append the track to the text track list.
@@ -3883,7 +3890,13 @@ PassRefPtr<TimeRanges> HTMLMediaElement::buffered() const
 {
     if (!m_player)
         return TimeRanges::create();
-    return m_player->buffered();
+
+#if ENABLE(MEDIA_SOURCE)
+    if (m_mediaSource)
+        return TimeRanges::create(*m_mediaSource->buffered());
+#endif
+
+    return TimeRanges::create(*m_player->buffered());
 }
 
 PassRefPtr<TimeRanges> HTMLMediaElement::played()
@@ -3902,7 +3915,10 @@ PassRefPtr<TimeRanges> HTMLMediaElement::played()
 
 PassRefPtr<TimeRanges> HTMLMediaElement::seekable() const
 {
-    return m_player ? m_player->seekable() : TimeRanges::create();
+    if (m_player)
+        return TimeRanges::create(*m_player->seekable());
+
+    return TimeRanges::create();
 }
 
 bool HTMLMediaElement::potentiallyPlaying() const
