@@ -121,7 +121,7 @@ protected:
     virtual void derefEventTarget() OVERRIDE { deref(); }
 
 private:
-    SourceBuffer(PassOwnPtr<SourceBufferPrivate>, PassRefPtr<MediaSource>);
+    SourceBuffer(PassRefPtr<SourceBufferPrivate>, PassRefPtr<MediaSource>);
 
     // SourceBufferPrivateClient
     virtual void sourceBufferPrivateDidEndStream(SourceBufferPrivate*, const WTF::AtomicString&);
@@ -181,9 +181,9 @@ private:
     friend class Internals;
     Vector<String> bufferedSamplesForTrackID(const AtomicString&);
 
-    OwnPtr<SourceBufferPrivate> m_private;
-    MediaSource* m_source;
-    GenericEventQueue m_asyncEventQueue;
+    RefPtr<SourceBufferPrivate> m_private;
+    RefPtr<MediaSource> m_source;
+    OwnPtr<GenericEventQueue> m_asyncEventQueue;
 
     Vector<unsigned char> m_pendingAppendData;
     Timer<SourceBuffer> m_appendBufferTimer;

@@ -100,16 +100,16 @@ struct SourceBuffer::TrackBuffer {
 
 PassRefPtr<SourceBuffer> SourceBuffer::create(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, PassRefPtr<MediaSource> source)
 {
-    RefPtr<SourceBuffer> sourceBuffer(adoptRef(new SourceBuffer(WTF::move(sourceBufferPrivate), source)));
+    RefPtr<SourceBuffer> sourceBuffer(adoptRef(new SourceBuffer(sourceBufferPrivate, source)));
     sourceBuffer->suspendIfNeeded();
     return sourceBuffer.release();
 }
 
 SourceBuffer::SourceBuffer(PassRefPtr<SourceBufferPrivate> sourceBufferPrivate, PassRefPtr<MediaSource> source)
     : ActiveDOMObject(source->scriptExecutionContext())
-    , m_private(WTF::move(sourceBufferPrivate))
+    , m_private(sourceBufferPrivate)
     , m_source(source)
-    , m_asyncEventQueue(*this)
+    , m_asyncEventQueue(GenericEventQueue::create(this))
     , m_appendBufferTimer(this, &SourceBuffer::appendBufferTimerFired)
     , m_highestPresentationEndTimestamp(MediaTime::invalidTime())
     , m_buffered(TimeRanges::create())
@@ -315,8 +315,7 @@ void SourceBuffer::removedFromMediaSource()
 
     abortIfUpdating();
 
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         TrackBuffer& trackBuffer = it->value;
         trackBuffer.samples.clear();
         trackBuffer.decodeQueue.clear();
@@ -330,8 +329,7 @@ void SourceBuffer::seekToTime(const MediaTime& time)
 {
     LOG(MediaSource, "SourceBuffer::seekToTime(%p) - time(%s)", this, toString(time).utf8().data());
 
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         TrackBuffer& trackBuffer = it->value;
         const AtomicString& trackID = it->key;
 
@@ -346,8 +344,7 @@ MediaTime SourceBuffer::sourceBufferPrivateFastSeekTimeForMediaTime(SourceBuffer
     MediaTime lowerBoundTime = targetTime - negativeThreshold;
     MediaTime upperBoundTime = targetTime + positiveThreshold;
 
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         TrackBuffer& trackBuffer = it->value;
         // Find the sample which contains the target time time.
         DecodeOrderSampleMap::iterator futureSyncSampleIterator = trackBuffer.samples.decodeOrder().findSyncSampleAfterPresentationTime(targetTime, positiveThreshold);
@@ -380,7 +377,7 @@ MediaTime SourceBuffer::sourceBufferPrivateFastSeekTimeForMediaTime(SourceBuffer
 
 bool SourceBuffer::hasPendingActivity() const
 {
-    return m_source || m_asyncEventQueue.hasPendingEvents();
+    return m_source || m_asyncEventQueue->hasPendingEvents();
 }
 
 void SourceBuffer::stop()
@@ -399,7 +396,7 @@ void SourceBuffer::scheduleEvent(const AtomicString& eventName)
     RefPtr<Event> event = Event::create(eventName, false, false);
     event->setTarget(this);
 
-    m_asyncEventQueue.enqueueEvent(event.release());
+    m_asyncEventQueue->enqueueEvent(event.release());
 }
 
 void SourceBuffer::appendBufferInternal(unsigned char* data, unsigned size, ExceptionCode& ec)
@@ -478,7 +475,7 @@ void SourceBuffer::appendBufferTimerFired(Timer<SourceBuffer>*)
 
     // 1. Loop Top: If the input buffer is empty, then jump to the need more data step below.
     if (!m_pendingAppendData.size()) {
-        sourceBufferPrivateAppendComplete(&m_private.get(), AppendSucceeded);
+        sourceBufferPrivateAppendComplete(m_private.get(), AppendSucceeded);
         return;
     }
 
@@ -525,8 +522,7 @@ void SourceBuffer::sourceBufferPrivateAppendComplete(SourceBufferPrivate*, Appen
         m_source->monitorSourceBuffers();
 
     MediaTime currentMediaTime = m_source->currentTime();
-    HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         TrackBuffer& trackBuffer = it->value;
         const AtomicString& trackID = it->key;
 
@@ -574,8 +570,7 @@ static PassRefPtr<TimeRanges> removeSamplesFromTrackBuffer(const DecodeOrderSamp
 
     RefPtr<TimeRanges> erasedRanges = TimeRanges::create();
     MediaTime microsecond(1, 1000000);
-    DecodeOrderSampleMap::const_iterator end = samples.end();
-    for (DecodeOrderSampleMap::const_iterator it = samples.begin(); it != end; ++it) {
+    for (DecodeOrderSampleMap::const_iterator it = samples.begin(); it != samples.end(); ++it) {
         const DecodeOrderSampleMap::KeyType& decodeKey = it->first;
 #if !LOG_DISABLED
         size_t startBufferSize = trackBuffer.samples.sizeInBytes();
@@ -623,8 +618,7 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
 
     // 2. Let end be the end presentation timestamp for the removal range.
     // 3. For each track buffer in this source buffer, run the following steps:
-    HashMap<AtomicString, TrackBuffer>::iterator bmend = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != bmend; ++it) {
+    for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         TrackBuffer& trackBuffer = it->value;
 
         // 3.1. Let remove end timestamp be the current value of duration
@@ -804,7 +798,8 @@ size_t SourceBuffer::maximumBufferSize() const
     if (!element)
         return 0;
 
-    return element->maximumSourceBufferSize(*this);
+    return 0;
+    // FIXME return element->maximumSourceBufferSize(*this);
 }
 
 const AtomicString& SourceBuffer::decodeError()
@@ -904,8 +899,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
         // 3.2 Add the appropriate track descriptions from this initialization segment to each of the track buffers.
         ASSERT(segment.audioTracks.size() == audioTracks()->length());
-        Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
-        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != segment.audioTracks.end(); ++it) {
             const InitializationSegment::AudioTrackInformation& audioTrackInfo = *it;
 
             if (audioTracks()->length() == 1) {
@@ -920,8 +914,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
 
 
         ASSERT(segment.videoTracks.size() == videoTracks()->length());
-        Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
-        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != segment.videoTracks.end(); ++it) {
             const InitializationSegment::VideoTrackInformation& videoTrackInfo = *it;
             if (videoTracks()->length() == 1) {
                 videoTracks()->item(0)->setPrivate(videoTrackInfo.track);
@@ -934,21 +927,25 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         ASSERT(segment.textTracks.size() == textTracks()->length());
-        Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
-        for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
+        for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != segment.textTracks.end(); ++it) {
             const InitializationSegment::TextTrackInformation &textTrackInfo = *it;
             if (textTracks()->length() == 1) {
-                static_cast<InbandTextTrack>(*textTracks()->item(0)).setPrivate(textTrackInfo.track);
+                InbandTextTrack *inbandTextTrack = dynamic_cast<InbandTextTrack *> (textTracks()->item(0));
+                if (inbandTextTrack) {
+                    inbandTextTrack->setPrivate(textTrackInfo.track);
+                }
                 break;
             }
 
             TextTrack *textTrack = textTracks()->getTrackById(textTrackInfo.track->id());
             ASSERT(textTrack);
-            static_cast<InbandTextTrack>(*textTrack).setPrivate(textTrackInfo.track);
+            InbandTextTrack *inbandTextTrack = dynamic_cast<InbandTextTrack *> (textTrack);
+            if (inbandTextTrack) {
+                inbandTextTrack->setPrivate(textTrackInfo.track);
+            }
         }
 
-        HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-        for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+        for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
             TrackBuffer& trackBuffer = it->value;
             trackBuffer.needRandomAccessFlag = true;
         }
@@ -964,8 +961,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         // NOTE: This check is the responsibility of the SourceBufferPrivate.
 
         // 5.2 For each audio track in the initialization segment, run following steps:
-        Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
-        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != segment.audioTracks.end(); ++it) {
             const InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
             AudioTrackPrivate* audioTrackPrivate = audioTrackInfo.track.get();
 
@@ -1006,8 +1002,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         // 5.3 For each video track in the initialization segment, run following steps:
-        Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
-        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != segment.videoTracks.end(); ++it) {
             const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             VideoTrackPrivate* videoTrackPrivate = videoTrackInfo.track.get();
 
@@ -1048,8 +1043,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
         }
 
         // 5.4 For each text track in the initialization segment, run following steps:
-        Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
-        for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
+        for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != segment.textTracks.end(); ++it) {
             const InitializationSegment::TextTrackInformation & textTrackInfo = *it;
             InbandTextTrackPrivate* textTrackPrivate = textTrackInfo.track.get();
 
@@ -1097,9 +1091,8 @@ void SourceBuffer::sourceBufferPrivateDidReceiveInitializationSegment(SourceBuff
     // 6. If the HTMLMediaElement.readyState attribute is HAVE_NOTHING, then run the following steps:
     if (m_private->readyState() == MediaPlayer::HaveNothing) {
         // 6.1 If one or more objects in sourceBuffers have first initialization segment flag set to false, then abort these steps.
-        Vector<RefPtr <SourceBuffer> >::iterator end = m_source->sourceBuffers()->end();
-        for (Vector<RefPtr <SourceBuffer> >::iterator it = m_source->sourceBuffers()->begin(); it != end; ++it) {
-            SourceBuffer *sourceBuffer = it->value;
+        for (Vector<RefPtr <SourceBuffer> >::iterator it = m_source->sourceBuffers()->begin(); it != m_source->sourceBuffers()->end(); ++it) {
+            SourceBuffer * sourceBuffer = it->get ();
             if (!sourceBuffer->m_receivedFirstInitializationSegment)
                 return;
         }
@@ -1130,22 +1123,19 @@ bool SourceBuffer::validateInitializationSegment(const InitializationSegment& se
         return false;
 
     //   * The codecs for each track, match what was specified in the first initialization segment.
-    Vector<InitializationSegment::AudioTrackInformation>::const_iterator aend = segment.audioTracks.end();
-    for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+    for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != segment.audioTracks.end(); ++it) {
         const InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
         if (!m_audioCodecs.contains(audioTrackInfo.description->codec()))
             return false;
     }
 
-    Vector<InitializationSegment::VideoTrackInformation>::const_iterator vend = segment.videoTracks.end();
-    for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+    for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != segment.videoTracks.end(); ++it) {
         const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
         if (!m_videoCodecs.contains(videoTrackInfo.description->codec()))
             return false;
     }
 
-    Vector<InitializationSegment::TextTrackInformation>::const_iterator tend = segment.textTracks.end();
-    for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != tend; ++it) {
+    for (Vector<InitializationSegment::TextTrackInformation>::const_iterator it = segment.textTracks.begin(); it != segment.textTracks.end(); ++it) {
         const InitializationSegment::TextTrackInformation & textTrackInfo = *it;
         if (!m_textCodecs.contains(textTrackInfo.description->codec()))
             return false;
@@ -1154,7 +1144,7 @@ bool SourceBuffer::validateInitializationSegment(const InitializationSegment& se
     //   * If more than one track for a single type are present (ie 2 audio tracks), then the Track
     //   IDs match the ones in the first initialization segment.
     if (segment.audioTracks.size() >= 2) {
-        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != aend; ++it) {
+        for (Vector<InitializationSegment::AudioTrackInformation>::const_iterator it = segment.audioTracks.begin(); it != segment.audioTracks.end(); ++it) {
             const InitializationSegment::AudioTrackInformation & audioTrackInfo = *it;
             if (!m_trackBufferMap.contains(audioTrackInfo.track->id()))
                 return false;
@@ -1162,7 +1152,7 @@ bool SourceBuffer::validateInitializationSegment(const InitializationSegment& se
     }
 
     if (segment.videoTracks.size() >= 2) {
-        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != segment.videoTracks.end(); ++it) {
             const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             if (!m_trackBufferMap.contains(videoTrackInfo.track->id()))
                 return false;
@@ -1171,7 +1161,7 @@ bool SourceBuffer::validateInitializationSegment(const InitializationSegment& se
 
     if (segment.textTracks.size() >= 2) {
         // Don't know why they use the video tracks here
-        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != vend; ++it) {
+        for (Vector<InitializationSegment::VideoTrackInformation>::const_iterator it = segment.videoTracks.begin(); it != segment.videoTracks.end(); ++it) {
             const InitializationSegment::VideoTrackInformation & videoTrackInfo = *it;
             if (!m_trackBufferMap.contains(videoTrackInfo.track->id()))
                 return false;
@@ -1270,8 +1260,7 @@ void SourceBuffer::sourceBufferPrivateDidReceiveSample(SourceBufferPrivate*, Pas
             // Set group start timestamp equal to the highest presentation end timestamp.
             // FIXME: Add support for "sequence" mode.
 
-            HashMap<AtomicString, TrackBuffer>::iterator end = m_trackBufferMap.end();
-            for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+            for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
                 TrackBuffer& trackBuffer = it->value;
                 // 1.7.2 Unset the last decode timestamp on all track buffers.
                 trackBuffer.lastDecodeTimestamp = MediaTime::invalidTime();
@@ -1691,8 +1680,8 @@ void SourceBuffer::reenqueueMediaForTime(TrackBuffer& trackBuffer, AtomicString 
 
 void SourceBuffer::didDropSample()
 {
-    if (!isRemoved())
-        m_source->mediaElement()->incrementDroppedFrameCount();
+    /* FIXME if (!isRemoved())
+        m_source->mediaElement()->incrementDroppedFrameCount(); */
 }
 
 void SourceBuffer::monitorBufferingRate()
@@ -1798,8 +1787,7 @@ bool SourceBuffer::canPlayThrough()
 size_t SourceBuffer::extraMemoryCost() const
 {
     size_t extraMemoryCost = m_pendingAppendData.capacity();
-    HashMap<AtomicString, TrackBuffer>::const_iterator end = m_trackBufferMap.end();
-    for (HashMap<AtomicString, TrackBuffer>::const_iterator it = m_trackBufferMap.begin(); it != end; ++it) {
+    for (HashMap<AtomicString, TrackBuffer>::const_iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         const TrackBuffer& trackBuffer = it->value;
         extraMemoryCost += trackBuffer.samples.sizeInBytes();
     }
@@ -1829,9 +1817,8 @@ Vector<String> SourceBuffer::bufferedSamplesForTrackID(const AtomicString& track
 
     TrackBuffer& trackBuffer = it->value;
     Vector<String> sampleDescriptions;
-    DecodeOrderSampleMap::iterator end = trackBuffer.samples.decodeOrder().end();
-    for (DecodeOrderSampleMap::iterator it = trackBuffer.samples.decodeOrder().begin(); it != end; ++it) {
-        sampleDescriptions.append(toString(*it->second));
+    for (DecodeOrderSampleMap::iterator it = trackBuffer.samples.decodeOrder().begin(); it != trackBuffer.samples.decodeOrder().end(); ++it) {
+        //sampleDescriptions.append(toString(*it->second));
     }
 
     return sampleDescriptions;
@@ -1840,7 +1827,9 @@ Vector<String> SourceBuffer::bufferedSamplesForTrackID(const AtomicString& track
 Document& SourceBuffer::document() const
 {
     ASSERT(scriptExecutionContext());
-    return static_cast<Document>(*scriptExecutionContext());
+    Document *document = dynamic_cast<Document *> (scriptExecutionContext());
+    ASSERT(document);
+    return *document;
 }
 
 } // namespace WebCore
