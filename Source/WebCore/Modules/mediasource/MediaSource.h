@@ -57,7 +57,7 @@ public:
     static const AtomicString& closedKeyword();
     static const AtomicString& endedKeyword();
 
-    static PassRefPtr<MediaSource> create(ScriptExecutionContext&);
+    static PassRefPtr<MediaSource> create(ScriptExecutionContext*);
     virtual ~MediaSource();
 
     void addedToRegistry();
@@ -115,7 +115,7 @@ public:
     using RefCounted<MediaSourcePrivateClient>::deref;
 
 protected:
-    explicit MediaSource(ScriptExecutionContext&);
+    explicit MediaSource(ScriptExecutionContext*);
 
     void onReadyStateChange(const AtomicString& oldState, const AtomicString& newState);
     Vector<PlatformTimeRanges> activeRanges() const;

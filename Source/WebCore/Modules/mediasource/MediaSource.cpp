@@ -66,15 +66,15 @@ void MediaSource::setRegistry(URLRegistry* registry)
     s_registry = registry;
 }
 
-PassRefPtr<MediaSource> MediaSource::create(ScriptExecutionContext& context)
+PassRefPtr<MediaSource> MediaSource::create(ScriptExecutionContext* context)
 {
     RefPtr<MediaSource> mediaSource(adoptRef(new MediaSource(context)));
     mediaSource->suspendIfNeeded();
     return mediaSource.release();
 }
 
-MediaSource::MediaSource(ScriptExecutionContext& context)
-    : ActiveDOMObject(&context)
+MediaSource::MediaSource(ScriptExecutionContext* context)
+    : ActiveDOMObject(context)
     , m_mediaElement(0)
     , m_duration(MediaTime::invalidTime())
     , m_pendingSeekTime(MediaTime::invalidTime())
