@@ -2229,8 +2229,11 @@ HEADERS += \
     platform/graphics/PathTraversalState.h \
     platform/graphics/Pattern.h \
     platform/graphics/PlatformLayer.h \
+    platform/graphics/PlatformTimeRanges.h \
     platform/graphics/Region.h \
     platform/graphics/RoundedRect.h \
+    platform/graphics/SourceBufferPrivate.h \
+    platform/graphics/SourceBufferPrivateClient.h \
     platform/graphics/qt/FontCustomPlatformData.h \
     platform/graphics/qt/NativeImageQt.h \
     platform/graphics/qt/StillImageQt.h
@@ -3383,6 +3386,7 @@ enable?(VIDEO) {
         html/shadow/MediaControlElements.cpp \
         html/TimeRanges.cpp \
         platform/graphics/MediaPlayer.cpp \
+        platform/graphics/PlatformTimeRanges.cpp \
         rendering/RenderVideo.cpp \
         rendering/RenderMedia.cpp \
         rendering/RenderMediaControls.cpp \
