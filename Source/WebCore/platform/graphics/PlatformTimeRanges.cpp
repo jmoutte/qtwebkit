@@ -259,13 +259,4 @@ MediaTime PlatformTimeRanges::totalDuration() const
     return total;
 }
 
-void PlatformTimeRanges::dump(PrintStream& out) const
-{
-    if (!length())
-        return;
-
-    for (size_t i = 0; i < length(); ++i)
-        out.print("[", start(i), "..", end(i), "] ");
-}
-
 }

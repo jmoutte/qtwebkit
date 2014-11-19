@@ -74,8 +74,6 @@ public:
 
     MediaTime totalDuration() const;
 
-    void dump(WTF::PrintStream&) const;
-
 private:
     PlatformTimeRanges& copy(const PlatformTimeRanges&);
 
