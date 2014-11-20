@@ -431,6 +431,34 @@ void InbandTextTrack::willRemoveTextTrackPrivate(InbandTextTrackPrivate* trackPr
     mediaElement()->removeTextTrack(this);
 }
 
+void InbandTextTrack::updateKindFromPrivate()
+{
+    switch (m_private->kind()) {
+    case InbandTextTrackPrivate::Subtitles:
+        setKind(TextTrack::subtitlesKeyword());
+        break;
+    case InbandTextTrackPrivate::Captions:
+        setKind(TextTrack::captionsKeyword());
+        break;
+    case InbandTextTrackPrivate::Descriptions:
+        setKind(TextTrack::descriptionsKeyword());
+        break;
+    case InbandTextTrackPrivate::Chapters:
+        setKind(TextTrack::chaptersKeyword());
+        break;
+    case InbandTextTrackPrivate::Metadata:
+        setKind(TextTrack::metadataKeyword());
+        break;
+    case InbandTextTrackPrivate::Forced:
+        setKind(TextTrack::forcedKeyword());
+        break;
+    case InbandTextTrackPrivate::None:
+    default:
+        ASSERT_NOT_REACHED();
+        break;
+    }
+}
+
 } // namespace WebCore
 
 #endif
