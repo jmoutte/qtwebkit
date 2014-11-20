@@ -3211,15 +3211,24 @@ enable?(FILE_SYSTEM) {
 
 enable?(MEDIA_SOURCE) {
     HEADERS += \
+        Modules/mediasource/AudioTrackMediaSource.h \
+        Modules/mediasource/DOMURLMediaSource.h \
         Modules/mediasource/MediaSource.h \
         Modules/mediasource/MediaSourceRegistry.h \
+        Modules/mediasource/SampleMap.h \
         Modules/mediasource/SourceBuffer.h \
-        Modules/mediasource/SourceBufferList.h
+        Modules/mediasource/SourceBufferList.h \
+        Modules/mediasource/TextTrackMediaSource.h \
+        Modules/mediasource/VideoPlaybackQuality.h \
+        Modules/mediasource/VideoTrackMediaSource.h
     SOURCES += \
+        Modules/mediasource/DOMURLMediaSource.cpp \
         Modules/mediasource/MediaSource.cpp \
         Modules/mediasource/MediaSourceRegistry.cpp \
+        Modules/mediasource/SampleMap.cpp \
         Modules/mediasource/SourceBuffer.cpp \
-        Modules/mediasource/SourceBufferList.cpp
+        Modules/mediasource/SourceBufferList.cpp \
+        Modules/mediasource/VideoPlaybackQuality.cpp
         
     use?(GSTREAMER) {
         HEADERS += \
@@ -3228,6 +3237,7 @@ enable?(MEDIA_SOURCE) {
             platform/graphics/gstreamer/MediaSourceGStreamer.h
         SOURCES += \
             platform/graphics/gstreamer/WebKitMediaSourceGStreamer.cpp \
+            platform/graphics/gstreamer/SourceBufferPrivateGStreamer.cpp \ 
             platform/graphics/gstreamer/MediaSourceGStreamer.cpp
     }
 }
