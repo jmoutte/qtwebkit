@@ -46,7 +46,7 @@ String DOMURLMediaSource::createObjectURL(ScriptExecutionContext* scriptExecutio
 
     if (!scriptExecutionContext || !source)
         return String();
-    return DOMURL::createPublicURL(scriptExecutionContext, source);
+    return DOMURL::createObjectURL(scriptExecutionContext, source);
 }
 
 } // namespace WebCore
