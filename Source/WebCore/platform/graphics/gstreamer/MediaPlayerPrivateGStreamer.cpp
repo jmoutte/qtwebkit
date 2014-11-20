@@ -342,6 +342,7 @@ void MediaPlayerPrivateGStreamer::load(const String& urlString)
 #if ENABLE(MEDIA_SOURCE)
 void MediaPlayerPrivateGStreamer::load(const String& url, MediaSourcePrivateClient* mediaSource)
 {
+    LOG_MEDIA_MESSAGE("Trying to open a mediasource");
     String mediasourceUri = String::format("mediasource%s", url.utf8().data());
     m_mediaSource = mediaSource;
     load(mediasourceUri);
