@@ -103,7 +103,7 @@ public:
     virtual void stop() OVERRIDE;
 
     // EventTarget interface
-    virtual const AtomicString& interfaceName() const; 
+    virtual const AtomicString& interfaceName() const OVERRIDE; 
     virtual ScriptExecutionContext* scriptExecutionContext() const OVERRIDE { return ActiveDOMObject::scriptExecutionContext(); }
     virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
     virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }

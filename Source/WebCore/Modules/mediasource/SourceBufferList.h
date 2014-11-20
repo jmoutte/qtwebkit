@@ -66,7 +66,7 @@ public:
     iterator end() { return m_list.end(); }
 
     // EventTarget interface
-    virtual const AtomicString& interfaceName() const; 
+    virtual const AtomicString& interfaceName() const OVERRIDE; 
     virtual ScriptExecutionContext* scriptExecutionContext() const { return m_scriptExecutionContext; }
     virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
     virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }

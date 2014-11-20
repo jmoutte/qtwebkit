@@ -1824,6 +1824,11 @@ Vector<String> SourceBuffer::bufferedSamplesForTrackID(const AtomicString& track
     return sampleDescriptions;
 }
 
+const AtomicString& SourceBuffer::interfaceName() const
+{
+    return eventNames().interfaceForSourceBuffer;
+}
+
 Document& SourceBuffer::document() const
 {
     ASSERT(scriptExecutionContext());
