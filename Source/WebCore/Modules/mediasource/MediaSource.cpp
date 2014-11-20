@@ -810,6 +810,16 @@ void MediaSource::stop()
     m_private.clear();
 }
 
+EventTargetData* MediaSource::eventTargetData()
+{
+    return &m_eventTargetData;
+}
+
+EventTargetData* MediaSource::ensureEventTargetData()
+{
+    return &m_eventTargetData;
+}
+
 void MediaSource::onReadyStateChange(const AtomicString& oldState, const AtomicString& newState)
 {
     if (isOpen()) {
