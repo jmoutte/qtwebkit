@@ -44,6 +44,7 @@ public:
     typedef MapType::iterator iterator;
     typedef MapType::reverse_iterator reverse_iterator;
     typedef std::pair<iterator, iterator> iterator_range;
+    typedef std::pair<reverse_iterator, reverse_iterator> reverse_iterator_range;
 
     iterator begin() { return m_samples.begin(); }
     iterator end() { return m_samples.end(); }

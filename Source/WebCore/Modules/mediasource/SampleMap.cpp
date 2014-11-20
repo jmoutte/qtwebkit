@@ -36,6 +36,8 @@ template <typename M>
 class SampleIsLessThanMediaTimeComparator {
 public:
     typedef typename M::value_type value_type;
+    SampleIsLessThanMediaTimeComparator() : m_mediaTime (MediaTime::zeroTime()) { } 
+    SampleIsLessThanMediaTimeComparator(MediaTime m) : m_mediaTime (m) { } 
     bool operator()(const value_type& value, const MediaTime& time)
     {
         MediaTime presentationEndTime = value.second->presentationTime() + value.second->duration();
@@ -46,6 +48,12 @@ public:
         MediaTime presentationStartTime = value.second->presentationTime();
         return time < presentationStartTime;
     }
+    bool operator()(const value_type& value)
+    {
+        return value.second->presentationTime() <= m_mediaTime;
+    }
+private:
+    MediaTime m_mediaTime;
 };
 
 template <typename M>
@@ -74,11 +82,11 @@ public:
 
 // SamplePresentationTimeIsInsideRangeComparator matches (range.first, range.second]
 struct SamplePresentationTimeIsInsideRangeComparator {
-    bool operator()(std::pair<MediaTime, MediaTime> range, const std::pair<MediaTime, RefPtr<MediaSample>>& value)
+    bool operator()(std::pair<MediaTime, MediaTime> range, const std::pair< MediaTime, RefPtr<MediaSample> >& value)
     {
         return range.second < value.first;
     }
-    bool operator()(const std::pair<MediaTime, RefPtr<MediaSample>>& value, std::pair<MediaTime, MediaTime> range)
+    bool operator()(const std::pair< MediaTime, RefPtr<MediaSample> >& value, std::pair<MediaTime, MediaTime> range)
     {
         return value.first <= range.first;
     }
@@ -86,11 +94,11 @@ struct SamplePresentationTimeIsInsideRangeComparator {
 
 // SamplePresentationTimeIsWithinRangeComparator matches [range.first, range.second)
 struct SamplePresentationTimeIsWithinRangeComparator {
-    bool operator()(std::pair<MediaTime, MediaTime> range, const std::pair<MediaTime, RefPtr<MediaSample>>& value)
+    bool operator()(std::pair<MediaTime, MediaTime> range, const std::pair< MediaTime, RefPtr<MediaSample> >& value)
     {
         return range.second <= value.first;
     }
-    bool operator()(const std::pair<MediaTime, RefPtr<MediaSample>>& value, std::pair<MediaTime, MediaTime> range)
+    bool operator()(const std::pair< MediaTime, RefPtr<MediaSample> >& value, std::pair<MediaTime, MediaTime> range)
     {
         return value.first < range.first;
     }
@@ -117,7 +125,7 @@ void SampleMap::addSample(PassRefPtr<MediaSample> prpSample)
 
     presentationOrder().m_samples.insert(PresentationOrderSampleMap::MapType::value_type(presentationTime, sample));
 
-    auto decodeKey = DecodeOrderSampleMap::KeyType(sample->decodeTime(), presentationTime);
+    std::pair<MediaTime, MediaTime> decodeKey = DecodeOrderSampleMap::KeyType(sample->decodeTime(), presentationTime);
     decodeOrder().m_samples.insert(DecodeOrderSampleMap::MapType::value_type(decodeKey, sample));
 
     m_totalSize += sample->sizeInBytes();
@@ -130,7 +138,7 @@ void SampleMap::removeSample(MediaSample* sample)
 
     presentationOrder().m_samples.erase(presentationTime);
 
-    auto decodeKey = DecodeOrderSampleMap::KeyType(sample->decodeTime(), presentationTime);
+    std::pair<MediaTime, MediaTime> decodeKey = DecodeOrderSampleMap::KeyType(sample->decodeTime(), presentationTime);
     decodeOrder().m_samples.erase(decodeKey);
 
     m_totalSize -= sample->sizeInBytes();
@@ -138,7 +146,7 @@ void SampleMap::removeSample(MediaSample* sample)
 
 PresentationOrderSampleMap::iterator PresentationOrderSampleMap::findSampleWithPresentationTime(const MediaTime& time)
 {
-    auto range = m_samples.equal_range(time);
+    iterator_range range = m_samples.equal_range(time);
     if (range.first == range.second)
         return end();
     return range.first;
@@ -146,7 +154,7 @@ PresentationOrderSampleMap::iterator PresentationOrderSampleMap::findSampleWithP
 
 PresentationOrderSampleMap::iterator PresentationOrderSampleMap::findSampleContainingPresentationTime(const MediaTime& time)
 {
-    auto range = std::equal_range(begin(), end(), time, SampleIsLessThanMediaTimeComparator<MapType>());
+    iterator_range range = std::equal_range(begin(), end(), time, SampleIsLessThanMediaTimeComparator<MapType>());
     if (range.first == range.second)
         return end();
     return range.first;
@@ -164,7 +172,7 @@ DecodeOrderSampleMap::iterator DecodeOrderSampleMap::findSampleWithDecodeKey(con
 
 PresentationOrderSampleMap::reverse_iterator PresentationOrderSampleMap::reverseFindSampleContainingPresentationTime(const MediaTime& time)
 {
-    auto range = std::equal_range(rbegin(), rend(), time, SampleIsGreaterThanMediaTimeComparator<MapType>());
+    reverse_iterator_range range = std::equal_range(rbegin(), rend(), time, SampleIsGreaterThanMediaTimeComparator<MapType>());
     if (range.first == range.second)
         return rend();
     return range.first;
@@ -244,13 +252,9 @@ PresentationOrderSampleMap::iterator_range PresentationOrderSampleMap::findSampl
 
 PresentationOrderSampleMap::iterator_range PresentationOrderSampleMap::findSamplesWithinPresentationRangeFromEnd(const MediaTime& beginTime, const MediaTime& endTime)
 {
-    reverse_iterator rangeEnd = std::find_if(rbegin(), rend(), [&beginTime] (PresentationOrderSampleMap::MapType::value_type value) {
-        return value.second->presentationTime() <= beginTime;
-    });
+    reverse_iterator rangeEnd = std::find_if(rbegin(), rend(), SampleIsLessThanMediaTimeComparator<MapType>(beginTime));
 
-    reverse_iterator rangeStart = std::find_if(rbegin(), rangeEnd, [&endTime] (PresentationOrderSampleMap::MapType::value_type value) {
-        return value.second->presentationTime() <= endTime;
-    });
+    reverse_iterator rangeStart = std::find_if(rbegin(), rangeEnd, SampleIsLessThanMediaTimeComparator<MapType>(endTime));
 
     return iterator_range(rangeStart.base(), rangeEnd.base());
 }
