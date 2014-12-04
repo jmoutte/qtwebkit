@@ -810,6 +810,7 @@ void MediaPlayerPrivateGStreamer::handleSyncMessage(GstMessage* message)
 {
     switch (GST_MESSAGE_TYPE(message)) {
         case GST_MESSAGE_ELEMENT:
+        case GST_MESSAGE_APPLICATION:
         {
 #if ENABLE(ENCRYPTED_MEDIA) || ENABLE(ENCRYPTED_MEDIA_V2)
             const GstStructure* s = gst_message_get_structure (message);
