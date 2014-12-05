@@ -39,5 +39,17 @@
 ] interface SourceBufferList : EventTarget {
     readonly attribute unsigned long length;
     getter SourceBuffer item(unsigned long index);
+    
+    attribute EventListener onaddsourcebuffer;
+    attribute EventListener onremovesourcebuffer;
+
+    // EventTarget interface
+    void addEventListener(DOMString type,
+                          EventListener listener,
+                          optional boolean useCapture);
+    void removeEventListener(DOMString type,
+                             EventListener listener,
+                             optional boolean useCapture);
+    [RaisesException] boolean dispatchEvent(Event event);
 };
 

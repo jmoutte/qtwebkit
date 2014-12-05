@@ -71,6 +71,9 @@ public:
     virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
     virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }
 
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(addsourcebuffer);
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(removesourcebuffer);
+
     using RefCounted<SourceBufferList>::ref;
     using RefCounted<SourceBufferList>::deref;
 
