@@ -108,6 +108,10 @@ public:
     virtual EventTargetData* eventTargetData() { return &m_eventTargetData; }
     virtual EventTargetData* ensureEventTargetData() { return &m_eventTargetData; }
 
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(update);
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(updatestart);
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(updateend);
+
     using RefCounted<SourceBuffer>::ref;
     using RefCounted<SourceBuffer>::deref;
 
