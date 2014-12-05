@@ -56,6 +56,10 @@ enum EndOfStreamError {
     [RaisesException] void endOfStream(optional EndOfStreamError error);
 
     static boolean isTypeSupported (DOMString type);
+    
+    attribute EventListener onsourceopen;
+    attribute EventListener onsourceended;
+    attribute EventListener onsourceclose;
 
     // EventTarget interface
     void addEventListener(DOMString type,

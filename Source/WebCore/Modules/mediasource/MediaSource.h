@@ -107,6 +107,10 @@ public:
     virtual ScriptExecutionContext* scriptExecutionContext() const;
     virtual void refEventTarget() { ref(); }
     virtual void derefEventTarget() { deref(); }
+    
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(sourceopen);
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(sourceended);
+    DEFINE_ATTRIBUTE_EVENT_LISTENER(sourceclose);
 
     // URLRegistrable interface
     virtual URLRegistry& registry() const OVERRIDE;
