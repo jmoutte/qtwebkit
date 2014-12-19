@@ -58,6 +58,7 @@ namespace WebCore {
     extern WTFLogChannel LogThreading;
     extern WTFLogChannel LogStorageAPI;
     extern WTFLogChannel LogMedia;
+    extern WTFLogChannel LogMediaSource;
     extern WTFLogChannel LogPlugins;
     extern WTFLogChannel LogArchives;
     extern WTFLogChannel LogProgress;
