@@ -327,7 +327,7 @@ void SourceBuffer::removedFromMediaSource()
 
 void SourceBuffer::seekToTime(const MediaTime& time)
 {
-    LOG(MediaSource, "SourceBuffer::seekToTime(%p) - time(%s)", this, toString(time).utf8().data());
+    LOG(MediaSource, "SourceBuffer::seekToTime(%p) - time(%f)", this, time.toDouble ());
 
     for (HashMap<AtomicString, TrackBuffer>::iterator it = m_trackBufferMap.begin(); it != m_trackBufferMap.end(); ++it) {
         TrackBuffer& trackBuffer = it->value;
@@ -527,7 +527,7 @@ void SourceBuffer::sourceBufferPrivateAppendComplete(SourceBufferPrivate*, Appen
         const AtomicString& trackID = it->key;
 
         if (trackBuffer.needsReenqueueing) {
-            LOG(MediaSource, "SourceBuffer::sourceBufferPrivateAppendComplete(%p) - reenqueuing at time (%s)", this, toString(currentMediaTime).utf8().data());
+            LOG(MediaSource, "SourceBuffer::sourceBufferPrivateAppendComplete(%p) - reenqueuing at time (%f)", this, currentMediaTime.toDouble());
             reenqueueMediaForTime(trackBuffer, trackID, currentMediaTime);
         } else
             provideMediaData(trackBuffer, trackID);
@@ -537,7 +537,7 @@ void SourceBuffer::sourceBufferPrivateAppendComplete(SourceBufferPrivate*, Appen
     if (extraMemoryCost() > this->maximumBufferSize())
         m_bufferFull = true;
 
-    LOG(Media, "SourceBuffer::sourceBufferPrivateAppendComplete(%p) - buffered = %s", this, toString(m_buffered->ranges()).utf8().data());
+    LOG(Media, "SourceBuffer::sourceBufferPrivateAppendComplete(%p) - buffered = %f", this, m_buffered->ranges().totalDuration().toDouble());
 }
 
 void SourceBuffer::sourceBufferPrivateDidReceiveRenderingError(SourceBufferPrivate*, int error)
@@ -576,7 +576,7 @@ static PassRefPtr<TimeRanges> removeSamplesFromTrackBuffer(const DecodeOrderSamp
         size_t startBufferSize = trackBuffer.samples.sizeInBytes();
 #endif
         const RefPtr<MediaSample>& sample = it->second;
-        LOG(MediaSource, "SourceBuffer::%s(%p) - removing sample(%s)", logPrefix, buffer, toString(*it->second).utf8().data());
+        LOG(MediaSource, "SourceBuffer::%s(%p) - removing sample(%f)", logPrefix, buffer, sample->duration().toDouble());
 
         // Remove the erased samples from the TrackBuffer sample map.
         trackBuffer.samples.removeSample(sample.get());
@@ -607,7 +607,7 @@ static PassRefPtr<TimeRanges> removeSamplesFromTrackBuffer(const DecodeOrderSamp
 
 void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& end)
 {
-    LOG(MediaSource, "SourceBuffer::removeCodedFrames(%p) - start(%s), end(%s)", this, toString(start).utf8().data(), toString(end).utf8().data());
+    LOG(MediaSource, "SourceBuffer::removeCodedFrames(%p) - start(%f), end(%f)", this, start.toDouble(), end.toDouble());
 
     // 3.5.9 Coded Frame Removal Algorithm
     // https://dvcs.w3.org/hg/html-media/raw-file/tip/media-source/media-source.html#sourcebuffer-coded-frame-removal
@@ -671,7 +671,7 @@ void SourceBuffer::removeCodedFrames(const MediaTime& start, const MediaTime& en
     // 4. If buffer full flag equals true and this object is ready to accept more bytes, then set the buffer full flag to false.
     // No-op
 
-    LOG(Media, "SourceBuffer::removeCodedFrames(%p) - buffered = %s", this, toString(m_buffered->ranges()).utf8().data());
+    LOG(Media, "SourceBuffer::removeCodedFrames(%p) - buffered = %f", this, m_buffered->ranges().totalDuration().toDouble());
 }
 
 void SourceBuffer::removeTimerFired(Timer<SourceBuffer>*)
@@ -860,7 +860,7 @@ void SourceBuffer::setActive(bool active)
 
 void SourceBuffer::sourceBufferPrivateDidEndStream(SourceBufferPrivate*, const WTF::AtomicString& error)
 {
-    LOG(MediaSource, "SourceBuffer::sourceBufferPrivateDidEndStream(%p) - result = %s", this, String(error).utf8().data());
+    LOG(MediaSource, "SourceBuffer::sourceBufferPrivateDidEndStream(%p) - result = %s", this, error.string().utf8().data());
 
     if (!isRemoved())
         m_source->streamEndedWithError(error, IgnorableExceptionCode());
