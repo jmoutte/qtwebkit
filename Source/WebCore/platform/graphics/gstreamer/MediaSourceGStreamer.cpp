@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2013 Google Inc. All rights reserved.
  * Copyright (C) 2013 Orange
+ * Copyright (C) 2014 Sebastian Dröge <sebastian@centricular.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -37,22 +38,23 @@
 #include "SourceBufferPrivateGStreamer.h"
 #include "WebKitMediaSourceGStreamer.h"
 #include <wtf/gobject/GRefPtr.h>
+#include "NotImplemented.h"
 
 namespace WebCore {
 
 void MediaSourceGStreamer::open(MediaSourcePrivateClient* mediaSource, WebKitMediaSrc* src)
 {
     ASSERT(mediaSource);
-    RefPtr<MediaSourceGStreamer> mediaSourcePrivate = new MediaSourceGStreamer(mediaSource, src);
-    mediaSource->setPrivateAndOpen(mediaSourcePrivate.release());
+    RefPtr<MediaSourceGStreamer> sourceGStreamer = adoptRef(new MediaSourceGStreamer(mediaSource, src));
+    mediaSource->setPrivateAndOpen(sourceGStreamer.release());
 }
 
 MediaSourceGStreamer::MediaSourceGStreamer(MediaSourcePrivateClient* mediaSource, WebKitMediaSrc* src)
-    : m_client(adoptRef(new MediaSourceClientGstreamer(src)))
+    : MediaSourcePrivate()
     , m_mediaSource(mediaSource)
     , m_readyState(MediaPlayer::HaveNothing)
 {
-    ASSERT(m_client);
+    m_client = MediaSourceClientGStreamer::create(src);
 }
 
 MediaSourceGStreamer::~MediaSourceGStreamer()
@@ -61,22 +63,45 @@ MediaSourceGStreamer::~MediaSourceGStreamer()
 
 MediaSourceGStreamer::AddStatus MediaSourceGStreamer::addSourceBuffer(const ContentType& contentType, RefPtr<SourceBufferPrivate>& sourceBufferPrivate)
 {
-    sourceBufferPrivate = adoptRef(new SourceBufferPrivateGStreamer(m_client.get(), contentType));
-    return MediaSourceGStreamer::Ok;
+    m_sourceBuffers.append(SourceBufferPrivateGStreamer::create(m_client.get(), contentType));
+    sourceBufferPrivate = m_sourceBuffers.last();
+
+    return m_client->addSourceBuffer(m_sourceBuffers.last(), contentType);
 }
 
 void MediaSourceGStreamer::durationChanged()
 {
-    m_client->didReceiveDuration(m_mediaSource->duration().toDouble());
+    m_client->durationChanged(m_mediaSource->duration());
 }
 
-void MediaSourceGStreamer::markEndOfStream(EndOfStreamStatus)
+void MediaSourceGStreamer::markEndOfStream(EndOfStreamStatus status)
 {
-    m_client->didFinishLoading(0);
+    m_client->markEndOfStream(status);
 }
 
 void MediaSourceGStreamer::unmarkEndOfStream()
 {
+    notImplemented();
+}
+
+MediaPlayer::ReadyState MediaSourceGStreamer::readyState() const
+{
+    return m_readyState;
+}
+
+void MediaSourceGStreamer::setReadyState(MediaPlayer::ReadyState state)
+{
+    m_readyState = state;
+}
+
+void MediaSourceGStreamer::waitForSeekCompleted()
+{
+    notImplemented();
+}
+
+void MediaSourceGStreamer::seekCompleted()
+{
+    notImplemented();
 }
 
 }

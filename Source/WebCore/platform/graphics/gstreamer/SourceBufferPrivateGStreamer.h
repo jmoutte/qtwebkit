@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2013 Google Inc. All rights reserved.
  * Copyright (C) 2013 Orange
+ * Copyright (C) 2014 Sebastian Dröge <sebastian@centricular.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -36,26 +37,43 @@
 
 #include "SourceBufferPrivate.h"
 #include "WebKitMediaSourceGStreamer.h"
+#include "ContentType.h"
 
 namespace WebCore {
 
+class MediaSourceClientGStreamer;
+
 class SourceBufferPrivateGStreamer : public SourceBufferPrivate {
 public:
-    SourceBufferPrivateGStreamer(PassRefPtr<MediaSourceClientGstreamer>, const ContentType&);
-    ~SourceBufferPrivateGStreamer() { }
+    static PassRefPtr<SourceBufferPrivateGStreamer> create(PassRefPtr<MediaSourceClientGStreamer>, const ContentType&);
+    SourceBufferPrivateGStreamer(PassRefPtr<MediaSourceClientGStreamer>, const ContentType&);
+    virtual ~SourceBufferPrivateGStreamer();
 
-    void setClient(SourceBufferPrivateClient*) { }
-    void append(const unsigned char*, unsigned);
-    void abort();
-    void removedFromMediaSource();
-    MediaPlayer::ReadyState readyState() const { return m_readyState; }
-    void setReadyState(MediaPlayer::ReadyState readyState) { m_readyState = readyState; }
-    void evictCodedFrames() { }
-    bool isFull() { return false; }
+    virtual void setClient(SourceBufferPrivateClient*);
+
+    virtual void append(const unsigned char* data, unsigned length);
+    virtual void abort();
+    virtual void removedFromMediaSource();
+
+    virtual MediaPlayer::ReadyState readyState() const;
+    virtual void setReadyState(MediaPlayer::ReadyState);
+
+    virtual void flushAndEnqueueNonDisplayingSamples(Vector<RefPtr<MediaSample> >, AtomicString);
+    virtual void enqueueSample(PassRefPtr<MediaSample>, AtomicString);
+    virtual bool isReadyForMoreSamples(AtomicString);
+    virtual void setActive(bool);
+    virtual void stopAskingForMoreSamples(AtomicString);
+    virtual void notifyClientWhenReadyForMoreSamples(AtomicString);
 
 private:
-    String m_type;
-    RefPtr<MediaSourceClientGstreamer> m_client;
+    friend class MediaSourceClientGStreamer;
+
+    void didReceiveInitializationSegment(const SourceBufferPrivateClient::InitializationSegment&);
+    void didReceiveSample(PassRefPtr<MediaSample>);
+
+    ContentType m_type;
+    RefPtr<MediaSourceClientGStreamer> m_client;
+    SourceBufferPrivateClient* m_sourceBufferPrivateClient;
     MediaPlayer::ReadyState m_readyState;
 };
 

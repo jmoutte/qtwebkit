@@ -2,6 +2,7 @@
  *  Copyright (C) 2009, 2010 Sebastian Dröge <sebastian.droege@collabora.co.uk>
  *  Copyright (C) 2013 Collabora Ltd.
  *  Copyright (C) 2013 Orange
+ *  Copyright (C) 2014 Sebastian Dröge <sebastian@centricular.com>
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -23,6 +24,12 @@
 #if ENABLE(VIDEO) && ENABLE(MEDIA_SOURCE) && USE(GSTREAMER)
 
 #include "MediaPlayer.h"
+#include "MediaSource.h"
+#include "SourceBufferPrivateClient.h"
+#include "SourceBufferPrivate.h"
+
+#include "GRefPtrGStreamer.h"
+
 #include <gst/gst.h>
 
 G_BEGIN_DECLS
@@ -48,25 +55,45 @@ struct _WebKitMediaSrcClass {
 };
 
 GType webkit_media_src_get_type(void);
-void webKitMediaSrcSetMediaPlayer(WebKitMediaSrc*, WebCore::MediaPlayer*);
-void webKitMediaSrcSetPlayBin(WebKitMediaSrc*, GstElement*);
 
 G_END_DECLS
 
-class MediaSourceClientGstreamer: public RefCounted<MediaSourceClientGstreamer> {
-    public:
-        MediaSourceClientGstreamer(WebKitMediaSrc*);
-        ~MediaSourceClientGstreamer();
-
-        void didReceiveDuration(double);
-        void didReceiveData(const char*, int, String);
-        void didFinishLoading(double);
-        void didFail();
-
-    private:
-        WebKitMediaSrc* m_src;
+namespace WTF {
+template<> GRefPtr<WebKitMediaSrc> adoptGRef(WebKitMediaSrc* ptr);
+template<> WebKitMediaSrc* refGPtr<WebKitMediaSrc>(WebKitMediaSrc* ptr);
+template<> void derefGPtr<WebKitMediaSrc>(WebKitMediaSrc* ptr);
 };
 
+namespace WebCore {
+
+class ContentType;
+class SourceBufferPrivateGStreamer;
+class MediaSourceGStreamer;
+
+class MediaSourceClientGStreamer: public RefCounted<MediaSourceClientGStreamer> {
+    public:
+        static PassRefPtr<MediaSourceClientGStreamer> create(WebKitMediaSrc*);
+        MediaSourceClientGStreamer(WebKitMediaSrc*);
+        virtual ~MediaSourceClientGStreamer();
+
+        // From MediaSourceGStreamer
+        MediaSourcePrivate::AddStatus addSourceBuffer(PassRefPtr<SourceBufferPrivateGStreamer>, const ContentType&);
+        void durationChanged(const MediaTime&);
+        void markEndOfStream(MediaSourcePrivate::EndOfStreamStatus);
+
+        // From SourceBufferPrivateGStreamer
+        bool append(PassRefPtr<SourceBufferPrivateGStreamer>, const unsigned char*, unsigned);
+        void removedFromMediaSource(PassRefPtr<SourceBufferPrivateGStreamer>);
+
+        // From our WebKitMediaSrc
+        void didReceiveInitializationSegment(SourceBufferPrivateGStreamer*, const SourceBufferPrivateClient::InitializationSegment&);
+        void didReceiveSample(SourceBufferPrivateGStreamer* sourceBuffer, PassRefPtr<MediaSample> sample);
+
+    private:
+        GRefPtr<WebKitMediaSrc> m_src;
+};
+
+};
 
 #endif // USE(GSTREAMER)
 #endif
